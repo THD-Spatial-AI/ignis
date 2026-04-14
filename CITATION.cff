@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+title: "HDCP Go"
+message: "If you use this software, please cite it as below."
+type: software
+authors:
+  - name: "THD-Spatial-AI Research Group"
+    affiliation: "Technische Hochschule Deggendorf"
+repository-code: "https://github.com/THD-Spatial-AI/hdcp-go"
+url: "https://github.com/THD-Spatial-AI/hdcp-go"
+license: MIT
+version: "1.0.0"
+date-released: "2026-01-01"
+abstract: >
+  HDCP Go is a Go implementation of the Heat Demand Calculation Pipeline (HDCP)
+  for estimating and validating building energy performance across European countries.
+  It implements the 17-level TABULA calculation methodology covering building geometry,
+  thermal properties, climate conditions, solar gains, and final heating energy demand,
+  exposed as a REST API.
+keywords:
+  - heat demand calculation
+  - building energy performance
+  - TABULA
+  - European building typology
+  - energy efficiency

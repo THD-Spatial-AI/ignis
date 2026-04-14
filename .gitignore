@@ -1,0 +1,21 @@
+# Binaries
+bin/
+*.exe
+*.exe~
+
+# Environment
+.env
+
+# Logs
+logs/
+
+# Generated data
+data/tabula_models/
+
+# MkDocs build
+/site
+
+# IDE
+.idea/
+.vscode/settings.json
+*.DS_Store

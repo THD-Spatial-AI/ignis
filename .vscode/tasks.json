@@ -1,0 +1,38 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+        "label": "Build & Run App",
+        "type": "shell",
+        "command": "go build -o bin/app ./cmd/app && ./bin/app",
+        "group": {
+          "kind": "test",
+          "isDefault": true
+        },
+        "problemMatcher": [],
+        "detail": "Runs the compiled Go application."
+    },
+    {
+      "label": "Build & Create DB",
+      "type": "shell",
+      "command": "go build -o bin/rebuild_db ./cmd/rebuild_db && ./bin/rebuild_db",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "detail": "Builds and runs the database creation script."
+    },
+    {
+      "label": "Build & Validate Data",
+      "type": "shell",
+      "command": "go build -o bin/validate ./cmd/validate && ./bin/validate",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "detail": "Builds and runs the data validation script."
+    }
+]
+}
