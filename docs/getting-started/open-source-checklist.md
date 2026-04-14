@@ -10,13 +10,13 @@ This checklist is designed to be practical and easy to review. It separates **re
 
 | Section | Requirement Level | Status | Notes |
 | ------- | ----------------- | ------ | ----- |
-| [Essential Requirements](#essential-requirements) | Required | Pending | Must be completed before public release |
-| [Data Management (Git LFS)](#data-management-required-if-applicable) | Required if applicable | Pending | Only if repository contains large files |
-| [Attribution](#attribution-required-if-applicable) | Required if applicable | Pending | Only if project uses third-party assets requiring attribution |
-| [Citation](#citation-recommended-for-research-projects) | Recommended | Pending | For research projects — enables proper academic citation |
-| [Optional but Recommended Files](#optional-but-recommended-files-recommended) | Recommended | Pending | Strongly encouraged for public/community repos |
-| [Quality Checks](#quality-checks-required) | Required | Pending | Final review before publishing |
-| [Final Steps](#final-steps-required) | Required | Pending | Verify repository works from a fresh clone |
+| [Essential Requirements](#essential-requirements) | Required | Complete | |
+| [Data Management (Git LFS)](#data-management-required-if-applicable) | Required if applicable | Complete | `data/tabula-calculator.xlsx` tracked via LFS |
+| [Attribution](#attribution-required-if-applicable) | Required if applicable | Complete | TABULA/IWU attributed in `ATTRIBUTIONS.md` |
+| [Citation](#citation-recommended-for-research-projects) | Recommended | Complete | `CITATION.cff` present |
+| [Optional but Recommended Files](#optional-but-recommended-files-recommended) | Recommended | Partial | Issue templates present; CHANGELOG, CODEOWNERS, SECURITY, SUPPORT pending |
+| [Quality Checks](#quality-checks-required) | Required | Partial | Repository settings to be configured after GitHub push |
+| [Final Steps](#final-steps-required) | Required | Pending | Verify after push |
 
 ---
 
@@ -28,43 +28,39 @@ Quick links: [LICENSE](#license) · [README](#readme) · [CONTRIBUTING](#contrib
 
 ### LICENSE
 
-- [ ] `LICENSE` file present in repository root
-- [ ] Appropriate license chosen (see [Choose a License](https://choosealicense.com/))
-- [ ] License committed to repository
+- [x] `LICENSE` file present in repository root
+- [x] Appropriate license chosen — MIT
+- [x] License committed to repository
 
 ### README
 
-- [ ] `README.md` file present in repository root
+- [x] `README.md` file present in repository root
 
 #### README content
 
-- [ ] Project title and short description included
-- [ ] Project purpose clearly explained
-- [ ] Key features listed
-- [ ] Installation/setup instructions provided (if applicable)
-- [ ] Usage examples or usage steps included
-- [ ] Contribution guidance referenced (e.g. `CONTRIBUTING.md`)
-- [ ] README uses clear Markdown formatting
+- [x] Project title and short description included
+- [x] Project purpose clearly explained
+- [x] Key features listed
+- [x] Installation/setup instructions provided
+- [x] Usage examples included
+- [x] Contribution guidance referenced (`CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`)
+- [x] README uses clear Markdown formatting
 
 ### CONTRIBUTING
 
-- [ ] `CONTRIBUTING.md` file present in repository root
-- [ ] Issue reporting process documented
-- [ ] Pull request submission process documented
-- [ ] Coding standards / best practices outlined (if applicable)
-- [ ] Commit message guidance included (recommended)
-- [ ] `CONTRIBUTING.md` linked from `README.md`
+- [x] `CONTRIBUTING.md` file present in repository root
+- [x] Issue reporting process documented
+- [x] Pull request submission process documented
+- [x] Coding standards / best practices outlined (`go build`, `go test`, validation regression)
+- [x] Commit message guidance included
+- [x] `CONTRIBUTING.md` linked from `README.md`
 
 ### CODE_OF_CONDUCT
 
-- [ ] `CODE_OF_CONDUCT.md` file present in repository root
-- [ ] Code of conduct chosen (e.g. [Contributor Covenant](https://www.contributor-covenant.org/))
-- [ ] Contact method for reporting issues included
-- [ ] `CODE_OF_CONDUCT.md` linked from `README.md` or documentation
-
-!!! warning
-
-    Without files listed above, your repository does not meet the minimum requirements for public release under the **THD-Spatial** organization. Please complete all essential items before proceeding to make your repository public.
+- [x] `CODE_OF_CONDUCT.md` file present in repository root
+- [x] Contributor Covenant 3.0
+- [x] Contact method for reporting issues included
+- [x] `CODE_OF_CONDUCT.md` linked from `README.md`
 ---
 
 ## Data Management (Required if applicable)
@@ -73,11 +69,11 @@ If your repository contains large files (e.g. datasets, binaries, media, generat
 
 ### Git LFS (Large File Storage)
 
-- [ ] Git LFS installed locally
-- [ ] Git LFS initialised in repository (`git lfs install`)
-- [ ] Large file types tracked (e.g. data files, media, binaries)
-- [ ] `.gitattributes` committed to repository
-- [ ] Large files added and committed properly
+- [x] Git LFS installed locally
+- [x] Git LFS initialised in repository (`git lfs install`)
+- [x] Large file types tracked — `*.xlsx`, `*.csv`, archives, media (`data/tabula-calculator.xlsx`)
+- [x] `.gitattributes` committed to repository
+- [x] Large files added and committed properly
 - [ ] Release strategy for LFS files documented (if applicable)
 
 > **Note:** Files tracked by Git LFS are not included in release assets by default.
@@ -91,12 +87,12 @@ If your project uses third-party components, assets, or generated code that requ
 
 ### ATTRIBUTION
 
-- [ ] `ATTRIBUTIONS.md` file created in repository root
-- [ ] Third-party component or asset names listed
-- [ ] Source platform or author identified for each entry
-- [ ] License type specified for each entry
-- [ ] Links to original sources included
-- [ ] Any required attribution text preserved as-is from the original license/notice
+- [x] `ATTRIBUTIONS.md` file created in repository root
+- [x] TABULA building typology data (IWU) listed
+- [x] Source platform or author identified
+- [x] License type specified — CC BY 4.0
+- [x] Links to original sources included
+- [x] Go dependencies noted
 
 !!! note
 
@@ -112,14 +108,14 @@ For full specification details, see [Citation File Format](https://citation-file
 
 ### CITATION.cff
 
-- [ ] `CITATION.cff` file created in repository root
-- [ ] `cff-version` set to `1.2.0`
-- [ ] Project title specified
-- [ ] At least one author listed (with name and affiliation)
-- [ ] ORCID included for each author (if available)
-- [ ] License field matches the repository `LICENSE` file
-- [ ] Repository URL included
-- [ ] Version and release date set
+- [x] `CITATION.cff` file created in repository root
+- [x] `cff-version` set to `1.2.0`
+- [x] Project title specified — HDCP Go
+- [x] Author listed — THD-Spatial-AI Research Group, Technische Hochschule Deggendorf
+- [ ] ORCID included for each author (add when individual authors are listed)
+- [x] License field matches `LICENSE` — MIT
+- [x] Repository URL included
+- [x] Version and release date set
 - [ ] File validates against the CFF schema (use [cff-validator](https://github.com/citation-file-format/cff-initializer-javascript))
 
 !!! tip
@@ -140,8 +136,8 @@ These files are not always required, but they improve project quality, collabora
 
 ### Issue and PR Templates
 
-- [ ] `.github/ISSUE_TEMPLATE/` directory created (if using issue templates)
-- [ ] Issue template(s) added
+- [x] `.github/ISSUE_TEMPLATE/` directory created (if using issue templates)
+- [x] Issue template(s) added
 - [ ] `.github/pull_request_template.md` file added
 - [ ] PR template includes a contributor checklist (recommended)
 
@@ -170,10 +166,10 @@ These files are not always required, but they improve project quality, collabora
 
 ### Documentation Quality
 
-- [ ] Documentation reviewed for clarity
-- [ ] Spelling and grammar checked
-- [ ] Links tested and working
-- [ ] Code examples/commands tested (if applicable)
+- [x] Documentation reviewed for clarity
+- [x] Spelling and grammar checked
+- [x] Links tested and working
+- [x] Code examples/commands tested (if applicable)
 
 ### Repository Settings
 
@@ -185,11 +181,11 @@ These files are not always required, but they improve project quality, collabora
 
 ### Code Quality / Safety
 
-- [ ] Code reviewed and cleaned up
-- [ ] Sensitive information removed (API keys, passwords, credentials)
-- [ ] `.gitignore` configured properly
-- [ ] Dependencies documented
-- [ ] Build/test instructions included (if applicable)
+- [x] Code reviewed and cleaned up
+- [x] Sensitive information removed (API keys, passwords, credentials)
+- [x] `.gitignore` configured properly
+- [x] Dependencies documented
+- [x] Build/test instructions included (if applicable)
 
 ---
 
@@ -207,5 +203,5 @@ These files are not always required, but they improve project quality, collabora
 
 Once all required items are completed, the repository meets the THD-Spatial-AI minimum readiness standard for public release.
 
-- **Date completed:** `DD.MM.YYYY`
-- **Reviewed by:** `Name(s)`
+- **Date completed:** `14.04.2026`
+- **Reviewed by:** [`Jay Ravani`](https://github.com/jravani)
