@@ -83,7 +83,7 @@ markdown_extensions:
 # Page tree
 nav:
   - Home: index.md
-  - Open Source Checklist: getting-started/open-source-checklist.md
+  - Open Source Checklist: open-source-checklist.md
 
 # Copyright
 copyright: |
