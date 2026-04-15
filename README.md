@@ -123,6 +123,20 @@ Austria, Belgium, Bulgaria, Cyprus, Czech Republic, Denmark, France, Germany, Gr
 
 ---
 
+## Data Sources
+
+The building typology data and heat demand calculation methodology implemented in this project are based on the **TABULA** project (Typology Approach for Building Stock Energy Assessment), coordinated by Institut Wohnen und Umwelt (IWU), Darmstadt, Germany, under the Intelligent Energy Europe Programme.
+
+- **TABULA WebTool:** [episcope.eu/building-typology/tabula-webtool](https://episcope.eu/building-typology/tabula-webtool/)
+- **Source data / Excel workbook:** [episcope.eu](https://episcope.eu/welcome/)
+- **License:** Creative Commons Attribution 4.0 International (CC BY 4.0)
+
+> Loga, T., Stein, B., Diefenbach, N., Born, R. (2016): *Deutsche Wohngebäudetypologie. Beispielhafte Maßnahmen zur Verbesserung der Energieeffizienz von typischen Wohngebäuden.* 2nd edition. Institut Wohnen und Umwelt, Darmstadt.
+
+See [ATTRIBUTIONS.md](ATTRIBUTIONS.md) for full attribution details.
+
+---
+
 ## Contributing
 
 Bug reports, feature requests, and pull requests are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md) before getting started.
