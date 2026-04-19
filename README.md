@@ -145,4 +145,4 @@ Bug reports, feature requests, and pull requests are welcome. Please read [CONTR
 
 ## License
 
-MIT License — Copyright (c) 2026 Technische Hochschule Deggendorf (THD-Spatial-AI). See [LICENSE](LICENSE) for the full text.
+MIT License — Copyright (c) 2026 BigGeoData & Spatial AI, Technische Hochschule Deggendorf
