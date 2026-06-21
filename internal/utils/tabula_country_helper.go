@@ -295,9 +295,10 @@ func (h *TabulaCountryHelper) CodeToCountry(code string) string {
 		return country
 	}
 
-	// Log warning if logger is available
-	Warn.Printf("Country code '%s' not found", code)
-	return strings.ToLower(code) // Default to lowercase version of the code
+	if Warn != nil {
+		Warn.Printf("Country code '%s' not found", code)
+	}
+	return strings.ToLower(code) // fallback: lowercase of the input code
 }
 
 // CountryToCode converts a country name to its corresponding country code

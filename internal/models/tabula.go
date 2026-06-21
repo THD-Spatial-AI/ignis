@@ -70,7 +70,6 @@ type Envelope struct {
 	A_C_IntDim    float64 `json:"A_C_IntDim"`    // m² conditioned floor area (internal dims)
 	A_C_Use       float64 `json:"A_C_Use"`       // m² useful conditioned floor area
 	A_C_Living    float64 `json:"A_C_Living"`    // m² conditioned living area
-	A_C_RefInput  float64 `json:"A_C_Ref_Input"` // m² reference floor area
 
 	// Roofs
 	A_Roof_1 float64 `json:"A_Roof_1"` // m² roof area 1
