@@ -20,10 +20,11 @@ const (
 )
 
 var (
-	Info  *log.Logger
-	Debug *log.Logger
-	Warn  *log.Logger
-	Error *log.Logger
+	// Default to discard so callers are safe before InitLogger() is called (e.g. in tests).
+	Info  = log.New(io.Discard, "", 0)
+	Debug = log.New(io.Discard, "", 0)
+	Warn  = log.New(io.Discard, "", 0)
+	Error = log.New(io.Discard, "", 0)
 
 	// Current log level - can be configured
 	currentLogLevel LogLevel = LogLevelInfo // Default to INFO level
