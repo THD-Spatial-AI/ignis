@@ -1,12 +1,10 @@
 module github.com/THD-Spatial-AI/hdcp-go
 
-go 1.24.0
-
-toolchain go1.24.5
+go 1.25.0
 
 require (
 	github.com/gin-gonic/gin v1.11.0
-	github.com/jackc/pgx/v5 v5.7.6
+	github.com/jackc/pgx/v5 v5.9.2
 	github.com/joho/godotenv v1.5.1
 	github.com/xuri/excelize/v2 v2.10.0
 )
