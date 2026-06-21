@@ -9,7 +9,7 @@ import (
 // Handler holds shared dependencies for all API handlers.
 // A single instance is created at startup and shared across all requests.
 type Handler struct {
-	repo *repository.TabulaRepository
+	repo repository.TabulaReader
 }
 
 // New creates a Handler using the shared connection pool.

@@ -1,9 +1,11 @@
 package hdcp
 
 import (
+	"fmt"
+	"log"
+
 	"github.com/THD-Spatial-AI/hdcp-go/internal/calc"
 	"github.com/THD-Spatial-AI/hdcp-go/internal/models"
-	"log"
 )
 
 // Logger wraps the standard logger
@@ -24,10 +26,11 @@ func (l *Logger) Error(format string, v ...interface{}) {
 }
 
 // Pipeline handles the heating demand calculation pipeline, using different levels of calculations.
-// Each level relies on data from the previous level, and results are logged.
+// Each level relies on data from the previous level. Run() stops and returns an error if any level panics.
 type Pipeline struct {
 	Lvl0   *models.TabulaBuildingParameters
 	Logger *Logger
+	err    error // set by handleError on the first panic; causes Run() to abort
 
 	// Calculation levels
 	Lvl1  *calc.CalcLevel1
@@ -57,29 +60,27 @@ func NewPipeline(lvl0 *models.TabulaBuildingParameters, logger *Logger) *Pipelin
 	}
 }
 
-// Run executes the full calculation pipeline from level 1 to 17 and logs progress.
-// Returns: Final heating demand result from level 17.
-func (p *Pipeline) Run() float64 {
-	// Sequentially run all calculation levels
-	p.calcLvl1()
-	p.calcLvl2()
-	p.calcLvl3()
-	p.calcLvl4()
-	p.calcLvl5()
-	p.calcLvl6()
-	p.calcLvl7()
-	p.calcLvl8()
-	p.calcLvl9()
-	p.calcLvl10()
-	p.calcLvl11()
-	p.calcLvl12()
-	p.calcLvl13()
-	p.calcLvl14()
-	p.calcLvl15()
-	p.calcLvl16()
+// Run executes the full calculation pipeline from level 1 to 17.
+// Returns the final heating demand (kWh/(m²·a)) and any error. If a level panics the
+// pipeline stops immediately — subsequent levels are not run — and an error is returned.
+func (p *Pipeline) Run() (float64, error) {
+	steps := []func(){
+		p.calcLvl1, p.calcLvl2, p.calcLvl3, p.calcLvl4,
+		p.calcLvl5, p.calcLvl6, p.calcLvl7, p.calcLvl8,
+		p.calcLvl9, p.calcLvl10, p.calcLvl11, p.calcLvl12,
+		p.calcLvl13, p.calcLvl14, p.calcLvl15, p.calcLvl16,
+	}
+	for _, step := range steps {
+		step()
+		if p.err != nil {
+			return 0, p.err
+		}
+	}
 	result := p.calcLvl17()
-
-	return result
+	if p.err != nil {
+		return 0, p.err
+	}
+	return result, nil
 }
 
 // calcLvl1 runs level 1 calculation and logs any errors
@@ -186,9 +187,12 @@ func (p *Pipeline) calcLvl17() float64 {
 	return p.Lvl17.Run()
 }
 
-// handleError recovers from panics and logs them
+// handleError recovers from panics, logs them, and stores the error so Run() can abort.
 func (p *Pipeline) handleError(level string) {
 	if r := recover(); r != nil {
 		p.Logger.Error("Error occurred in %s: %v", level, r)
+		if p.err == nil {
+			p.err = fmt.Errorf("pipeline failed at %s: %v", level, r)
+		}
 	}
 }
