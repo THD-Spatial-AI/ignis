@@ -194,7 +194,11 @@ func runPipelineTest(pool *pgxpool.Pool, tableName string, rowID int) TestResult
 	hdcpPipeline := hdcp.NewPipeline(tabulaData, logger)
 
 	// Run the calculation pipeline
-	calculatedQHND := hdcpPipeline.Run()
+	calculatedQHND, err := hdcpPipeline.Run()
+	if err != nil {
+		result.ErrorMessage = fmt.Sprintf("pipeline error: %v", err)
+		return result
+	}
 	result.CalculatedQHND = calculatedQHND
 
 	// Calculate difference and percent error

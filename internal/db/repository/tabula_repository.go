@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/THD-Spatial-AI/hdcp-go/internal/config"
 	"github.com/THD-Spatial-AI/hdcp-go/internal/models"
 
 	"github.com/jackc/pgx/v5"
@@ -15,8 +14,6 @@ import (
 
 // ErrVariantNotFound indicates that a building variant was not found in the requested table.
 var ErrVariantNotFound = errors.New("tabula variant not found")
-
-var cfg = config.LoadConfig()
 
 // TabulaRepository provides read access to TABULA datasets.
 type TabulaRepository struct {
@@ -57,7 +54,7 @@ func (r *TabulaRepository) ListVariants(ctx context.Context, tableName string) (
 
 // GetVariant loads the full TABULA record and key metadata for a specific building variant.
 func (r *TabulaRepository) GetVariant(ctx context.Context, tableName, buildingCode string) (*models.TabulaBuildingParameters, string, float64, error) {
-	query := fmt.Sprintf(`SELECT * FROM %s.%s WHERE "Code_BuildingVariant" = $1 LIMIT 1`, cfg.DB.Schemas.Tabula, r.qualifyTable(tableName))
+	query := fmt.Sprintf(`SELECT * FROM %s WHERE "Code_BuildingVariant" = $1 LIMIT 1`, r.qualifyTable(tableName))
 
 	rows, err := r.pool.Query(ctx, query, buildingCode)
 	if err != nil {

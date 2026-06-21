@@ -82,23 +82,33 @@ func (h *Handler) GetVariantData(c *gin.Context) {
 	})
 }
 
+// tableNameFromISO converts an ISO 3166-1 alpha-2 code to the TABULA table name.
+// Returns an error if the code is unknown — CodeToCountry returns a lowercase fallback
+// for unknown codes, so we verify the round-trip to detect them.
 func tableNameFromISO(isoCode string) (string, error) {
 	if len(isoCode) != 2 {
 		return "", fmt.Errorf("invalid ISO2 code: %s", isoCode)
 	}
 
 	table := tabulaCountryHelper.CodeToCountry(isoCode)
-	if table == "" {
+	if tabulaCountryHelper.CountryToCode(table) != strings.ToUpper(isoCode) {
 		return "", fmt.Errorf("no TABULA dataset configured for %s", isoCode)
 	}
 
 	return table, nil
 }
 
+// isoFromVariantCode extracts and validates the ISO 3166-1 alpha-2 prefix from a TABULA variant code.
+// Valid codes follow the pattern "CC.something" (e.g. "DE.N.SFH.01.Gen").
 func isoFromVariantCode(variantCode string) (string, error) {
-	if len(variantCode) < 2 {
-		return "", fmt.Errorf("invalid variant code: %s", variantCode)
+	if len(variantCode) < 4 || variantCode[2] != '.' {
+		return "", fmt.Errorf("invalid variant code %q: expected format CC.xxx", variantCode)
 	}
-
-	return strings.ToUpper(variantCode[:2]), nil
+	prefix := strings.ToUpper(variantCode[:2])
+	for _, ch := range prefix {
+		if ch < 'A' || ch > 'Z' {
+			return "", fmt.Errorf("invalid variant code %q: country prefix must be two letters", variantCode)
+		}
+	}
+	return prefix, nil
 }

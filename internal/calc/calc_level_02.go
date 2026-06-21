@@ -59,8 +59,8 @@ func (c *CalcLevel2) Run() {
 // actually measured by applying the TABULA definition, if available; otherwise estimated by applying standard conversion factors
 // Formula: IF(A_C_Ref_Input > 0, A_C_Ref_Input, A_C_Ref_Estim)
 func (c *CalcLevel2) calcACRef() float64 {
-	if c.Lvl0.BasicParameters.Envelope.A_C_RefInput > 0 {
-		return c.Lvl0.BasicParameters.Envelope.A_C_RefInput
+	if c.Lvl0.BasicParameters.Envelope.A_C_Ref_Input > 0 {
+		return c.Lvl0.BasicParameters.Envelope.A_C_Ref_Input
 	}
 	return c.Lvl1.A_C_Ref_Estim
 }

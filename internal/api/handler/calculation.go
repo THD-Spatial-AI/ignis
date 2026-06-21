@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"errors"
+	"math"
 	"net/http"
 	"strings"
 
@@ -67,6 +68,10 @@ func (h *Handler) CalculateHeatDemand(c *gin.Context) {
 		return
 	}
 	if overrides.ARef != nil {
+		if *overrides.ARef <= 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "A_ref must be a positive number"})
+			return
+		}
 		building.BasicParameters.Envelope.A_C_Ref_Input = *overrides.ARef
 	}
 
@@ -75,6 +80,12 @@ func (h *Handler) CalculateHeatDemand(c *gin.Context) {
 	if err != nil {
 		utils.Error.Printf("hdcp: pipeline failed for %s: %v", variantCode, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Pipeline execution failed"})
+		return
+	}
+
+	if math.IsNaN(qHND) || math.IsInf(qHND, 0) {
+		utils.Error.Printf("hdcp: pipeline returned non-finite value for %s: %v", variantCode, qHND)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Pipeline returned invalid result"})
 		return
 	}
 

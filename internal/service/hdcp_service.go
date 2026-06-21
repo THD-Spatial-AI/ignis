@@ -29,11 +29,12 @@ func NewHDCPService() *HDCPService {
 	}
 }
 
-// NewHDCPServiceWithDB creates a new HDCP service with database support
-func NewHDCPServiceWithDB(pool *pgxpool.Pool) *HDCPService {
+// NewHDCPServiceWithDB creates a new HDCP service with database support.
+// schema is the PostgreSQL schema name (e.g. "tabula").
+func NewHDCPServiceWithDB(pool *pgxpool.Pool, schema string) *HDCPService {
 	return &HDCPService{
 		logger:     hdcp.NewLogger(log.New(os.Stdout, "", 0)),
-		repository: repository.NewBuildingRepository(pool),
+		repository: repository.NewBuildingRepository(pool, schema),
 	}
 }
 
@@ -64,22 +65,19 @@ func normalizeCountryName(name string) string {
 	return name
 }
 
-// CalculateHeatingDemand executes the HDCP calculation pipeline
-// Returns the calculated q_h_nd (annual heating energy demand in kWh/(m²·a))
+// CalculateHeatingDemand executes the HDCP calculation pipeline.
+// Returns the calculated q_h_nd (annual heating energy demand in kWh/(m²·a)).
 func (s *HDCPService) CalculateHeatingDemand(buildingParams *models.TabulaBuildingParameters) (float64, error) {
-	// Create and run pipeline
 	pipeline := hdcp.NewPipeline(buildingParams, s.logger)
-	result := pipeline.Run()
-
-	return result, nil
+	return pipeline.Run()
 }
 
 // CalculateHeatingDemandWithDetails executes the HDCP calculation pipeline
-// Returns the calculated result along with intermediate calculation levels
+// and returns the fully populated Pipeline struct for inspection of intermediate levels.
 func (s *HDCPService) CalculateHeatingDemandWithDetails(buildingParams *models.TabulaBuildingParameters) (*hdcp.Pipeline, error) {
-	// Create and run pipeline
 	pipeline := hdcp.NewPipeline(buildingParams, s.logger)
-	pipeline.Run()
-
+	if _, err := pipeline.Run(); err != nil {
+		return nil, err
+	}
 	return pipeline, nil
 }

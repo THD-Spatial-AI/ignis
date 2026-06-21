@@ -3,27 +3,29 @@ package repository
 import (
 	"context"
 	"fmt"
-	"github.com/THD-Spatial-AI/hdcp-go/internal/models"
 	"reflect"
 
+	"github.com/THD-Spatial-AI/hdcp-go/internal/models"
+
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// BuildingRepository handles database operations for building data
+// BuildingRepository handles database operations for building data.
 type BuildingRepository struct {
-	pool *pgxpool.Pool
+	pool   *pgxpool.Pool
+	schema string
 }
 
-// NewBuildingRepository creates a new building repository
-func NewBuildingRepository(pool *pgxpool.Pool) *BuildingRepository {
-	return &BuildingRepository{
-		pool: pool,
-	}
+// NewBuildingRepository creates a new building repository.
+// schema is the PostgreSQL schema name (e.g. "tabula"); pass "" to use the search_path default.
+func NewBuildingRepository(pool *pgxpool.Pool, schema string) *BuildingRepository {
+	return &BuildingRepository{pool: pool, schema: schema}
 }
 
-// GetByID retrieves a building by row ID from the specified table
+// GetByID retrieves a building by row ID from the specified table.
 func (r *BuildingRepository) GetByID(ctx context.Context, tableName string, rowID int) (*models.TabulaBuildingParameters, error) {
-	query := fmt.Sprintf(`SELECT * FROM %s.%s WHERE id = $1`, cfg.DB.Schemas.Tabula, tableName)
+	query := fmt.Sprintf(`SELECT * FROM %s WHERE id = $1`, r.qualifyTable(tableName))
 
 	rows, err := r.pool.Query(ctx, query, rowID)
 	if err != nil {
@@ -47,9 +49,9 @@ func (r *BuildingRepository) GetByID(ctx context.Context, tableName string, rowI
 	return tabulaData, nil
 }
 
-// GetByBuildingCode retrieves a building by building variant code
+// GetByBuildingCode retrieves a building by building variant code.
 func (r *BuildingRepository) GetByBuildingCode(ctx context.Context, tableName string, buildingCode string) (*models.TabulaBuildingParameters, error) {
-	query := fmt.Sprintf(`SELECT * FROM %s.%s WHERE code_buildingvariant = $1 LIMIT 1`, cfg.DB.Schemas.Tabula, tableName)
+	query := fmt.Sprintf(`SELECT * FROM %s WHERE code_buildingvariant = $1 LIMIT 1`, r.qualifyTable(tableName))
 
 	rows, err := r.pool.Query(ctx, query, buildingCode)
 	if err != nil {
@@ -71,6 +73,13 @@ func (r *BuildingRepository) GetByBuildingCode(ctx context.Context, tableName st
 	populateStructFromMap(tabulaData, dataMap)
 
 	return tabulaData, nil
+}
+
+func (r *BuildingRepository) qualifyTable(tableName string) string {
+	if r.schema == "" {
+		return pgx.Identifier{tableName}.Sanitize()
+	}
+	return pgx.Identifier{r.schema, tableName}.Sanitize()
 }
 
 // initializeTabulaData creates a fully initialized TabulaBuildingParameters with all nested structs
