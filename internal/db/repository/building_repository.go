@@ -23,32 +23,6 @@ func NewBuildingRepository(pool *pgxpool.Pool, schema string) *BuildingRepositor
 	return &BuildingRepository{pool: pool, schema: schema}
 }
 
-// GetByID retrieves a building by row ID from the specified table.
-func (r *BuildingRepository) GetByID(ctx context.Context, tableName string, rowID int) (*models.TabulaBuildingParameters, error) {
-	query := fmt.Sprintf(`SELECT * FROM %s WHERE id = $1`, r.qualifyTable(tableName))
-
-	rows, err := r.pool.Query(ctx, query, rowID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query building data: %w", err)
-	}
-	defer rows.Close()
-
-	if !rows.Next() {
-		return nil, fmt.Errorf("no data found for row ID %d", rowID)
-	}
-
-	dataMap, err := rowsToDataMap(rows)
-	if err != nil {
-		return nil, err
-	}
-
-	// Initialize and populate TabulaBuildingParameters
-	tabulaData := initializeTabulaData()
-	populateStructFromMap(tabulaData, dataMap)
-
-	return tabulaData, nil
-}
-
 // GetByBuildingCode retrieves a building by building variant code.
 func (r *BuildingRepository) GetByBuildingCode(ctx context.Context, tableName string, buildingCode string) (*models.TabulaBuildingParameters, error) {
 	query := fmt.Sprintf(`SELECT * FROM %s WHERE code_buildingvariant = $1 LIMIT 1`, r.qualifyTable(tableName))
