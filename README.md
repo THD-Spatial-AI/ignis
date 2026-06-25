@@ -1,5 +1,5 @@
-![Ignis logo](docs/assets/logo/ignis-logo-light.svg#gh-light)
-![Ignis logo](docs/assets/logo/ignis-logo-dark.svg#gh-dark)
+![Ignis logo](docs/assets/logo/ignis-logo-light.svg#gh-dark-mode-only)
+![Ignis logo](docs/assets/logo/ignis-logo-dark.svg#gh-light-mode-only)
 
 [![CI](https://github.com/thd-spatial-ai/ignis/actions/workflows/ci.yml/badge.svg)](https://github.com/thd-spatial-ai/ignis/actions/workflows/ci.yml)
 [![MkDocs](https://github.com/thd-spatial-ai/ignis/actions/workflows/docs.yml/badge.svg)](https://thd-spatial-ai.github.io/ignis)
