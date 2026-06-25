@@ -16,12 +16,20 @@ import (
 
 // mockRepo implements repository.TabulaReader for use in handler tests.
 type mockRepo struct {
-	listVariants func(ctx context.Context, tableName string) ([]string, error)
-	getVariant   func(ctx context.Context, tableName, code string) (*models.TabulaBuildingParameters, string, float64, error)
+	listVariants  func(ctx context.Context, tableName string) ([]string, error)
+	matchVariants func(ctx context.Context, tableName, prefix string) ([]string, error)
+	getVariant    func(ctx context.Context, tableName, code string) (*models.TabulaBuildingParameters, string, float64, error)
 }
 
 func (m *mockRepo) ListVariants(ctx context.Context, tableName string) ([]string, error) {
 	return m.listVariants(ctx, tableName)
+}
+
+func (m *mockRepo) MatchVariants(ctx context.Context, tableName, prefix string) ([]string, error) {
+	if m.matchVariants != nil {
+		return m.matchVariants(ctx, tableName, prefix)
+	}
+	return nil, nil
 }
 
 func (m *mockRepo) GetVariant(ctx context.Context, tableName, code string) (*models.TabulaBuildingParameters, string, float64, error) {

@@ -8,6 +8,7 @@ bin/
 
 # Logs
 logs/
+*.out
 
 # Generated data
 data/tabula_models/
