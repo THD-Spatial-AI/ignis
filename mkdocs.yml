@@ -76,14 +76,21 @@ markdown_extensions:
       line_spans: __span
       pygments_lang_class: true
   - pymdownx.inlinehilite
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tasklist:
       custom_checkbox: true
 
 # Page tree
 nav:
   - Home: index.md
-  - Open Source Checklist: open-source-checklist.md
+  - Getting started: getting-started.md
+  - API reference: api.md
+  - Pipeline: pipeline.md
+  - Validation: validation.md
 
 # Copyright
 copyright: |

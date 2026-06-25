@@ -1,145 +1,56 @@
-# ignis
+![Ignis logo](docs/assets/logo/ignis-logo-light.svg#gh-light)
+![Ignis logo](docs/assets/logo/ignis-logo-dark.svg#gh-dark)
 
-A Go implementation of the ISO 13790 heat demand calculation pipeline for estimating and validating building energy performance across European countries.
+[![CI](https://github.com/thd-spatial-ai/ignis/actions/workflows/ci.yml/badge.svg)](https://github.com/thd-spatial-ai/ignis/actions/workflows/ci.yml)
+[![MkDocs](https://github.com/thd-spatial-ai/ignis/actions/workflows/docs.yml/badge.svg)](https://thd-spatial-ai.github.io/ignis)
+[![GitHub release](https://img.shields.io/github/v/release/thd-spatial-ai/ignis?include_prereleases&label=release&logo=github)](https://github.com/thd-spatial-ai/ignis/releases)
 
-**19/20 countries at 100% validation accuracy — 2,091/2,147 buildings passing validation.**
+Go microservice implementing the ISO 13790 annual heating energy demand calculation pipeline, validated against the [TABULA](https://episcope.eu/building-typology/tabula-webtool/) European building typology database across 20 countries.
 
-See [MULTI_COUNTRY_VALIDATION_REPORT.md](MULTI_COUNTRY_VALIDATION_REPORT.md) for detailed results.
-
----
-
-## Project Structure
-
-```
-ignis/
-├── cmd/
-│   ├── app/            # HTTP API server
-│   ├── build_db/       # Database rebuild tool
-│   └── validate/       # Validation tool
-├── data/
-│   ├── tabula_models/  # Exported JSON models (auto-generated, gitignored)
-│   └── tabula-calculator.xlsx
-├── examples/
-│   └── batch_by_code.json
-├── internal/
-│   ├── api/            # HTTP handlers
-│   ├── calc/           # 17-level calculation pipeline
-│   ├── config/         # Configuration and environment
-│   ├── db/             # Database access
-│   ├── hdcp/           # Pipeline orchestration
-│   ├── models/         # Data models
-│   ├── service/        # Business logic
-│   └── utils/          # Helpers
-└── go.mod
-```
+**19/20 countries at 100% accuracy — 2,091 / 2,147 buildings validated.** See the [validation report](docs/validation.md).
 
 ---
 
-## Prerequisites
+## Compatibility
 
-- Go 1.21 or higher
-- PostgreSQL database
-- Excel workbook with Tabula building data (`data/tabula-calculator.xlsx`)
+| Dependency | Version |
+|---|---|
+| Go | 1.26+ |
+| PostgreSQL | 15 – 17 |
 
 ---
 
-## Configuration
-
-Copy `.env.example` to `.env` and fill in your values:
+## Quick start
 
 ```bash
-cp .env.example .env
+cp .env.example .env          # configure DB connection and ALLOWED_ORIGINS
+go build -o bin/build_db cmd/build_db/main.go
+./bin/build_db                # load TABULA workbook → PostgreSQL
+go build -o bin/app cmd/app/main.go
+./bin/app                     # start API on :8080
 ```
+
+Full setup and API documentation: [thd-spatial-ai.github.io/ignis](https://thd-spatial-ai.github.io/ignis)
+
+---
+
+## Testing
 
 ```bash
-# Database
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=your_password
-DB_NAME=ignis
-DB_SSL_MODE=disable
-
-# Country for validation
-COUNTRY=germany
-
-# Data files
-EXCEL_FILE=data/tabula-calculator.xlsx
+go test ./...
+go test ./... -coverprofile=coverage.out -covermode=atomic
+go tool cover -html=coverage.out
 ```
 
 ---
 
-## Building
+## Local docs
 
 ```bash
-go build -o bin/validate   cmd/validate/main.go
-go build -o bin/build_db   cmd/build_db/main.go
-go build -o bin/app        cmd/app/main.go
+python -m venv .venv
+.venv/bin/pip install -r docs/requirements.txt
+.venv/bin/mkdocs serve
 ```
-
----
-
-## Usage
-
-### 1. Build the database
-
-Load building data from the Excel workbook into PostgreSQL:
-
-```bash
-./bin/build_db
-```
-
-### 2. Validate calculations
-
-```bash
-# Single country
-./bin/validate -country germany
-
-# All countries
-./test_all_countries.sh
-```
-
-### 3. Run the API server
-
-```bash
-./bin/app
-```
-
----
-
-## Validation Methodology
-
-- **Tolerance:** ±2% on final `q_h_nd` (annual heating energy demand)
-- **Metric:** kWh/(m²·a)
-- **Pipeline:** 17-level cascading calculation covering building geometry, envelope, thermal properties, climate conditions, solar gains, thermal bridges, heat transfer coefficients, and final energy demand
-
----
-
-## Supported Countries
-
-Austria, Belgium, Bulgaria, Cyprus, Czech Republic, Denmark, France, Germany, Greece, Hungary, Ireland, Italy, Netherlands, Norway, Poland, Serbia, Slovenia, Sweden, United Kingdom
-
-> Spain is not yet producing valid results (under investigation).
-
----
-
-## Data Sources
-
-The building typology data and heat demand calculation methodology implemented in this project are based on the **TABULA** project (Typology Approach for Building Stock Energy Assessment), coordinated by Institut Wohnen und Umwelt (IWU), Darmstadt, Germany, under the Intelligent Energy Europe Programme.
-
-- **TABULA WebTool:** [episcope.eu/building-typology/tabula-webtool](https://episcope.eu/building-typology/tabula-webtool/)
-- **Source data / Excel workbook:** [episcope.eu](https://episcope.eu/welcome/)
-- **License:** Creative Commons Attribution 4.0 International (CC BY 4.0)
-
-> Loga, T., Stein, B., Diefenbach, N., Born, R. (2016): *Deutsche Wohngebäudetypologie. Beispielhafte Maßnahmen zur Verbesserung der Energieeffizienz von typischen Wohngebäuden.* 2nd edition. Institut Wohnen und Umwelt, Darmstadt.
-
-See [ATTRIBUTIONS.md](ATTRIBUTIONS.md) for full attribution details.
-
----
-
-## Contributing
-
-Bug reports, feature requests, and pull requests are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md) before getting started.
 
 ---
 
@@ -149,9 +60,8 @@ MIT License — Copyright 2026 BigGeoData & Spatial AI, Technische Hochschule De
 
 ## Acknowledgements
 
-This project is being developed in the context of the research project RENvolveIT (<https://projekte.ffg.at/projekt/5127011>).
-This research was funded by CETPartnership, the Clean Energy Transition Partnership under the 2023 joint call for research proposals, co-funded by the European Commission (GA N°101069750) and with the funding organizations detailed on <https://cetpartnership.eu/funding-agencies-and-call-modules>.​
+Developed in the context of the RENvolveIT research project (<https://projekte.ffg.at/projekt/5127011>), funded by CETPartnership under the 2023 joint call for research proposals, co-funded by the European Commission (GA N°101069750).
 
-<img src="docs/assets/sponsors/CETP-logo.svg" alt="CETPartnership" width="144" height="72">  <img src="docs/assets/sponsors/EN_Co-fundedbytheEU_RGB_POS.png" alt="EU" width="180" height="40">
+<img src="docs/assets/sponsors/CETP-logo.svg" alt="CETPartnership" width="144" height="72">&nbsp;&nbsp;<img src="docs/assets/sponsors/EN_Co-fundedbytheEU_RGB_POS.png" alt="EU" width="180" height="40">
 
-**TABULA & EPISCOPE (IEE Projects):** building-characteristic data (accessed 13.11.2025, [https://episcope.eu/iee-project/tabula/](https://episcope.eu/iee-project/tabula/))
+**TABULA & EPISCOPE (IEE Projects):** building-characteristic data ([episcope.eu](https://episcope.eu/iee-project/tabula/), accessed 13.11.2025)
