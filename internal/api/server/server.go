@@ -3,11 +3,11 @@ package server
 import (
 	"context"
 
-	"github.com/THD-Spatial-AI/hdcp-go/internal/api/handler"
-	"github.com/THD-Spatial-AI/hdcp-go/internal/api/middleware"
-	"github.com/THD-Spatial-AI/hdcp-go/internal/api/router"
-	"github.com/THD-Spatial-AI/hdcp-go/internal/config"
-	"github.com/THD-Spatial-AI/hdcp-go/internal/utils"
+	"github.com/thd-spatial-ai/ignis/internal/api/handler"
+	"github.com/thd-spatial-ai/ignis/internal/api/middleware"
+	"github.com/thd-spatial-ai/ignis/internal/api/router"
+	"github.com/thd-spatial-ai/ignis/internal/config"
+	"github.com/thd-spatial-ai/ignis/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -42,7 +42,7 @@ func SetupServer() (*gin.Engine, func()) {
 	h := handler.New(pool, schema)
 
 	r := gin.New()
-	r.Use(gin.Recovery(), middleware.RequestLogger())
+	r.Use(gin.Recovery(), middleware.CORS(), middleware.RequestLogger())
 	r.SetTrustedProxies(nil)
 
 	router.RegisterRoutes(r, h)

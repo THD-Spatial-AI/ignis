@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/THD-Spatial-AI/hdcp-go/internal/models"
+	"github.com/thd-spatial-ai/ignis/internal/models"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -50,6 +50,38 @@ func (r *TabulaRepository) ListVariants(ctx context.Context, tableName string) (
 	}
 
 	return variants, nil
+}
+
+// MatchVariants returns all variant codes whose Code_BuildingVariant starts with the given prefix.
+// The prefix should be in the form "CC.N.TYPE.PERIOD" (e.g. "DE.N.SFH.01") — a trailing "."
+// is appended automatically so that only variants of that exact building+period are returned.
+func (r *TabulaRepository) MatchVariants(ctx context.Context, tableName, prefix string) ([]string, error) {
+	pattern := prefix + ".%"
+	query := fmt.Sprintf(
+		`SELECT "Code_BuildingVariant" FROM %s WHERE "Code_BuildingVariant" LIKE $1 ORDER BY "Code_BuildingVariant"`,
+		r.qualifyTable(tableName),
+	)
+
+	rows, err := r.pool.Query(ctx, query, pattern)
+	if err != nil {
+		return nil, fmt.Errorf("failed to match variants: %w", err)
+	}
+	defer rows.Close()
+
+	var codes []string
+	for rows.Next() {
+		var code string
+		if err := rows.Scan(&code); err != nil {
+			return nil, fmt.Errorf("failed to scan variant code: %w", err)
+		}
+		codes = append(codes, code)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to iterate matched variants: %w", err)
+	}
+
+	return codes, nil
 }
 
 // GetVariant loads the full TABULA record and key metadata for a specific building variant.

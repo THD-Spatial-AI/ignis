@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/THD-Spatial-AI/hdcp-go/internal/config"
+	"github.com/thd-spatial-ai/ignis/internal/config"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )

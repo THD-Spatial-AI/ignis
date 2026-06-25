@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 	"fmt"
-	"github.com/THD-Spatial-AI/hdcp-go/internal/db/repository"
-	"github.com/THD-Spatial-AI/hdcp-go/internal/hdcp"
-	"github.com/THD-Spatial-AI/hdcp-go/internal/models"
+	"github.com/thd-spatial-ai/ignis/internal/db/repository"
+	"github.com/thd-spatial-ai/ignis/internal/hdcp"
+	"github.com/thd-spatial-ai/ignis/internal/models"
 	"log"
 	"os"
 	"strings"
@@ -16,37 +16,37 @@ import (
 // Re-export types for easier use in handlers
 type TabulaBuildingParameters = models.TabulaBuildingParameters
 
-// HDCPService provides business logic for HDCP calculations
-type HDCPService struct {
+// IgnisService provides business logic for HDCP calculations
+type IgnisService struct {
 	logger     *hdcp.Logger
 	repository *repository.BuildingRepository
 }
 
-// NewHDCPService creates a new HDCP service instance without database
-func NewHDCPService() *HDCPService {
-	return &HDCPService{
+// NewIgnisService creates a new HDCP service instance without database
+func NewIgnisService() *IgnisService {
+	return &IgnisService{
 		logger: hdcp.NewLogger(log.New(os.Stdout, "", 0)),
 	}
 }
 
-// NewHDCPServiceWithDB creates a new HDCP service with database support.
+// NewIgnisServiceWithDB creates a new HDCP service with database support.
 // schema is the PostgreSQL schema name (e.g. "tabula").
-func NewHDCPServiceWithDB(pool *pgxpool.Pool, schema string) *HDCPService {
-	return &HDCPService{
+func NewIgnisServiceWithDB(pool *pgxpool.Pool, schema string) *IgnisService {
+	return &IgnisService{
 		logger:     hdcp.NewLogger(log.New(os.Stdout, "", 0)),
 		repository: repository.NewBuildingRepository(pool, schema),
 	}
 }
 
-// NewHDCPServiceWithLogger creates a new HDCP service with custom logger
-func NewHDCPServiceWithLogger(logger *hdcp.Logger) *HDCPService {
-	return &HDCPService{
+// NewIgnisServiceWithLogger creates a new HDCP service with custom logger
+func NewIgnisServiceWithLogger(logger *hdcp.Logger) *IgnisService {
+	return &IgnisService{
 		logger: logger,
 	}
 }
 
 // GetBuildingByCode retrieves building parameters from database by building code
-func (s *HDCPService) GetBuildingByCode(ctx context.Context, country, buildingCode string) (*models.TabulaBuildingParameters, error) {
+func (s *IgnisService) GetBuildingByCode(ctx context.Context, country, buildingCode string) (*models.TabulaBuildingParameters, error) {
 	if s.repository == nil {
 		return nil, fmt.Errorf("database repository not initialized")
 	}
@@ -67,14 +67,14 @@ func normalizeCountryName(name string) string {
 
 // CalculateHeatingDemand executes the HDCP calculation pipeline.
 // Returns the calculated q_h_nd (annual heating energy demand in kWh/(m²·a)).
-func (s *HDCPService) CalculateHeatingDemand(buildingParams *models.TabulaBuildingParameters) (float64, error) {
+func (s *IgnisService) CalculateHeatingDemand(buildingParams *models.TabulaBuildingParameters) (float64, error) {
 	pipeline := hdcp.NewPipeline(buildingParams, s.logger)
 	return pipeline.Run()
 }
 
 // CalculateHeatingDemandWithDetails executes the HDCP calculation pipeline
 // and returns the fully populated Pipeline struct for inspection of intermediate levels.
-func (s *HDCPService) CalculateHeatingDemandWithDetails(buildingParams *models.TabulaBuildingParameters) (*hdcp.Pipeline, error) {
+func (s *IgnisService) CalculateHeatingDemandWithDetails(buildingParams *models.TabulaBuildingParameters) (*hdcp.Pipeline, error) {
 	pipeline := hdcp.NewPipeline(buildingParams, s.logger)
 	if _, err := pipeline.Run(); err != nil {
 		return nil, err

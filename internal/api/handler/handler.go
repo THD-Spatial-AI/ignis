@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"github.com/THD-Spatial-AI/hdcp-go/internal/db/repository"
+	"github.com/thd-spatial-ai/ignis/internal/db/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )

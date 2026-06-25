@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/THD-Spatial-AI/hdcp-go/internal/api/server"
-	"github.com/THD-Spatial-AI/hdcp-go/internal/utils"
+	"github.com/thd-spatial-ai/ignis/internal/api/server"
+	"github.com/thd-spatial-ai/ignis/internal/utils"
 )
 
 // Setup app server and routes

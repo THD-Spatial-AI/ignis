@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/THD-Spatial-AI/hdcp-go/internal/config"
-	"github.com/THD-Spatial-AI/hdcp-go/internal/hdcp"
-	"github.com/THD-Spatial-AI/hdcp-go/internal/models"
+	"github.com/thd-spatial-ai/ignis/internal/config"
+	"github.com/thd-spatial-ai/ignis/internal/hdcp"
+	"github.com/thd-spatial-ai/ignis/internal/models"
 	"log"
 	"math"
 	"os"
@@ -35,7 +35,7 @@ const tolerancePercent = 2.5 // 2% tolerance for heating demand cross-country va
 var cfg = config.LoadConfig()
 
 func main() {
-	fmt.Println("=== HDCP Pipeline Validation Tool ===")
+	fmt.Println("=== ignis Validation Tool ===")
 	startTime := time.Now()
 	// Load configuration
 	cfg := config.LoadConfig()
@@ -189,12 +189,12 @@ func runPipelineTest(pool *pgxpool.Pool, tableName string, rowID int) TestResult
 	// 	// Continue execution even if JSON save fails
 	// }
 
-	// Create HDCP instance and run pipeline
+	// Create ignis instance and run pipeline
 	logger := hdcp.NewLogger(log.New(os.Stdout, "", 0))
-	hdcpPipeline := hdcp.NewPipeline(tabulaData, logger)
+	pipeline := hdcp.NewPipeline(tabulaData, logger)
 
 	// Run the calculation pipeline
-	calculatedQHND, err := hdcpPipeline.Run()
+	calculatedQHND, err := pipeline.Run()
 	if err != nil {
 		result.ErrorMessage = fmt.Sprintf("pipeline error: %v", err)
 		return result

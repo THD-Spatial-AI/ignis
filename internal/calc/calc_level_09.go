@@ -2,7 +2,7 @@ package calc
 
 import (
 	"fmt"
-	"github.com/THD-Spatial-AI/hdcp-go/internal/models"
+	"github.com/thd-spatial-ai/ignis/internal/models"
 )
 
 // CalcLevel9 represents the ninth calculation level with all dependencies

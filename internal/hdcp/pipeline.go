@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/THD-Spatial-AI/hdcp-go/internal/calc"
-	"github.com/THD-Spatial-AI/hdcp-go/internal/models"
+	"github.com/thd-spatial-ai/ignis/internal/calc"
+	"github.com/thd-spatial-ai/ignis/internal/models"
 )
 
 // Logger wraps the standard logger

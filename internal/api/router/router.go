@@ -1,8 +1,8 @@
 package router
 
 import (
-	"github.com/THD-Spatial-AI/hdcp-go/internal/api/handler"
-	"github.com/THD-Spatial-AI/hdcp-go/internal/utils"
+	"github.com/thd-spatial-ai/ignis/internal/api/handler"
+	"github.com/thd-spatial-ai/ignis/internal/utils"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -23,6 +23,7 @@ func RegisterRoutes(r *gin.Engine, h *handler.Handler) {
 			// GET
 			v1.GET("/data/:code", h.GetVariantData)
 			v1.GET("/variants/:country_iso2", h.GetVariants)
+			v1.GET("/variants/:country_iso2/match", h.MatchVariants)
 
 			// POST
 			v1.POST("/calculate/:code", h.CalculateHeatDemand)

@@ -3,8 +3,8 @@ package importer
 import (
 	"context"
 	"fmt"
-	"github.com/THD-Spatial-AI/hdcp-go/internal/config"
-	"github.com/THD-Spatial-AI/hdcp-go/internal/utils"
+	"github.com/thd-spatial-ai/ignis/internal/config"
+	"github.com/thd-spatial-ai/ignis/internal/utils"
 	"sort"
 	"strconv"
 	"strings"

@@ -14,7 +14,7 @@ func loadDBConfig() *DBConfig {
 	return &DBConfig{
 		Host:     GetEnv("DB_HOST", "localhost"),
 		Port:     GetEnv("DB_PORT", "5432"),
-		Name:     GetEnv("DB_NAME", "hdcp"),
+		Name:     GetEnv("DB_NAME", "ignis"),
 		User:     GetEnv("DB_USER", "postgres"),
 		Password: GetEnv("DB_PASSWORD", ""),
 		SSLMode:  GetEnv("DB_SSL_MODE", "disable"),

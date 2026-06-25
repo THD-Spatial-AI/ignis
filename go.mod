@@ -1,4 +1,4 @@
-module github.com/THD-Spatial-AI/hdcp-go
+module github.com/thd-spatial-ai/ignis
 
 go 1.25.0
 

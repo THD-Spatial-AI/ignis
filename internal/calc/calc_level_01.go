@@ -1,7 +1,7 @@
 package calc
 
 import (
-	"github.com/THD-Spatial-AI/hdcp-go/internal/models"
+	"github.com/thd-spatial-ai/ignis/internal/models"
 )
 
 // CalcLevel1 holds calculated values for level 1

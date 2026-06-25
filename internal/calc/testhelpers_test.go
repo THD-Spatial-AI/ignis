@@ -3,7 +3,7 @@ package calc
 import (
 	"math"
 
-	"github.com/THD-Spatial-AI/hdcp-go/internal/models"
+	"github.com/thd-spatial-ai/ignis/internal/models"
 )
 
 const eps = 1e-9

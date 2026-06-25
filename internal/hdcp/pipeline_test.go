@@ -5,7 +5,7 @@ import (
 	"log"
 	"testing"
 
-	"github.com/THD-Spatial-AI/hdcp-go/internal/models"
+	"github.com/thd-spatial-ai/ignis/internal/models"
 )
 
 // newTestParams returns a fully initialised TabulaBuildingParameters with zero field values.

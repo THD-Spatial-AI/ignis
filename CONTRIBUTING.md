@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for taking the time to contribute to **HDCP Go**.
+Thank you for taking the time to contribute to **ignis**.
 
 This project welcomes contributions such as bug reports, feature requests, documentation improvements, and code changes.
 
@@ -26,7 +26,7 @@ By participating in this project, you agree to follow the rules and expectations
 
 ## Reporting Bugs and Requesting Changes
 
-Use the [GitHub issue tracker](https://github.com/THD-Spatial-AI/hdcp-go/issues) for bug reports, feature requests, and validation issues.
+Use the [GitHub issue tracker](https://github.com/thd-spatial-ai/ignis/issues) for bug reports, feature requests, and validation issues.
 
 When reporting an issue, please include:
 
@@ -42,8 +42,8 @@ When reporting an issue, please include:
 ### 1. Fork and clone
 
 ```bash
-git clone https://github.com/THD-Spatial-AI/hdcp-go.git
-cd hdcp-go
+git clone https://github.com/thd-spatial-ai/ignis.git
+cd ignis
 ```
 
 ### 2. Create a branch

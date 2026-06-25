@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/THD-Spatial-AI/hdcp-go/internal/config"
-	importer "github.com/THD-Spatial-AI/hdcp-go/internal/db"
-	"github.com/THD-Spatial-AI/hdcp-go/internal/utils"
+	"github.com/thd-spatial-ai/ignis/internal/config"
+	importer "github.com/thd-spatial-ai/ignis/internal/db"
+	"github.com/thd-spatial-ai/ignis/internal/utils"
 	"log"
 	"time"
 
@@ -15,7 +15,7 @@ import (
 func main() {
 	startTime := time.Now()
 	fmt.Println("============================================================")
-	fmt.Println("=== HDCP Database Rebuild Tool ===")
+	fmt.Println("=== ignis Database Rebuild Tool ===")
 	fmt.Println("============================================================")
 	fmt.Println("")
 

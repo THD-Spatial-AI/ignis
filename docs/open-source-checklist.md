@@ -110,7 +110,7 @@ For full specification details, see [Citation File Format](https://citation-file
 
 - [x] `CITATION.cff` file created in repository root
 - [x] `cff-version` set to `1.2.0`
-- [x] Project title specified — HDCP Go
+- [x] Project title specified — ignis
 - [x] Author listed — THD-Spatial-AI Research Group, Technische Hochschule Deggendorf
 - [ ] ORCID included for each author (add when individual authors are listed)
 - [x] License field matches `LICENSE` — MIT

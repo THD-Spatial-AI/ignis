@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/THD-Spatial-AI/hdcp-go/internal/db/repository"
-	"github.com/THD-Spatial-AI/hdcp-go/internal/utils"
+	"github.com/thd-spatial-ai/ignis/internal/db/repository"
+	"github.com/thd-spatial-ai/ignis/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -40,6 +40,70 @@ func (h *Handler) GetVariants(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"country": tableName,
 		"data":    variants,
+	})
+}
+
+// refurbishmentLabels assigns human-readable labels to refurbishment levels by position.
+// TABULA orders variants alphabetically; the first is always the as-built / existing state.
+var refurbishmentLabels = []string{
+	"Existing state",
+	"Medium refurbishment",
+	"Advanced refurbishment",
+}
+
+// refurbishmentLabel returns a display label for a variant at the given position.
+func refurbishmentLabel(index int) string {
+	if index < len(refurbishmentLabels) {
+		return refurbishmentLabels[index]
+	}
+	return fmt.Sprintf("Refurbishment level %d", index+1)
+}
+
+// MatchVariants returns all refurbishment variants for a building type and construction period.
+// Query params: type (e.g. SFH), period (e.g. 01). Both are required.
+// The response is ordered from existing state to most-refurbished.
+func (h *Handler) MatchVariants(c *gin.Context) {
+	isoCode := strings.ToUpper(strings.TrimSpace(c.Param("country_iso2")))
+	tableName, err := tableNameFromISO(isoCode)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	buildingType := strings.ToUpper(strings.TrimSpace(c.Query("type")))
+	period := strings.TrimSpace(c.Query("period"))
+
+	if buildingType == "" || period == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "query params 'type' and 'period' are required"})
+		return
+	}
+
+	// TABULA codes follow CC.N.TYPE.PERIOD.VariantSuffix — N is the national dataset identifier.
+	prefix := fmt.Sprintf("%s.N.%s.%s", isoCode, buildingType, period)
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), requestTimeout)
+	defer cancel()
+
+	codes, err := h.repo.MatchVariants(ctx, tableName, prefix)
+	if err != nil {
+		utils.Error.Printf("failed to match variants for %s: %v", prefix, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query variants"})
+		return
+	}
+
+	type variantEntry struct {
+		Code  string `json:"code"`
+		Label string `json:"label"`
+	}
+	entries := make([]variantEntry, len(codes))
+	for i, code := range codes {
+		entries[i] = variantEntry{Code: code, Label: refurbishmentLabel(i)}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"country": tableName,
+		"prefix":  prefix,
+		"data":    entries,
 	})
 }
 

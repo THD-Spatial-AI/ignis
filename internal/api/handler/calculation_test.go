@@ -8,8 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/THD-Spatial-AI/hdcp-go/internal/db/repository"
-	"github.com/THD-Spatial-AI/hdcp-go/internal/models"
+	"github.com/thd-spatial-ai/ignis/internal/db/repository"
+	"github.com/thd-spatial-ai/ignis/internal/models"
 
 	"github.com/gin-gonic/gin"
 )

@@ -1,6 +1,6 @@
-# HDCP Go
+# ignis
 
-Go implementation of the Heat Demand Calculation Pipeline (HDCP) for estimating and validating building energy performance across European countries.
+Go implementation of the ISO 13790 heat demand calculation pipeline for estimating and validating building energy performance across European countries.
 
 ## Documentation
 
@@ -10,9 +10,9 @@ Go implementation of the Heat Demand Calculation Pipeline (HDCP) for estimating 
 
 ## Links
 
-- [Repository](https://github.com/THD-Spatial-AI/hdcp-go)
-- [Issue Tracker](https://github.com/THD-Spatial-AI/hdcp-go/issues)
-- [Contributing](https://github.com/THD-Spatial-AI/hdcp-go/blob/main/CONTRIBUTING.md)
+- [Repository](https://github.com/thd-spatial-ai/ignis)
+- [Issue Tracker](https://github.com/thd-spatial-ai/ignis/issues)
+- [Contributing](https://github.com/thd-spatial-ai/ignis/blob/main/CONTRIBUTING.md)
 
 ## License
 

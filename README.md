@@ -1,6 +1,6 @@
-# HDCP Go
+# ignis
 
-A Go implementation of the Heat Demand Calculation Pipeline (HDCP) for estimating and validating building energy performance across European countries.
+A Go implementation of the ISO 13790 heat demand calculation pipeline for estimating and validating building energy performance across European countries.
 
 **19/20 countries at 100% validation accuracy — 2,091/2,147 buildings passing validation.**
 
@@ -11,7 +11,7 @@ See [MULTI_COUNTRY_VALIDATION_REPORT.md](MULTI_COUNTRY_VALIDATION_REPORT.md) for
 ## Project Structure
 
 ```
-hdcp-go/
+ignis/
 ├── cmd/
 │   ├── app/            # HTTP API server
 │   ├── build_db/       # Database rebuild tool
@@ -57,7 +57,7 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_USER=postgres
 DB_PASSWORD=your_password
-DB_NAME=hdcp
+DB_NAME=ignis
 DB_SSL_MODE=disable
 
 # Country for validation

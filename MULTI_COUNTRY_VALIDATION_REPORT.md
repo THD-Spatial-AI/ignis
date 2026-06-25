@@ -1,4 +1,4 @@
-# HDCP Go — Multi-Country Validation Report
+# ignis — Multi-Country Validation Report
 
 **Date:** November 6, 2025
 **Total Countries:** 20
@@ -121,7 +121,7 @@
 
 ## Conclusion
 
-The HDCP Go implementation demonstrates **exceptional cross-country performance** with:
+The ignis implementation demonstrates **exceptional cross-country performance** with:
 
 **97.39% overall pass rate** across 20 European countries
 **19 out of 20 countries at 100%** - production ready

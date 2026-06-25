@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/THD-Spatial-AI/hdcp-go/internal/db/repository"
-	"github.com/THD-Spatial-AI/hdcp-go/internal/service"
-	"github.com/THD-Spatial-AI/hdcp-go/internal/utils"
+	"github.com/thd-spatial-ai/ignis/internal/db/repository"
+	"github.com/thd-spatial-ai/ignis/internal/service"
+	"github.com/thd-spatial-ai/ignis/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -53,7 +53,7 @@ func (h *Handler) CalculateHeatDemand(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "variant not found: " + variantCode})
 			return
 		}
-		utils.Error.Printf("hdcp: failed to load TABULA data for %s: %v", variantCode, err)
+		utils.Error.Printf("ignis: failed to load TABULA data for %s: %v", variantCode, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load TABULA data"})
 		return
 	}
@@ -75,21 +75,21 @@ func (h *Handler) CalculateHeatDemand(c *gin.Context) {
 		building.BasicParameters.Envelope.A_C_Ref_Input = *overrides.ARef
 	}
 
-	svc := service.NewHDCPService()
+	svc := service.NewIgnisService()
 	qHND, err := svc.CalculateHeatingDemand(building)
 	if err != nil {
-		utils.Error.Printf("hdcp: pipeline failed for %s: %v", variantCode, err)
+		utils.Error.Printf("ignis: pipeline failed for %s: %v", variantCode, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Pipeline execution failed"})
 		return
 	}
 
 	if math.IsNaN(qHND) || math.IsInf(qHND, 0) {
-		utils.Error.Printf("hdcp: pipeline returned non-finite value for %s: %v", variantCode, qHND)
+		utils.Error.Printf("ignis: pipeline returned non-finite value for %s: %v", variantCode, qHND)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Pipeline returned invalid result"})
 		return
 	}
 
-	utils.Info.Printf("hdcp: variant=%s q_h_nd=%.2f kWh/(m2.a)", variantCode, qHND)
+	utils.Info.Printf("ignis: variant=%s q_h_nd=%.2f kWh/(m2.a)", variantCode, qHND)
 	c.JSON(http.StatusOK, gin.H{
 		"variant_code": variantCode,
 		"q_h_nd":       qHND,

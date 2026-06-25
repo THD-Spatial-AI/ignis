@@ -1,13 +1,13 @@
 # Project information
-site_name: HDCP Go
+site_name: ignis
 site_author: THD-Spatial-AI
 site_description: >-
-  HDCP Go — Heat Demand Calculation Pipeline for European building energy performance estimation.
-site_url: https://THD-Spatial.github.io/hdcp-go
+  ignis — Heat Demand Calculation Pipeline for European building energy performance estimation.
+site_url: https://thd-spatial-ai.github.io/ignis
 
 # Repository
-repo_name: THD-Spatial-AI/hdcp-go
-repo_url: https://github.com/THD-Spatial-AI/hdcp-go
+repo_name: thd-spatial-ai/ignis
+repo_url: https://github.com/thd-spatial-ai/ignis
 edit_uri: edit/main/docs/
 
 # Theme configuration
