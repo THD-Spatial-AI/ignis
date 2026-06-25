@@ -145,4 +145,13 @@ Bug reports, feature requests, and pull requests are welcome. Please read [CONTR
 
 ## License
 
-MIT License — Copyright (c) 2026 Technische Hochschule Deggendorf (THD-Spatial-AI). See [LICENSE](LICENSE) for the full text.
+MIT License — Copyright 2026 BigGeoData & Spatial AI, Technische Hochschule Deggendorf. See [LICENSE](LICENSE) for the full text.
+
+## Acknowledgements
+
+This project is being developed in the context of the research project RENvolveIT (<https://projekte.ffg.at/projekt/5127011>).
+This research was funded by CETPartnership, the Clean Energy Transition Partnership under the 2023 joint call for research proposals, co-funded by the European Commission (GA N°101069750) and with the funding organizations detailed on <https://cetpartnership.eu/funding-agencies-and-call-modules>.​
+
+<img src="docs/assets/sponsors/CETP-logo.svg" alt="CETPartnership" width="144" height="72">  <img src="docs/assets/sponsors/EN_Co-fundedbytheEU_RGB_POS.png" alt="EU" width="180" height="40">
+
+**TABULA & EPISCOPE (IEE Projects):** building-characteristic data (accessed 13.11.2025, [https://episcope.eu/iee-project/tabula/](https://episcope.eu/iee-project/tabula/))
