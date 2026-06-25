@@ -26,23 +26,21 @@ func RequestLogger() gin.HandlerFunc {
 	}
 }
 
-// CORS sets permissive CORS headers for browser clients.
+// CORS sets CORS headers for browser clients.
 //
 // Allowed origins are read from the ALLOWED_ORIGINS environment variable as a
 // comma-separated list (e.g. "http://localhost:5173,https://app.example.com").
-// When the variable is unset, localhost:5173 and localhost:3000 are allowed so
-// the Vite dev server works without any configuration.
+// If the variable is unset or empty, all cross-origin requests are rejected.
+// Set ALLOWED_ORIGINS in your .env file — see .env.example.
 func CORS() gin.HandlerFunc {
-	rawOrigins := os.Getenv("ALLOWED_ORIGINS")
 	var allowed []string
-	if rawOrigins == "" {
-		allowed = []string{"http://localhost:5173", "http://localhost:3000"}
-	} else {
-		for _, o := range strings.Split(rawOrigins, ",") {
-			if t := strings.TrimSpace(o); t != "" {
-				allowed = append(allowed, t)
-			}
+	for _, o := range strings.Split(os.Getenv("ALLOWED_ORIGINS"), ",") {
+		if t := strings.TrimSpace(o); t != "" {
+			allowed = append(allowed, t)
 		}
+	}
+	if len(allowed) == 0 {
+		log.Println("warning: ALLOWED_ORIGINS is not set — all cross-origin requests will be rejected")
 	}
 
 	isAllowed := func(origin string) bool {
