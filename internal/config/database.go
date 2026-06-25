@@ -11,13 +11,17 @@ const (
 
 // loadDBConfig loads database configuration from environment
 func loadDBConfig() *DBConfig {
+	password := GetEnv("DB_PASSWORD", "")
+	if password == "" {
+		panic("DB_PASSWORD is not set — refusing to start with an empty database password")
+	}
 	return &DBConfig{
 		Host:     GetEnv("DB_HOST", "localhost"),
 		Port:     GetEnv("DB_PORT", "5432"),
 		Name:     GetEnv("DB_NAME", "ignis"),
 		User:     GetEnv("DB_USER", "postgres"),
-		Password: GetEnv("DB_PASSWORD", ""),
-		SSLMode:  GetEnv("DB_SSL_MODE", "disable"),
+		Password: password,
+		SSLMode:  GetEnv("DB_SSL_MODE", "require"),
 		Schemas:  loadSchemas(),
 	}
 }

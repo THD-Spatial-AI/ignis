@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"errors"
+	"io"
 	"math"
 	"net/http"
 	"strings"
@@ -63,7 +64,7 @@ func (h *Handler) CalculateHeatDemand(c *gin.Context) {
 	var overrides struct {
 		ARef *float64 `json:"A_ref"`
 	}
-	if err := c.ShouldBindJSON(&overrides); err != nil && err.Error() != "EOF" {
+	if err := c.ShouldBindJSON(&overrides); err != nil && !errors.Is(err, io.EOF) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body: " + err.Error()})
 		return
 	}

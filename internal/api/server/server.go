@@ -42,7 +42,7 @@ func SetupServer() (*gin.Engine, func()) {
 	h := handler.New(pool, schema)
 
 	r := gin.New()
-	r.Use(gin.Recovery(), middleware.CORS(), middleware.RequestLogger())
+	r.Use(gin.Recovery(), middleware.CORS(), middleware.RequestBodyLimit(), middleware.RequestLogger())
 	r.SetTrustedProxies(nil)
 
 	router.RegisterRoutes(r, h)

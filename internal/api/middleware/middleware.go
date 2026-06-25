@@ -10,6 +10,23 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const maxRequestBodyBytes = 1024 // 1 KB — sufficient for {"A_ref": 150.0}
+
+// RequestBodyLimit rejects bodies larger than maxRequestBodyBytes.
+// Protects the calculate endpoint from oversized payloads.
+func RequestBodyLimit() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.Request.ContentLength > maxRequestBodyBytes {
+			c.AbortWithStatusJSON(http.StatusRequestEntityTooLarge, gin.H{
+				"error": "request body too large",
+			})
+			return
+		}
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxRequestBodyBytes)
+		c.Next()
+	}
+}
+
 // RequestLogger logs details about each incoming HTTP request.
 func RequestLogger() gin.HandlerFunc {
 	return func(c *gin.Context) {
