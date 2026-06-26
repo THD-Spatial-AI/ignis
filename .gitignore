@@ -1,5 +1,8 @@
 # Binaries
 bin/
+app
+build_db
+validate
 *.exe
 *.exe~
 

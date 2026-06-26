@@ -1,0 +1,17 @@
+services:
+  ignis:
+    container_name: ignis-environment
+    build:
+      context: ./..
+      dockerfile: environment/Dockerfile
+    env_file: docker.env        # load environment variables into container
+    stdin_open: true
+    tty: true
+    working_dir: /app
+    volumes:
+      - ./../data:/app/data     # mount data directory so build_db can read the Excel workbook
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # Linux compatibility
+    ports:
+      - "${HOST_PORT}:${APP_PORT}"  # map host port to container port (both configurable)
+    command: bash               # start an interactive shell for development

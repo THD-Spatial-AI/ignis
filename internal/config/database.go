@@ -5,9 +5,17 @@ import (
 )
 
 const (
-	tabulaSchema = "tabula"
-	dataDir      = "data/"
+	tabulaSchema  = "tabula"
+	dataDir       = "data/"
+	defaultPort   = "8080"
 )
+
+// loadAppConfig loads HTTP server configuration from environment
+func loadAppConfig() *AppConfig {
+	return &AppConfig{
+		Port: GetEnv("APP_PORT", defaultPort),
+	}
+}
 
 // loadDBConfig loads database configuration from environment
 func loadDBConfig() *DBConfig {
