@@ -3,7 +3,7 @@
 
 [![CI](https://github.com/thd-spatial-ai/ignis/actions/workflows/ci.yml/badge.svg)](https://github.com/thd-spatial-ai/ignis/actions/workflows/ci.yml) [![MkDocs](https://github.com/thd-spatial-ai/ignis/actions/workflows/docs.yml/badge.svg)](https://thd-spatial-ai.github.io/ignis) [![GitHub release](https://img.shields.io/github/v/release/thd-spatial-ai/ignis?include_prereleases&label=release&logo=github)](https://github.com/thd-spatial-ai/ignis/releases)
 
-Go microservice implementing the ISO 13790 annual heating energy demand calculation pipeline, validated against the [TABULA](https://episcope.eu/building-typology/tabula-webtool/) European building typology database across 20 countries.
+Go microservice implementing the **EN ISO 13790** annual heating energy demand calculation pipeline derived from [tabula-calculator.xlsx](https://episcope.eu/welcome/) *(Accessed on: 26.06.26)*. The calculation method has been documented in [Common calculation Method] Tool covers all European building typologies across 20 countries defined by **TABULA & EPISCOPE (IEE Projects)**.
 
 **19/20 countries at 100% accuracy — 2,091 / 2,147 buildings validated.** See the [validation report](docs/validation.md).
 
