@@ -21,11 +21,10 @@ The results have been validated against the Excel Workbook output. So far **19/2
 ## Quick start
 
 ```bash
-cp .env.example .env          # configure DB connection and ALLOWED_ORIGINS
-go build -o bin/build_db cmd/build_db/main.go
-./bin/build_db                # load TABULA workbook → PostgreSQL
-go build -o bin/app cmd/app/main.go
-./bin/app                     # start API on :8080
+cp .env.example .env   # configure DB connection, ALLOWED_ORIGINS, APP_PORT
+make build             # compile all binaries into bin/
+./bin/build_db         # load TABULA workbook → PostgreSQL
+make run               # start API on APP_PORT (default 8080)
 ```
 
 Full setup and API documentation: [thd-spatial-ai.github.io/ignis](https://thd-spatial-ai.github.io/ignis)

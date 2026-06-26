@@ -5,7 +5,7 @@ type Schemas struct {
 	Tabula string
 }
 
-// Database configuration
+// DBConfig holds database connection settings
 type DBConfig struct {
 	Host     string
 	Port     string
@@ -18,7 +18,12 @@ type DBConfig struct {
 	Schemas *Schemas
 }
 
-// Data paths
+// AppConfig holds HTTP server settings
+type AppConfig struct {
+	Port string // TCP port the server listens on, e.g. "8080"
+}
+
+// DataPaths holds file system paths for input data
 type DataPaths struct {
 	ExcelFile string
 }
