@@ -60,6 +60,6 @@ MIT License — Copyright 2026 BigGeoData & Spatial AI, Technische Hochschule De
 
 Developed in the context of the RENvolveIT research project (<https://projekte.ffg.at/projekt/5127011>), funded by CETPartnership under the 2023 joint call for research proposals, co-funded by the European Commission (GA N°101069750).
 
-<img src="docs/assets/sponsors/CETP-logo.svg" alt="CETPartnership" width="144" height="72">&nbsp;&nbsp;<img src="docs/assets/sponsors/EN_Co-fundedbytheEU_RGB_POS.png" alt="EU" width="180" height="40">
+<img src="docs/assets/sponsors/CETP-logo.svg" alt="CETPartnership" width="144" height="72">&nbsp;&nbsp;&nbsp;<img src="docs/assets/sponsors/EN_Co-fundedbytheEU_RGB_POS.png" alt="EU" width="180" height="40">
 
 **TABULA & EPISCOPE (IEE Projects):** building-characteristic data ([episcope.eu](https://episcope.eu/iee-project/tabula/), accessed 13.11.2025)
