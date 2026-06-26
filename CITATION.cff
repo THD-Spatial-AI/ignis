@@ -4,7 +4,7 @@ message: "If you use this software, please cite it as below."
 type: software
 authors:
   - name: "THD-Spatial-AI Research Group"
-    affiliation: "Technische Hochschule Deggendorf"
+    affiliation: "BigGeoData & Spatial AI, Technische Hochschule Deggendorf"
 repository-code: "https://github.com/THD-Spatial-AI/hdcp-go"
 url: "https://github.com/THD-Spatial-AI/hdcp-go"
 license: MIT

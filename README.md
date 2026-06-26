@@ -14,7 +14,7 @@ The results have been validated against the Excel Workbook output. So far **19/2
 | Dependency | Version |
 |---|---|
 | Go | 1.26+ |
-| PostgreSQL | 15 – 17 |
+| PostgreSQL | >= 15 |
 
 ---
 
