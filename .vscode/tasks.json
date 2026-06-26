@@ -2,37 +2,58 @@
   "version": "2.0.0",
   "tasks": [
     {
-        "label": "Build & Run App",
-        "type": "shell",
-        "command": "go build -o bin/app ./cmd/app && ./bin/app",
-        "group": {
-          "kind": "test",
-          "isDefault": true
-        },
-        "problemMatcher": [],
-        "detail": "Runs the compiled Go application."
+      "label": "Run App",
+      "type": "shell",
+      "command": "make run",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "detail": "Compiles bin/app and starts the HTTP API server."
     },
     {
-      "label": "Build & Create DB",
+      "label": "Create & Populate DB",
       "type": "shell",
-      "command": "go build -o bin/rebuild_db ./cmd/rebuild_db && ./bin/rebuild_db",
+      "command": "make create-db",
+      "group": "build",
+      "problemMatcher": [],
+      "detail": "Creates the database if absent (or drops the tabula schema if it exists), then loads TABULA data from the Excel workbook."
+    },
+    {
+      "label": "Build All",
+      "type": "shell",
+      "command": "make build",
+      "group": "build",
+      "problemMatcher": [],
+      "detail": "Compiles all binaries (app, build_db, validate) into bin/."
+    },
+    {
+      "label": "Test",
+      "type": "shell",
+      "command": "make test",
       "group": {
         "kind": "test",
         "isDefault": true
       },
       "problemMatcher": [],
-      "detail": "Builds and runs the database creation script."
+      "detail": "Runs all unit tests."
     },
     {
-      "label": "Build & Validate Data",
+      "label": "Validate",
       "type": "shell",
-      "command": "go build -o bin/validate ./cmd/validate && ./bin/validate",
-      "group": {
-        "kind": "test",
-        "isDefault": true
-      },
+      "command": "make validate",
+      "group": "test",
       "problemMatcher": [],
-      "detail": "Builds and runs the data validation script."
+      "detail": "Compiles bin/validate and runs the accuracy check against the database (must pass ±2.5%)."
+    },
+    {
+      "label": "Clean",
+      "type": "shell",
+      "command": "make clean",
+      "group": "build",
+      "problemMatcher": [],
+      "detail": "Removes the bin/ directory."
     }
-]
+  ]
 }
