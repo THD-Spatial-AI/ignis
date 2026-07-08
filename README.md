@@ -12,7 +12,7 @@ The results have been validated against the Excel Workbook output. So far **19/2
 ## Compatibility
 
 | Dependency | Version |
-|---|---|
+| ---------- | ------- |
 | Go | 1.26+ |
 | PostgreSQL | >= 15 |
 
@@ -20,13 +20,13 @@ The results have been validated against the Excel Workbook output. So far **19/2
 
 ## Quick start
 
-```bash
-cp .env.example .env   # configure DB connection, ALLOWED_ORIGINS, APP_PORT
-make build             # compile all binaries into bin/
-make create-db         # create the PostgreSQL database named in .env
-./bin/build_db         # load TABULA workbook → PostgreSQL
-make run               # start API on APP_PORT (default 8080)
-```
+| Step | Command | Description |
+| ---- | ------- | ----------- |
+| 1 | `cp .env.example .env` | Configure DB connection, ALLOWED_ORIGINS, APP_PORT |
+| 2 | `make build` | Compile all binaries into bin/ |
+| 3 | `make create-db` | Create the PostgreSQL database named in .env |
+| 4 | `./bin/build_db` | Load TABULA workbook inside PostgreSQL |
+| 5 | `make run` | Start API on APP_PORT (default 8080) |
 
 Full setup and API documentation: [thd-spatial-ai.github.io/ignis](https://thd-spatial-ai.github.io/ignis)
 
@@ -62,4 +62,4 @@ Developed in the context of the RENvolveIT research project (<https://projekte.f
 
 <img src="docs/assets/sponsors/CETP-logo.svg" alt="CETPartnership" width="144" height="72">&nbsp;&nbsp;&nbsp;<img src="docs/assets/sponsors/EN_Co-fundedbytheEU_RGB_POS.png" alt="EU" width="180" height="40">
 
-**TABULA & EPISCOPE (IEE Projects):** building-characteristic data ([episcope.eu](https://episcope.eu/iee-project/tabula/), accessed 13.11.2025)
+**TABULA & EPISCOPE (IEE Projects):** building-characteristic data ([episcope.eu](https://episcope.eu/iee-project/tabula/), accessed 08.07.2026)
