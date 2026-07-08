@@ -24,6 +24,7 @@ func RegisterRoutes(r *gin.Engine, h *handler.Handler) {
 			v1.GET("/data/:code", h.GetVariantData)
 			v1.GET("/variants/:country_iso2", h.GetVariants)
 			v1.GET("/variants/:country_iso2/match", h.MatchVariants)
+			v1.GET("/fields", h.GetFieldMetadata)
 
 			// POST
 			v1.POST("/calculate/:code", h.CalculateHeatDemand)
