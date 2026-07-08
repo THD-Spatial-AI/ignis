@@ -114,6 +114,37 @@ Returns the raw TABULA parameters for a building variant. Used by client applica
 
 ---
 
+## List field metadata
+
+```
+GET /api/v1/fields
+```
+
+Returns a static description of every TABULA input field used by ignis's clients: where to find it in a `GET /api/v1/data/:code` response (`path`), its unit, a short label, and two descriptions — a plain-language one for non-experts and a technical one. This list is identical for every country, since the underlying database schema is uniform across all 20 TABULA countries.
+
+**Response**
+
+```json
+{
+  "data": [
+    {
+      "key": "HeatingDays",
+      "group": "ClimateConditions",
+      "path": "AdvancedParameters.ClimateConditions.HeatingDays",
+      "unit": "days/year",
+      "label": "Heating days",
+      "simple_description": "How many days a year the building typically needs heating, based on local climate.",
+      "expert_description": "Number of heating days per year."
+    }
+  ]
+}
+```
+
+!!! note
+    This endpoint is intended to power a future interactive building-description questionnaire in client applications: `simple_description` becomes the question text, and the field's own value from the matched TABULA variant (via `/api/v1/data/:code`) becomes the suggested default a user can accept if they don't know the answer.
+
+---
+
 ## Calculate heat demand
 
 ```
