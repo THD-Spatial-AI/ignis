@@ -8,7 +8,21 @@ on:
 permissions:
   contents: write
 jobs:
+  build-arc42:
+    runs-on: ubuntu-latest
+    container: texlive/texlive:latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build arc42 documentation
+        working-directory: documentation
+        run: make
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arc42-pdf
+          path: documentation/documentation.pdf
+
   deploy:
+    needs: build-arc42
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,4 +41,12 @@ jobs:
           restore-keys: |
             mkdocs-material-
       - run: pip install -r docs/requirements.txt
-      - run: mkdocs gh-deploy --force
+      - run: mkdocs build
+      - uses: actions/download-artifact@v4
+        with:
+          name: arc42-pdf
+          path: site/
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
