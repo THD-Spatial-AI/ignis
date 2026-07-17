@@ -1,4 +1,7 @@
-# ignis
+![Ignis logo](assets/logo/ignis-logo-dark.svg#gh-dark-mode-only)
+![Ignis logo](assets/logo/ignis-logo-light.svg#gh-light-mode-only)
+
+[![CI](https://github.com/thd-spatial-ai/ignis/actions/workflows/ci.yml/badge.svg)](https://github.com/thd-spatial-ai/ignis/actions/workflows/ci.yml)&nbsp;&nbsp;&nbsp;[![MkDocs](https://github.com/thd-spatial-ai/ignis/actions/workflows/docs.yml/badge.svg)](https://thd-spatial-ai.github.io/ignis)&nbsp;&nbsp;&nbsp;[![GitHub release](https://img.shields.io/github/v/release/thd-spatial-ai/ignis?include_prereleases&label=release&logo=github)](https://github.com/thd-spatial-ai/ignis/releases)
 
 Go microservice implementing the ISO 13790 annual heating energy demand calculation pipeline, validated against the [TABULA](https://episcope.eu/building-typology/tabula-webtool/) European building typology database.
 
