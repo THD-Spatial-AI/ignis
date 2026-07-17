@@ -15,6 +15,7 @@ ignis is designed as an internal microservice. Given a TABULA building variant c
 | [Getting started](getting-started.md) | Installation, configuration, building, running |
 | [API reference](api.md) | All endpoints with request/response examples |
 | [Validation](validation.md) | Per-country accuracy results |
+| [Architecture (PDF)](documentation.pdf) | Full arc42 architecture documentation |
 
 ---
 
