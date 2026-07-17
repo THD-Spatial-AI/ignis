@@ -14,7 +14,7 @@ This checklist is designed to be practical and easy to review. It separates **re
 | [Data Management (Git LFS)](#data-management-required-if-applicable) | Required if applicable | Complete | `data/tabula-calculator.xlsx` tracked via LFS |
 | [Attribution](#attribution-required-if-applicable) | Required if applicable | Complete | TABULA/IWU attributed in `ATTRIBUTIONS.md` |
 | [Citation](#citation-recommended-for-research-projects) | Recommended | Complete | `CITATION.cff` present |
-| [Optional but Recommended Files](#optional-but-recommended-files-recommended) | Recommended | Partial | Issue templates present; CHANGELOG, CODEOWNERS, SECURITY, SUPPORT pending |
+| [Optional but Recommended Files](#optional-but-recommended-files-recommended) | Recommended | Partial | Issue templates and SECURITY present; CHANGELOG, CODEOWNERS, SUPPORT pending |
 | [Quality Checks](#quality-checks-required) | Required | Partial | Repository settings to be configured after GitHub push |
 | [Final Steps](#final-steps-required) | Required | Pending | Verify after push |
 
@@ -149,10 +149,10 @@ These files are not always required, but they improve project quality, collabora
 
 ### Security Policy
 
-- [ ] `SECURITY.md` file created
-- [ ] Vulnerability reporting process documented
-- [ ] Contact method for security issues provided
-- [ ] Supported versions documented (if applicable)
+- [x] `SECURITY.md` file created
+- [x] Vulnerability reporting process documented
+- [x] Contact method for security issues provided
+- [x] Supported versions documented (if applicable)
 
 ### Support Guidelines
 

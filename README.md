@@ -58,6 +58,8 @@ python -m venv .venv
 
 MIT License — Copyright 2026 BigGeoData & Spatial AI, Technische Hochschule Deggendorf. See [LICENSE](LICENSE) for the full text.
 
+Found a security issue? See [SECURITY.md](SECURITY.md) for how to report it privately.
+
 ## Acknowledgements
 
 Developed in the context of the RENvolveIT research project (<https://projekte.ffg.at/projekt/5127011>), funded by CETPartnership under the 2023 joint call for research proposals, co-funded by the European Commission (GA N°101069750).
