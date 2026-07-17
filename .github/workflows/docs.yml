@@ -13,6 +13,12 @@ jobs:
     container: texlive/texlive:latest
     steps:
       - uses: actions/checkout@v4
+      - name: Pull LFS content (figures are stored via Git LFS)
+        run: |
+          apt-get update -qq && apt-get install -y -qq git-lfs
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git lfs install
+          git lfs pull
       - name: Build arc42 documentation
         working-directory: documentation
         run: make
