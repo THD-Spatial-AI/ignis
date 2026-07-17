@@ -30,6 +30,8 @@ The results have been validated against the Excel Workbook output. So far **19/2
 
 Full setup and API documentation: [thd-spatial-ai.github.io/ignis](https://thd-spatial-ai.github.io/ignis)
 
+Architecture documentation (arc42, PDF): [thd-spatial-ai.github.io/ignis/documentation.pdf](https://thd-spatial-ai.github.io/ignis/documentation.pdf)
+
 ---
 
 ## Testing
