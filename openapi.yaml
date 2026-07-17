@@ -1,0 +1,412 @@
+openapi: 3.0.3
+
+info:
+  title: ignis API
+  version: 1.0.0
+  description: |
+    ignis calculates annual heating energy demand (`q_h_nd`, in kWh/(m²·a))
+    for European building typologies, following EN ISO 13790 over the TABULA
+    building dataset. Given a TABULA variant code, it returns the demand and the
+    underlying parameters. All endpoints are read-only.
+
+    ## Authentication
+
+    ignis has no authentication of its own. It runs behind a reverse proxy,
+    and the proxy is the only way to reach it. Any backend service that wants
+    to use ignis sends a valid `X-Api-Key` header on every request; the proxy
+    checks that header and rejects anything else with `403` before the
+    request ever reaches ignis.
+
+    ignis is meant to be called by a trusted, server-side caller — never
+    directly by a browser or an end user's client, since the key must not be
+    visible outside that caller. If the system calling ignis has its own
+    user-facing login (EnerPlanET, for example, uses Keycloak), that login
+    authenticates the user *to that system*; ignis never sees it. That
+    system's own backend then calls ignis on the user's behalf, using the API
+    key described below.
+
+    The API key is a prototype-stage credential, suitable for local
+    development and evaluation. A production deployment should replace it
+    with a short-lived token or mutual TLS between the caller and ignis; the
+    request/response contract of the endpoints does not change if it does.
+  license:
+    name: MIT
+    url: https://github.com/thd-spatial-ai/ignis/blob/main/LICENSE
+  contact:
+    name: THD-Spatial-AI
+    url: https://github.com/thd-spatial-ai/ignis
+
+servers:
+  - url: https://localhost
+    description: Local development, via the reverse proxy (ignis-reverse-proxy)
+  - url: https://{host}
+    description: Deployed behind the platform's reverse proxy
+    variables:
+      host:
+        default: ignis.example.org
+        description: The public host the reverse proxy is published on
+
+tags:
+  - name: Health
+    description: Liveness check
+  - name: Variants
+    description: Look up TABULA building variant codes
+  - name: Data
+    description: Read building parameters and field metadata
+  - name: Calculation
+    description: Run the heating-demand pipeline
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Liveness check
+      description: Returns 200 while the server is running. Does not check the database.
+      responses:
+        "200":
+          description: Server is up
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/variants/{country_iso2}:
+    get:
+      tags: [Variants]
+      summary: List all variant codes for a country
+      parameters:
+        - $ref: "#/components/parameters/CountryIso2"
+      responses:
+        "200":
+          description: Variant codes for the country
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VariantsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/variants/{country_iso2}/match:
+    get:
+      tags: [Variants]
+      summary: Match refurbishment variants for a building type and period
+      description: >
+        Returns the refurbishment levels for one building type and construction
+        period, ordered from existing state to most refurbished.
+      parameters:
+        - $ref: "#/components/parameters/CountryIso2"
+        - name: type
+          in: query
+          required: true
+          description: TABULA building type code
+          schema:
+            type: string
+            enum: [SFH, TH, MFH, AB]
+          example: SFH
+        - name: period
+          in: query
+          required: true
+          description: TABULA construction-period code
+          schema:
+            type: string
+          example: "01"
+      responses:
+        "200":
+          description: Matched refurbishment levels
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MatchResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/data/{code}:
+    get:
+      tags: [Data]
+      summary: Get raw TABULA parameters for a variant
+      parameters:
+        - $ref: "#/components/parameters/VariantCode"
+      responses:
+        "200":
+          description: Full parameter set for the variant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/fields:
+    get:
+      tags: [Data]
+      summary: List field metadata
+      description: >
+        Static description of every TABULA input field: where it sits in a
+        /data/{code} response, its unit, a short label, and plain and technical
+        descriptions. Identical for every country.
+      responses:
+        "200":
+          description: Field metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FieldsResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/calculate/{code}:
+    post:
+      tags: [Calculation]
+      summary: Run the heating-demand pipeline for a variant
+      parameters:
+        - $ref: "#/components/parameters/VariantCode"
+      requestBody:
+        required: false
+        description: Optional overrides. Omit the body to use the TABULA defaults.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CalculateRequest"
+      responses:
+        "200":
+          description: Calculated annual heating demand
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalculateResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: >
+        Static key checked by the reverse proxy. Sent by the trusted platform
+        backend, not by an end user's browser. A request without a valid key is
+        rejected with 403 before it reaches ignis.
+
+  parameters:
+    CountryIso2:
+      name: country_iso2
+      in: path
+      required: true
+      description: ISO 3166-1 alpha-2 country code
+      schema:
+        type: string
+        minLength: 2
+        maxLength: 2
+      example: DE
+    VariantCode:
+      name: code
+      in: path
+      required: true
+      description: >
+        TABULA variant code. The first two characters are the ISO 3166-1 alpha-2
+        country code, which selects the database table.
+      schema:
+        type: string
+      example: DE.N.SFH.01.Gen.ReEx.001.001
+
+  responses:
+    BadRequest:
+      description: Invalid input (unknown country, malformed code, invalid A_ref)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: no TABULA dataset configured for XX
+    Forbidden:
+      description: Missing or invalid API key (enforced by the reverse proxy)
+      content:
+        text/plain:
+          schema:
+            type: string
+          example: "Forbidden: missing or invalid API key"
+    NotFound:
+      description: Variant code not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: Variant not found
+    ServerError:
+      description: Pipeline failed or returned a non-finite result
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: OK
+      required: [status]
+
+    VariantsResponse:
+      type: object
+      properties:
+        country:
+          type: string
+          description: Country name for the queried ISO code
+          example: germany
+        data:
+          type: array
+          items:
+            type: string
+          description: All variant codes for the country
+      required: [country, data]
+
+    MatchResponse:
+      type: object
+      properties:
+        country:
+          type: string
+          example: germany
+        prefix:
+          type: string
+          description: Shared code prefix for the matched building type and period
+          example: DE.N.SFH.01
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/VariantLevel"
+      required: [country, prefix, data]
+
+    VariantLevel:
+      type: object
+      properties:
+        code:
+          type: string
+          example: DE.N.SFH.01.Gen.ReEx.001.001
+        label:
+          type: string
+          example: Existing state
+      required: [code, label]
+
+    DataResponse:
+      type: object
+      properties:
+        country:
+          type: string
+          example: germany
+        variant_code:
+          type: string
+          example: DE.N.SFH.01.Gen.ReEx.001.001
+        expected_q_h_nd:
+          type: number
+          format: double
+          description: TABULA reference value for this variant, used for validation
+          example: 282.7
+        tabula_data:
+          $ref: "#/components/schemas/TabulaData"
+      required: [country, variant_code, tabula_data]
+
+    TabulaData:
+      type: object
+      description: >
+        Full TABULA parameter set (~200 fields), nested under two groups. Use
+        /api/v1/fields to resolve each field's path, unit, and label.
+      properties:
+        BasicParameters:
+          type: object
+          additionalProperties: true
+        AdvancedParameters:
+          type: object
+          additionalProperties: true
+
+    FieldsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/FieldMetadata"
+      required: [data]
+
+    FieldMetadata:
+      type: object
+      properties:
+        key:
+          type: string
+          example: A_C_Ref_Input
+        group:
+          type: string
+          example: Envelope
+        path:
+          type: string
+          description: Dotted path into a /data/{code} response
+          example: BasicParameters.Envelope.A_C_Ref_Input
+        unit:
+          type: string
+          example: m²
+        label:
+          type: string
+          example: Reference floor area
+        simple_description:
+          type: string
+          example: The total heated floor area of the building.
+        expert_description:
+          type: string
+          example: Reference floor area from input dataset, used for calculating area fractions for measures.
+      required: [key, group, path, unit, label]
+
+    CalculateRequest:
+      type: object
+      properties:
+        A_ref:
+          type: number
+          format: double
+          description: >
+            Overrides the reference floor area from the TABULA record. Must be
+            greater than 0.
+          example: 150.0
+
+    CalculateResponse:
+      type: object
+      properties:
+        variant_code:
+          type: string
+          example: DE.N.SFH.01.Gen.ReEx.001.001
+        q_h_nd:
+          type: number
+          format: double
+          description: Annual net heating energy demand
+          example: 282.72
+        unit:
+          type: string
+          example: kWh/(m2.a)
+      required: [variant_code, q_h_nd, unit]
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]

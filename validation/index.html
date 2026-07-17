@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="ignis — Heat Demand Calculation Pipeline for European building energy performance estimation.">
+        <meta name="description" content="ignis: Heat Demand Calculation Pipeline for European building energy performance estimation.">
       
       
         <meta name="author" content="THD-Spatial-AI">
@@ -15,7 +15,7 @@
         <link rel="canonical" href="https://thd-spatial-ai.github.io/ignis/validation/">
       
       
-        <link rel="prev" href="../pipeline/">
+        <link rel="prev" href="../api/">
       
       
       
@@ -355,33 +355,6 @@
       
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../pipeline/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Pipeline
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
     
   
   
@@ -459,12 +432,12 @@
   <a href="#spain-known-issue" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Spain — known issue
+        Spain: known issue
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Spain — known issue">
+    <nav class="md-nav" aria-label="Spain: known issue">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -554,12 +527,12 @@
   <a href="#spain-known-issue" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Spain — known issue
+        Spain: known issue
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Spain — known issue">
+    <nav class="md-nav" aria-label="Spain: known issue">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -750,8 +723,8 @@
 </table>
 <p><strong>Overall: 97.4% (2,091 / 2,147 buildings passing)</strong></p>
 <hr />
-<h2 id="spain-known-issue">Spain — known issue<a class="headerlink" href="#spain-known-issue" title="Permanent link">&para;</a></h2>
-<p>56 of 72 buildings fail (77.8%). The failures are systematic — calculated values consistently deviate from the TABULA reference — which points to a Spain-specific parameter rather than a general pipeline bug.</p>
+<h2 id="spain-known-issue">Spain: known issue<a class="headerlink" href="#spain-known-issue" title="Permanent link">&para;</a></h2>
+<p>56 of 72 buildings fail (77.8%). The failures are systematic (calculated values consistently deviate from the TABULA reference), which points to a Spain-specific parameter rather than a general pipeline bug.</p>
 <p><strong>Status:</strong> under investigation.</p>
 <h3 id="investigation-checklist">Investigation checklist<a class="headerlink" href="#investigation-checklist" title="Permanent link">&para;</a></h3>
 <ul class="task-list">
@@ -766,7 +739,7 @@
 <ul>
 <li><strong>Tolerance:</strong> ±2% on <code>q_h_nd</code> (annual heating energy demand, kWh/(m²·a))</li>
 <li><strong>Reference:</strong> TABULA Excel workbook (<code>data/tabula-calculator.xlsx</code>)</li>
-<li><strong>Pipeline:</strong> 17-level cascading calculation — geometry, envelope, U-values, climate, solar gains, thermal bridges, heat transfer coefficients</li>
+<li><strong>Pipeline:</strong> 17-level cascading calculation: geometry, envelope, U-values, climate, solar gains, thermal bridges, heat transfer coefficients</li>
 </ul>
 <hr />
 <h2 id="running-validation">Running validation<a class="headerlink" href="#running-validation" title="Permanent link">&para;</a></h2>
@@ -809,7 +782,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../pipeline/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Pipeline">
+          <a href="../api/" class="md-footer__link md-footer__link--prev" aria-label="Previous: API reference">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -819,7 +792,7 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Pipeline
+                API reference
               </div>
             </div>
           </a>
@@ -833,7 +806,7 @@
       <div class="md-copyright">
   
     <div class="md-copyright__highlight">
-      &copy; 2026 <a href="https://github.com/THD-Spatial-AI" target="_blank" rel="noopener">BigGeoData & Spatial AI, Technische Hochschule Deggendorf</a> — MIT License
+      &copy; 2026 <a href="https://github.com/THD-Spatial-AI" target="_blank" rel="noopener">BigGeoData & Spatial AI, Technische Hochschule Deggendorf</a> · MIT License
 
     </div>
   
