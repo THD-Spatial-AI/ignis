@@ -1,0 +1,30 @@
+localhost {
+	# Single source of truth for allowed origins is ALLOWED_ORIGINS in
+	# docker.env (the same list ignis's own Go CORS middleware reads).
+	# ALLOWED_ORIGINS_PATTERN is derived from it at container startup
+	# (see docker-compose.yml's entrypoint) into the regex form this
+	# matcher needs — nothing here is hardcoded per origin.
+	@allowed_origin header_regexp Origin {$ALLOWED_ORIGINS_PATTERN}
+
+	# Preflight (OPTIONS): answered here, never forwarded to the app.
+	# X-Api-Key is a proxy-only concept — ignis's own CORS middleware
+	# (internal/api/middleware/middleware.go) doesn't know it exists,
+	# and it shouldn't have to.
+	@preflight method OPTIONS
+	handle @preflight {
+		header @allowed_origin Access-Control-Allow-Origin "{http.regexp.allowed_origin.1}"
+		header Access-Control-Allow-Methods "GET, POST, OPTIONS"
+		header Access-Control-Allow-Headers "Content-Type, X-Api-Key"
+		header Access-Control-Max-Age "86400"
+		respond 204
+	}
+
+	@authorized header X-Api-Key "supersecret123"
+	handle @authorized {
+		reverse_proxy ignis-app:{$APP_PORT:8080}
+	}
+
+	handle {
+		respond "Forbidden: missing or invalid API key" 403
+	}
+}
