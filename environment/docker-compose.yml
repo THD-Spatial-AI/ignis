@@ -1,17 +1,77 @@
+# Compose project name = the concern this stack belongs to. The energy-modelling
+# application is split into concerns, each its own namespace; ignis and buem are
+# both building-simulation concerns, so their containers share this namespace.
+name: building-simulation
+
+# Container naming convention: <service>-<role>, where role is one of
+# reverse-proxy | app | db. Service name and container_name are kept identical.
+# Other services in this namespace follow the same shape (e.g. buem-app,
+# buem-reverse-proxy, buem-db), so a container name always says both which
+# service it belongs to and what role it plays.
 services:
-  ignis:
-    container_name: ignis-environment
+  ignis-db:
+    image: postgres:17-alpine
+    container_name: ignis-db
+    env_file: docker.env        # provides POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB
+    volumes:
+      - ignis-db-data:/var/lib/postgresql/data   # persists across container recreation
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    # No `ports:` mapping — reachable only from other containers on this
+    # network, by service name (`ignis-db`), same as the app itself.
+
+  ignis-app:
+    container_name: ignis-app
     build:
       context: ./..
       dockerfile: environment/Dockerfile
-    env_file: docker.env        # load environment variables into container
-    stdin_open: true
-    tty: true
+    env_file: docker.env        # DB connection + CORS config
+    environment:
+      - APP_PORT=${APP_PORT}    # internal listen port, single source from .env
     working_dir: /app
     volumes:
       - ./../data:/app/data     # mount data directory so build_db can read the Excel workbook
-    extra_hosts:
-      - "host.docker.internal:host-gateway"  # Linux compatibility
+    depends_on:
+      ignis-db:
+        condition: service_healthy
+    # No `ports:` mapping here on purpose — the app is not reachable from the
+    # host directly. Only the reverse proxy is exposed; everyone else must go through it.
+    command: ./bin/app          # run the server directly (was: interactive dev shell)
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:$$APP_PORT/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  ignis-reverse-proxy:
+    image: caddy:2.11-alpine
+    container_name: ignis-reverse-proxy
+    env_file: docker.env        # provides ALLOWED_ORIGINS, the single source for CORS
+    environment:
+      - APP_PORT=${APP_PORT}    # so the Caddyfile's upstream ignis-app:{$APP_PORT} resolves
+    depends_on:
+      ignis-app:
+        condition: service_healthy
     ports:
-      - "${HOST_PORT}:${APP_PORT}"  # map host port to container port (both configurable)
-    command: bash               # start an interactive shell for development
+      - "${HOST_HTTPS_PORT:-443}:443" # public entry point; host side assignable per service
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${CADDY_DATA_DIR}:/data/caddy # reuse the host's already-trusted local CA
+    # The Caddyfile matches Origin against a regex, but ALLOWED_ORIGINS is a
+    # plain comma list (the shape ignis's own Go CORS middleware needs — see
+    # docker.env). Caddyfile placeholders can't transform text, so this builds
+    # the regex from that one list at startup instead of hardcoding origins in
+    # both places. Same list, two shapes it's actually consumed in — not two
+    # things a human has to remember to keep in sync.
+    entrypoint:
+      - sh
+      - -c
+      - >
+        export ALLOWED_ORIGINS_PATTERN="^($$(echo "$$ALLOWED_ORIGINS" | sed -e 's/[.]/\\./g' -e 's/,/|/g'))$$" &&
+        exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+
+volumes:
+  ignis-db-data:
