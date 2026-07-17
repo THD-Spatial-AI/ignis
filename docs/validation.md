@@ -33,9 +33,9 @@ Pipeline validated against the TABULA reference values (±2% tolerance on `q_h_n
 
 ---
 
-## Spain — known issue
+## Spain: known issue
 
-56 of 72 buildings fail (77.8%). The failures are systematic — calculated values consistently deviate from the TABULA reference — which points to a Spain-specific parameter rather than a general pipeline bug.
+56 of 72 buildings fail (77.8%). The failures are systematic (calculated values consistently deviate from the TABULA reference), which points to a Spain-specific parameter rather than a general pipeline bug.
 
 **Status:** under investigation.
 
@@ -53,7 +53,7 @@ Pipeline validated against the TABULA reference values (±2% tolerance on `q_h_n
 
 - **Tolerance:** ±2% on `q_h_nd` (annual heating energy demand, kWh/(m²·a))
 - **Reference:** TABULA Excel workbook (`data/tabula-calculator.xlsx`)
-- **Pipeline:** 17-level cascading calculation — geometry, envelope, U-values, climate, solar gains, thermal bridges, heat transfer coefficients
+- **Pipeline:** 17-level cascading calculation: geometry, envelope, U-values, climate, solar gains, thermal bridges, heat transfer coefficients
 
 ---
 

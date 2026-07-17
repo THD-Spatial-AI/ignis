@@ -1,186 +1,43 @@
 # API reference
 
-Base URL: `http://localhost:8080/api/v1`
+The interactive reference below is generated from the OpenAPI spec
+([`openapi.yaml`](openapi.yaml)), the machine-readable source of truth for
+every endpoint, schema, and error. Download it to generate a client, load it
+into Postman, or import it into another tool.
 
-All responses are JSON. All endpoints are read-only — ignis does not modify the database.
+## How to consume the API
 
----
+ignis has no authentication of its own. It runs behind a reverse proxy, and
+that proxy is the only way in: any backend service that wants to use ignis
+sends a valid `X-Api-Key` header, and the proxy rejects anything else with
+`403` before ignis ever sees the request. ignis is meant to be called by a
+trusted server-side caller, never directly by a browser or an end user's
+client, since the key must not be visible outside that caller. If the system
+in front of ignis has its own user-facing login (EnerPlanET, for example,
+uses Keycloak), that login authenticates the user **to that system**, not to
+ignis; that system's own backend then calls ignis on the user's behalf, using
+the API key. The full model is in the spec's description.
 
-## Health check
+!!! note "Base URL"
+    All paths are served through the reverse proxy. In local development that is
+    `https://localhost`; in a deployment it is whatever host the proxy is
+    published on.
 
-```
-GET /health
-```
+## Testing it yourself
 
-Returns `200 OK` when the server is running. Does not check the database connection.
+The Swagger UI below can call a locally running ignis directly.
 
-**Response**
+1. Start the stack, from `environment/`: `docker compose up -d`. On a first
+   run, load the TABULA data once: `docker compose exec ignis-app ./bin/build_db`.
+2. Serve these docs locally with `mkdocs serve`. The reverse proxy already
+   allows requests from `http://localhost:8000` (its default port).
+3. If your browser has never trusted the local proxy's certificate, open
+   `https://localhost` directly once and accept it (or run `caddy trust`).
+4. Click **Authorize** below and enter the API key checked by the reverse
+   proxy (`X-Api-Key`; the prototype default is set in
+   `environment/Caddyfile`). It applies to every **Try it out** call from
+   then on.
+5. Expand an endpoint, click **Try it out**, fill in the parameters, and
+   **Execute**.
 
-```json
-{ "status": "OK" }
-```
-
----
-
-## List variants
-
-```
-GET /api/v1/variants/{country_iso2}
-```
-
-Returns all available building variant codes for a country.
-
-**Path parameters**
-
-| Parameter | Description | Example |
-|---|---|---|
-| `country_iso2` | ISO 3166-1 alpha-2 country code | `DE` |
-
-**Response**
-
-```json
-{
-  "country": "germany",
-  "data": ["DE.N.SFH.01.Gen", "DE.N.SFH.01.ReEx", ...]
-}
-```
-
----
-
-## Match variants
-
-```
-GET /api/v1/variants/{country_iso2}/match?type={type}&period={period}
-```
-
-Returns all refurbishment levels for a specific building type and construction period, ordered from existing state to most-refurbished.
-
-**Path parameters**
-
-| Parameter | Description | Example |
-|---|---|---|
-| `country_iso2` | ISO 3166-1 alpha-2 country code | `DE` |
-
-**Query parameters**
-
-| Parameter | Description | Example |
-|---|---|---|
-| `type` | Building type code | `SFH`, `MFH`, `TH`, `AB` |
-| `period` | Construction period code | `01`, `02`, `03` |
-
-**Response**
-
-```json
-{
-  "country": "germany",
-  "prefix": "DE.N.SFH.01",
-  "data": [
-    { "code": "DE.N.SFH.01.Gen", "label": "Existing state" },
-    { "code": "DE.N.SFH.01.ReEx", "label": "Medium refurbishment" },
-    { "code": "DE.N.SFH.01.ReAd", "label": "Advanced refurbishment" }
-  ]
-}
-```
-
----
-
-## Get variant data
-
-```
-GET /api/v1/data/{code}
-```
-
-Returns the raw TABULA parameters for a building variant. Used by client applications to populate their own forms or models.
-
-**Path parameters**
-
-| Parameter | Description | Example |
-|---|---|---|
-| `code` | TABULA variant code | `DE.N.SFH.01.Gen` |
-
-**Response**
-
-```json
-{
-  "country": "germany",
-  "variant_code": "DE.N.SFH.01.Gen",
-  "tabula_data": { ... },
-  "expected_q_h_nd": 123.45
-}
-```
-
-!!! note
-    `tabula_data` contains the full set of ~200 TABULA parameters. `expected_q_h_nd` is the reference value from the workbook, used for validation.
-
----
-
-## List field metadata
-
-```
-GET /api/v1/fields
-```
-
-Returns a static description of every TABULA input field used by ignis's clients: where to find it in a `GET /api/v1/data/:code` response (`path`), its unit, a short label, and two descriptions — a plain-language one for non-experts and a technical one. This list is identical for every country, since the underlying database schema is uniform across all 20 TABULA countries.
-
-**Response**
-
-```json
-{
-  "data": [
-    {
-      "key": "HeatingDays",
-      "group": "ClimateConditions",
-      "path": "AdvancedParameters.ClimateConditions.HeatingDays",
-      "unit": "days/year",
-      "label": "Heating days",
-      "simple_description": "How many days a year the building typically needs heating, based on local climate.",
-      "expert_description": "Number of heating days per year."
-    }
-  ]
-}
-```
-
-!!! note
-    This endpoint is intended to power a future interactive building-description questionnaire in client applications: `simple_description` becomes the question text, and the field's own value from the matched TABULA variant (via `/api/v1/data/:code`) becomes the suggested default a user can accept if they don't know the answer.
-
----
-
-## Calculate heat demand
-
-```
-POST /api/v1/calculate/{code}
-```
-
-Runs the 17-level ISO 13790 pipeline for the specified building variant and returns the annual heating energy demand.
-
-**Path parameters**
-
-| Parameter | Description | Example |
-|---|---|---|
-| `code` | TABULA variant code | `DE.N.SFH.01.Gen` |
-
-**Request body** (optional)
-
-```json
-{ "A_ref": 150.0 }
-```
-
-`A_ref` overrides the reference floor area stored in the TABULA record. Omit the body to use the TABULA default.
-
-**Response**
-
-```json
-{
-  "variant_code": "DE.N.SFH.01.Gen",
-  "q_h_nd": 123.45,
-  "unit": "kWh/(m2.a)"
-}
-```
-
-**Error responses**
-
-| Status | Condition |
-|---|---|
-| `400` | Invalid variant code format, unknown country, invalid `A_ref` |
-| `404` | Variant code not found in database |
-| `500` | Pipeline execution failed or returned a non-finite result |
+<swagger-ui src="openapi.yaml"/>

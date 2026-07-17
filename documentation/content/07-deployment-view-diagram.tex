@@ -1,0 +1,5 @@
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/07-deployment-view.drawio.pdf}
+\caption{Deployment View: the three containers, all on one Docker Compose network in the \texttt{building-simulation} namespace. Only \texttt{ignis-reverse-proxy} publishes a host port; \texttt{ignis-app} and \texttt{ignis-db} are reachable only by service name from within the network. The stack needs nothing on the host except Docker.}
+\end{figure}
