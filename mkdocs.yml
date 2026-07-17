@@ -2,7 +2,7 @@
 site_name: ignis
 site_author: THD-Spatial-AI
 site_description: >-
-  ignis — Heat Demand Calculation Pipeline for European building energy performance estimation.
+  ignis: Heat Demand Calculation Pipeline for European building energy performance estimation.
 site_url: https://thd-spatial-ai.github.io/ignis
 
 # Repository
@@ -58,6 +58,8 @@ theme:
 plugins:
   - search:
       separator: '[\s\u200b\-_,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
+  - swagger-ui-tag:
+      tryItOutEnabled: true
 
 # Extensions
 markdown_extensions:
@@ -89,9 +91,8 @@ nav:
   - Home: index.md
   - Getting started: getting-started.md
   - API reference: api.md
-  - Pipeline: pipeline.md
   - Validation: validation.md
 
 # Copyright
 copyright: |
-  &copy; 2026 <a href="https://github.com/THD-Spatial-AI" target="_blank" rel="noopener">BigGeoData & Spatial AI, Technische Hochschule Deggendorf</a> — MIT License
+  &copy; 2026 <a href="https://github.com/THD-Spatial-AI" target="_blank" rel="noopener">BigGeoData & Spatial AI, Technische Hochschule Deggendorf</a> · MIT License

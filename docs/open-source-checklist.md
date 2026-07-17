@@ -29,7 +29,7 @@ Quick links: [LICENSE](#license) · [README](#readme) · [CONTRIBUTING](#contrib
 ### LICENSE
 
 - [x] `LICENSE` file present in repository root
-- [x] Appropriate license chosen — MIT
+- [x] Appropriate license chosen: MIT
 - [x] License committed to repository
 
 ### README
@@ -71,7 +71,7 @@ If your repository contains large files (e.g. datasets, binaries, media, generat
 
 - [x] Git LFS installed locally
 - [x] Git LFS initialised in repository (`git lfs install`)
-- [x] Large file types tracked — `*.xlsx`, `*.csv`, archives, media (`data/tabula-calculator.xlsx`)
+- [x] Large file types tracked: `*.xlsx`, `*.csv`, archives, media (`data/tabula-calculator.xlsx`)
 - [x] `.gitattributes` committed to repository
 - [x] Large files added and committed properly
 - [ ] Release strategy for LFS files documented (if applicable)
@@ -90,7 +90,7 @@ If your project uses third-party components, assets, or generated code that requ
 - [x] `ATTRIBUTIONS.md` file created in repository root
 - [x] TABULA building typology data (IWU) listed
 - [x] Source platform or author identified
-- [x] License type specified — CC BY 4.0
+- [x] License type specified: CC BY 4.0
 - [x] Links to original sources included
 - [x] Go dependencies noted
 
@@ -110,10 +110,10 @@ For full specification details, see [Citation File Format](https://citation-file
 
 - [x] `CITATION.cff` file created in repository root
 - [x] `cff-version` set to `1.2.0`
-- [x] Project title specified — ignis
-- [x] Author listed — THD-Spatial-AI Research Group, Technische Hochschule Deggendorf
+- [x] Project title specified: ignis
+- [x] Author listed: THD-Spatial-AI Research Group, Technische Hochschule Deggendorf
 - [ ] ORCID included for each author (add when individual authors are listed)
-- [x] License field matches `LICENSE` — MIT
+- [x] License field matches `LICENSE`: MIT
 - [x] Repository URL included
 - [x] Version and release date set
 - [ ] File validates against the CFF schema (use [cff-validator](https://github.com/citation-file-format/cff-initializer-javascript))

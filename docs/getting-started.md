@@ -23,10 +23,10 @@ cp .env.example .env
 | `DB_HOST` | PostgreSQL host | `localhost` |
 | `DB_PORT` | PostgreSQL port | `5432` |
 | `DB_USER` | Database user | `postgres` |
-| `DB_PASSWORD` | Database password | — required, no default |
+| `DB_PASSWORD` | Database password | required, no default |
 | `DB_NAME` | Database name | `ignis` |
 | `DB_SSL_MODE` | TLS mode (`require` / `disable`) | `require` |
-| `ALLOWED_ORIGINS` | Comma-separated list of allowed CORS origins | — unset rejects all cross-origin requests |
+| `ALLOWED_ORIGINS` | Comma-separated list of allowed CORS origins | unset rejects all cross-origin requests |
 
 !!! info "ALLOWED_ORIGINS"
     Only needed when a browser-based client calls ignis directly. For server-to-server calls (the intended deployment model), leave it unset.
@@ -44,7 +44,7 @@ go build -o bin/validate  cmd/validate/main.go
 
 ## Load the database
 
-Loads the TABULA workbook into PostgreSQL. This is destructive — it drops and recreates the `tabula` schema.
+Loads the TABULA workbook into PostgreSQL. This is destructive: it drops and recreates the `tabula` schema.
 
 ```bash
 ./bin/build_db
@@ -68,7 +68,5 @@ See the [validation report](validation.md) for current results.
 
 ## Deployment
 
-ignis is a microservice — it should run on a private Docker network with no public port exposed. The parent application (e.g. EnerPlanET) proxies requests to it. Authentication and rate limiting are the parent application's responsibility.
-
 !!! danger "Do not expose ignis directly to the internet"
-    The API has no authentication. Restrict network access at the infrastructure level.
+    The API has no authentication of its own. Run it behind a reverse proxy on a private network, with no public port exposed on ignis itself. See the [arc42 architecture documentation](https://github.com/thd-spatial-ai/ignis/tree/main/documentation) for the deployment topology, reverse-proxy setup, and access-control design.
