@@ -16,7 +16,7 @@ You should hear back within a week. If the report is valid, we'll work with you 
 
 A few things about ignis's design that are **intentional, documented limitations**, not vulnerabilities to report:
 
-- **The API key is a prototype-stage credential** (see the [arc42 architecture doc](https://thd-spatial-ai.github.io/ignis/documentation.pdf), ADR-004). It is not a substitute for real authentication and must not be relied on in a production deployment.
+- **The API key is a prototype-stage credential** (see ADR-004 in the arc42 architecture doc, currently under development and not yet published). It is not a substitute for real authentication and must not be relied on in a production deployment.
 - **ignis has no authentication of its own.** It is designed to run behind a reverse proxy on a private network, never exposed directly to the internet. Deploying it without a proxy in front is a misconfiguration, not a vulnerability in ignis itself.
 
 If you find a genuine issue within that design — for example, a way to bypass the reverse proxy's checks, an injection vulnerability, or a way to access data outside the caller's intended scope — please report it as above.
