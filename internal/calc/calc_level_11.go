@@ -32,7 +32,7 @@ func (c *CalcLevel11) Run() {
 	c.HTransmission = c.calcHTransmission()
 }
 
-// calcHTransmission calculates indicator for energy quality of building envelope (compactness + insulation)
+// indicator for energy quality of building envelope (compactness + insulation)
 // Excel Formula: IFERROR(SUM(H_Transmission_Roof_1:H_Transmission_ThermalBridging)/A_C_Ref,0)
 func (c *CalcLevel11) calcHTransmission() float64 {
 	totalTransmission := c.Lvl6.HTransmissionFloor1 +

@@ -32,7 +32,7 @@ func (c *CalcLevel12) Run() {
 	c.Tau = c.calcTau()
 }
 
-// calcFRedTemp determines the reduced temperature factor based on h_Transmission
+// determines the reduced temperature factor based on h_Transmission
 // Excel Formula: IF(h_Transmission<=1,F_red_htr1+(1-h_Transmission)/0.5*(1-F_red_htr1),IF(h_Transmission>=4,F_red_htr4,F_red_htr1+(h_Transmission-1)*(F_red_htr4-F_red_htr1)/(4-1)))
 func (c *CalcLevel12) calcFRedTemp() float64 {
 	if c.Lvl11.HTransmission <= 1 {
@@ -46,7 +46,7 @@ func (c *CalcLevel12) calcFRedTemp() float64 {
 	}
 }
 
-// calcTau calculates time constant relevant for seasonal method
+// time constant relevant for seasonal method
 // Excel Formula: c_m/(h_Transmission+h_Ventilation)
 func (c *CalcLevel12) calcTau() float64 {
 	return c.Lvl0.AdvancedParameters.HeatTransfer.C_m / (c.Lvl11.HTransmission + c.Lvl1.H_Ventilation)

@@ -7,7 +7,7 @@ type CalcLevel17 struct {
 	Lvl14 *CalcLevel14
 	Lvl16 *CalcLevel16
 
-	// Calculated attributes - FINAL OUTPUT
+	// Calculated attributes
 	QHNd float64 `json:"q_h_nd"` // Final heating demand per unit area
 }
 
@@ -29,8 +29,6 @@ func (c *CalcLevel17) Run() float64 {
 	return c.QHNd
 }
 
-// calcQHNd calculates the final net heating demand per unit area
-// This is the FINAL OUTPUT of the entire calculation pipeline
 // Excel Formula: q_ht - eta_h_gn * (q_sol + q_int)
 func (c *CalcLevel17) calcQHNd() float64 {
 	return c.Lvl14.QHt - c.Lvl16.EtaHGn*(c.Lvl8.QSol+c.Lvl1.Q_int)

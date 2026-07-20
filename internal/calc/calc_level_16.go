@@ -28,7 +28,7 @@ func (c *CalcLevel16) Run() {
 	c.EtaHGn = c.calcEtaHGn()
 }
 
-// calcEtaHGn calculates the gain utilization factor
+// the gain utilization factor
 // Excel Formula: (1-gamma_h_gn^a_H)/(1-gamma_h_gn^(a_H+1))
 func (c *CalcLevel16) calcEtaHGn() float64 {
 	numerator := 1 - math.Pow(c.Lvl15.GammaHGn, c.Lvl13.AH)

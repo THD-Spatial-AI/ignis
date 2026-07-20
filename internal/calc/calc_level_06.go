@@ -60,14 +60,13 @@ func (c *CalcLevel6) Run() {
 	c.GGlN = c.calcGGlN()
 }
 
-// calcAEstimWallExtAir calculates wall area (external air)
 // Excel Formula: n_Storey_effective_envelope*A_Estim_GrossWall_Storey - A_Estim_Wall_ToCellarOrSoil - A_Estim_Window - A_Estim_Door
 func (c *CalcLevel6) calcAEstimWallExtAir() float64 {
 	return (c.Lvl2.N_Storey_effective_envelope * c.Lvl4.A_Estim_GrossWall_Storey) -
 		c.Lvl5.A_Estim_Wall_ToCellarOrSoil - c.Lvl4.A_Estim_Window - c.Lvl3.A_Estim_Door
 }
 
-// calcCheckFloorAreaExactToEstim checks if the floor area estimation is within plausible limits
+// checks if the floor area estimation is within plausible limits
 // Excel Formula: IF(AND(r_EnvFloor_ExactToEstim >= f_PlausiCrit_FloorArea_LowerLimit, r_EnvFloor_ExactToEstim <= f_PlausiCrit_FloorArea_UpperLimit), 1, 0)
 func (c *CalcLevel6) calcCheckFloorAreaExactToEstim() int {
 	if c.Lvl5.R_EnvFloor_ExactToEstim >= c.Lvl0.AdvancedParameters.PredefinedCodes.F_PlausiCrit_FloorArea_LowerLimit &&
@@ -77,7 +76,7 @@ func (c *CalcLevel6) calcCheckFloorAreaExactToEstim() int {
 	return 0
 }
 
-// calcCheckWindowAreaExactToEstim checks if the window area estimation is within plausible limits
+// checks if the window area estimation is within plausible limits
 // Excel Formula: IF(AND(r_EnvWindow_ExactToEstim >= f_PlausiCrit_WindowArea_LowerLimit, r_EnvWindow_ExactToEstim <= f_PlausiCrit_WindowArea_UpperLimit), 1, 0)
 func (c *CalcLevel6) calcCheckWindowAreaExactToEstim() int {
 	if c.Lvl5.R_EnvWindow_ExactToEstim >= c.Lvl0.AdvancedParameters.PredefinedCodes.F_PlausiCrit_WindowArea_LowerLimit &&
@@ -87,7 +86,6 @@ func (c *CalcLevel6) calcCheckWindowAreaExactToEstim() int {
 	return 0
 }
 
-// calcACalcWall2 calculates wall area based on envelope type and construction border
 // Excel Formula: IF($Code_TypeIntake_EnvelopeArea="Estimation", IF(Code_Estim_ConstructionBorder_Wall_ToCellarOrSoil="Soil", 0, A_Estim_Wall_ToCellarOrSoil), A_Wall_2)
 func (c *CalcLevel6) calcACalcWall2() float64 {
 	if c.Lvl0.AdvancedParameters.PredefinedCodes.Code_TypeIntake_EnvelopeArea == "Estimation" {
@@ -99,7 +97,6 @@ func (c *CalcLevel6) calcACalcWall2() float64 {
 	return c.Lvl0.BasicParameters.Envelope.A_Wall_2
 }
 
-// calcACalcFloor2 calculates floor area based on envelope type
 // Excel Formula: IF($Code_TypeIntake_EnvelopeArea="Estimation", A_Estim_Floor - A_Calc_Floor_1, A_Floor_2)
 func (c *CalcLevel6) calcACalcFloor2() float64 {
 	if c.Lvl0.AdvancedParameters.PredefinedCodes.Code_TypeIntake_EnvelopeArea == "Estimation" {
@@ -108,7 +105,6 @@ func (c *CalcLevel6) calcACalcFloor2() float64 {
 	return c.Lvl0.BasicParameters.Envelope.A_Floor_2
 }
 
-// calcACalcWindowEast calculates east window area based on envelope type
 // Excel Formula: IF($Code_TypeIntake_EnvelopeArea="Estimation", 0.5 * SUM($A_Calc_Window_1:$A_Calc_Window_2), A_Window_East)
 func (c *CalcLevel6) calcACalcWindowEast() float64 {
 	if c.Lvl0.AdvancedParameters.PredefinedCodes.Code_TypeIntake_EnvelopeArea == "Estimation" {
@@ -117,7 +113,6 @@ func (c *CalcLevel6) calcACalcWindowEast() float64 {
 	return c.Lvl0.BasicParameters.Envelope.A_Window_East
 }
 
-// calcACalcWindowWest calculates west window area based on envelope type
 // Excel Formula: IF($Code_TypeIntake_EnvelopeArea="Estimation", 0.5 * SUM($A_Calc_Window_1:$A_Calc_Window_2), A_Window_West)
 func (c *CalcLevel6) calcACalcWindowWest() float64 {
 	if c.Lvl0.AdvancedParameters.PredefinedCodes.Code_TypeIntake_EnvelopeArea == "Estimation" {
@@ -126,45 +121,39 @@ func (c *CalcLevel6) calcACalcWindowWest() float64 {
 	return c.Lvl0.BasicParameters.Envelope.A_Window_West
 }
 
-// calcHTransmissionRoof1 calculates heat transmission through roof 1
 // Excel Formula: IF(ISERROR(U_Actual_Roof_1 * A_Calc_Roof_1 * b_Transmission_Roof_1), 0, U_Actual_Roof_1 * A_Calc_Roof_1 * b_Transmission_Roof_1)
 func (c *CalcLevel6) calcHTransmissionRoof1() float64 {
 	result := c.Lvl5.U_Actual_Roof_1 * c.Lvl5.A_Calc_Roof_1 * c.Lvl0.AdvancedParameters.HeatLosses.B_Transmission_Roof_1
 	return result
 }
 
-// calcHTransmissionRoof2 calculates heat transmission through roof 2
 // Excel Formula: IF(ISERROR(U_Actual_Roof_2 * A_Calc_Roof_2 * b_Transmission_Roof_2), 0, U_Actual_Roof_2 * A_Calc_Roof_2 * b_Transmission_Roof_2)
 func (c *CalcLevel6) calcHTransmissionRoof2() float64 {
 	result := c.Lvl5.U_Actual_Roof_2 * c.Lvl5.A_Calc_Roof_2 * c.Lvl0.AdvancedParameters.HeatLosses.B_Transmission_Roof_2
 	return result
 }
 
-// calcHTransmissionFloor1 calculates heat transmission through floor 1
 // Excel Formula: IF(ISERROR(U_Actual_Floor_1 * A_Calc_Floor_1 * b_Transmission_Floor_1), 0, U_Actual_Floor_1 * A_Calc_Floor_1 * b_Transmission_Floor_1)
 func (c *CalcLevel6) calcHTransmissionFloor1() float64 {
 	result := c.Lvl5.U_Actual_Floor_1 * c.Lvl5.A_Calc_Floor_1 * c.Lvl0.AdvancedParameters.HeatLosses.B_Transmission_Floor_1
 	return result
 }
 
-// calcHTransmissionWindow1 calculates heat transmission through window 1
 // Excel Formula: IF(ISERROR(U_Actual_Window_1 * A_Calc_Window_1 * 1), 0, U_Actual_Window_1 * A_Calc_Window_1 * 1)
 func (c *CalcLevel6) calcHTransmissionWindow1() float64 {
 	result := c.Lvl3.U_Actual_Window_1 * c.Lvl5.A_Calc_Window_1
 	return result
 }
 
-// calcHTransmissionWindow2 calculates heat transmission through window 2
 // Excel Formula: IF(ISERROR(U_Actual_Window_2 * A_Calc_Window_2 * 1), 0, U_Actual_Window_2 * A_Calc_Window_2 * 1)
 func (c *CalcLevel6) calcHTransmissionWindow2() float64 {
 	result := c.Lvl3.U_Actual_Window_2 * c.Lvl1.A_Calc_Window_2
 	return result
 }
 
-// calcGGlN calculates average for both window types, considering refurbished state
+// calculates average for both window types, considering refurbished state
 // Excel Formula: IFERROR((IF(LEN(Code_Measure_Window_1)>1, IF(ISERROR(g_gl_n_Measure_Window_1), 0, g_gl_n_Measure_Window_1), IF(ISERROR(g_gl_n_Window_1), 0, g_gl_n_Window_1)) * A_Calc_Window_1 + IF(LEN(Code_Measure_Window_2)>1, IF(ISERROR(g_gl_n_Measure_Window_2), 0, g_gl_n_Measure_Window_2), IF(ISERROR(g_gl_n_Window_2), 0, g_gl_n_Window_2)) * A_Calc_Window_2) / (A_Calc_Window_1 + A_Calc_Window_2), 0)
 func (c *CalcLevel6) calcGGlN() float64 {
-	// Determine value for window 1
 	// Note: Code_Measure can be empty string or "0" to indicate no measure
 	var valueWindow1 float64
 	code1 := c.Lvl0.AdvancedParameters.MeasureTypes.Code_Measure_Window_1
@@ -175,7 +164,6 @@ func (c *CalcLevel6) calcGGlN() float64 {
 	}
 	weightedValueWindow1 := valueWindow1 * c.Lvl5.A_Calc_Window_1
 
-	// Determine value for window 2
 	var valueWindow2 float64
 	code2 := c.Lvl0.AdvancedParameters.MeasureTypes.Code_Measure_Window_2
 	if code2 != "" && code2 != "0" {
@@ -185,7 +173,6 @@ func (c *CalcLevel6) calcGGlN() float64 {
 	}
 	weightedValueWindow2 := valueWindow2 * c.Lvl1.A_Calc_Window_2
 
-	// Calculate final average
 	denominator := c.Lvl5.A_Calc_Window_1 + c.Lvl1.A_Calc_Window_2
 	if denominator == 0 {
 		return 0
