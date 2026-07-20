@@ -90,6 +90,9 @@ func (h *Handler) CalculateHeatDemand(c *gin.Context) {
 		return
 	}
 
+	// Rounded here to two decimal places for cleaner output; the underlying calculation uses full precision.
+	qHND = math.Round(qHND*100) / 100
+
 	utils.Info.Printf("ignis: variant=%s q_h_nd=%.2f kWh/(m2.a)", variantCode, qHND)
 	c.JSON(http.StatusOK, gin.H{
 		"variant_code": variantCode,
