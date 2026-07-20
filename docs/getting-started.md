@@ -69,4 +69,4 @@ See the [validation report](validation.md) for current results.
 ## Deployment
 
 !!! danger "Do not expose ignis directly to the internet"
-    The API has no authentication of its own. Run it behind a reverse proxy on a private network, with no public port exposed on ignis itself. See the [arc42 architecture documentation](https://thd-spatial-ai.github.io/ignis/documentation.pdf) for the deployment topology, reverse-proxy setup, and access-control design.
+    The API has no authentication of its own. Run it behind a reverse proxy on a private network, with no public port exposed on ignis itself.

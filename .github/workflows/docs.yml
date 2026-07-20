@@ -48,10 +48,8 @@ jobs:
             mkdocs-material-
       - run: pip install -r docs/requirements.txt
       - run: mkdocs build
-      - uses: actions/download-artifact@v4
-        with:
-          name: arc42-pdf
-          path: site/
+      # arc42 PDF is intentionally not copied into site/: the architecture
+      # documentation is still under development and not ready to be public.
       - uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
