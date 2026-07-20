@@ -55,7 +55,6 @@ func (c *CalcLevel2) Run() {
 	c.U_Measure_Door_1 = c.calcUMeasureDoor1()
 }
 
-// calcACRef calculates A_C_Ref
 // actually measured by applying the TABULA definition, if available; otherwise estimated by applying standard conversion factors
 // Formula: IF(A_C_Ref_Input > 0, A_C_Ref_Input, A_C_Ref_Estim)
 func (c *CalcLevel2) calcACRef() float64 {
@@ -65,13 +64,11 @@ func (c *CalcLevel2) calcACRef() float64 {
 	return c.Lvl1.A_C_Ref_Estim
 }
 
-// calcNStoreyEffective calculates n_Storey_effective
 // Formula: 0.7 * f_AtticCond + n_Storey + f_CellarCond
 func (c *CalcLevel2) calcNStoreyEffective() float64 {
 	return 0.7*c.Lvl1.F_AtticCond + float64(c.Lvl0.BasicParameters.BuildingAppearance.N_Storey) + c.Lvl1.F_CellarCond
 }
 
-// calcNStoreyEffectiveEnvelope calculates n_Storey_effective_envelope
 // Formula: IF(RIGHT($Code_AtticCond,1)="I",1,f_AtticCond)*0.7+n_Storey+IF(RIGHT($Code_CellarCond,1)="I",1,f_CellarCond)
 func (c *CalcLevel2) calcNStoreyEffectiveEnvelope() float64 {
 	atticCond := c.Lvl1.F_AtticCond
@@ -87,7 +84,6 @@ func (c *CalcLevel2) calcNStoreyEffectiveEnvelope() float64 {
 	return atticCond*0.7 + float64(c.Lvl0.BasicParameters.BuildingAppearance.N_Storey) + cellarCond
 }
 
-// calcCheckToBeAppliedFloorAreaExactToEstim calculates Check_ToBeApplied_FloorArea_ExactToEstim
 // Formula: IF(f_AtticCond+f_CellarCond=0,1,0)
 func (c *CalcLevel2) calcCheckToBeAppliedFloorAreaExactToEstim() int {
 	if c.Lvl1.F_AtticCond+c.Lvl1.F_CellarCond == 0 {
@@ -96,8 +92,6 @@ func (c *CalcLevel2) calcCheckToBeAppliedFloorAreaExactToEstim() int {
 	return 0
 }
 
-// calcRMeasureRoof1 calculates R_Measure_Roof_1
-// element type roof 1
 // Unit: m²K/W
 // Formula: IFERROR(IF(d_Insulation_PredefinedMeasure_Roof_1 <> 0, d_Insulation_Measure_Roof_1 / d_Insulation_PredefinedMeasure_Roof_1, 1) * R_PredefinedMeasure_Roof_1, 0)
 func (c *CalcLevel2) calcRMeasureRoof1() float64 {
@@ -108,8 +102,6 @@ func (c *CalcLevel2) calcRMeasureRoof1() float64 {
 	return c.Lvl0.AdvancedParameters.ThermalResistances.R_PredefinedMeasure_Roof_1
 }
 
-// calcRMeasureRoof2 calculates R_Measure_Roof_2
-// element type roof 2
 // Unit: m²K/W
 // Formula: IFERROR(IF(d_Insulation_PredefinedMeasure_Roof_2 <> 0, d_Insulation_Measure_Roof_2 / d_Insulation_PredefinedMeasure_Roof_2, 1) * R_PredefinedMeasure_Roof_2, 0)
 func (c *CalcLevel2) calcRMeasureRoof2() float64 {
@@ -120,8 +112,6 @@ func (c *CalcLevel2) calcRMeasureRoof2() float64 {
 	return c.Lvl0.AdvancedParameters.ThermalResistances.R_PredefinedMeasure_Roof_2
 }
 
-// calcRMeasureWall1 calculates R_Measure_Wall_1
-// element type wall 1
 // Unit: m²K/W
 // Formula: IFERROR(IF(d_Insulation_PredefinedMeasure_Wall_1 <> 0, d_Insulation_Measure_Wall_1 / d_Insulation_PredefinedMeasure_Wall_1, 1) * R_PredefinedMeasure_Wall_1, 0)
 func (c *CalcLevel2) calcRMeasureWall1() float64 {
@@ -132,8 +122,6 @@ func (c *CalcLevel2) calcRMeasureWall1() float64 {
 	return c.Lvl0.AdvancedParameters.ThermalResistances.R_PredefinedMeasure_Wall_1
 }
 
-// calcRMeasureWall2 calculates R_Measure_Wall_2
-// element type wall 2
 // Unit: m²K/W
 // Formula: IFERROR(IF(d_Insulation_PredefinedMeasure_Wall_2 <> 0, d_Insulation_Measure_Wall_2 / d_Insulation_PredefinedMeasure_Wall_2, 1) * R_PredefinedMeasure_Wall_2, 0)
 func (c *CalcLevel2) calcRMeasureWall2() float64 {
@@ -144,8 +132,6 @@ func (c *CalcLevel2) calcRMeasureWall2() float64 {
 	return c.Lvl0.AdvancedParameters.ThermalResistances.R_PredefinedMeasure_Wall_2
 }
 
-// calcRMeasureWall3 calculates R_Measure_Wall_3
-// element type wall 3
 // Unit: m²K/W
 // Formula: IFERROR(IF(d_Insulation_PredefinedMeasure_Wall_3 <> 0, d_Insulation_Measure_Wall_3 / d_Insulation_PredefinedMeasure_Wall_3, 1) * R_PredefinedMeasure_Wall_3, 0)
 func (c *CalcLevel2) calcRMeasureWall3() float64 {
@@ -156,8 +142,6 @@ func (c *CalcLevel2) calcRMeasureWall3() float64 {
 	return c.Lvl0.AdvancedParameters.ThermalResistances.R_PredefinedMeasure_Wall_3
 }
 
-// calcRMeasureFloor1 calculates R_Measure_Floor_1
-// element type floor 1
 // Unit: m²K/W
 // Formula: IFERROR(IF(d_Insulation_PredefinedMeasure_Floor_1 <> 0, d_Insulation_Measure_Floor_1 / d_Insulation_PredefinedMeasure_Floor_1, 1) * R_PredefinedMeasure_Floor_1, 0)
 func (c *CalcLevel2) calcRMeasureFloor1() float64 {
@@ -168,8 +152,6 @@ func (c *CalcLevel2) calcRMeasureFloor1() float64 {
 	return c.Lvl0.AdvancedParameters.ThermalResistances.R_PredefinedMeasure_Floor_1
 }
 
-// calcRMeasureFloor2 calculates R_Measure_Floor_2
-// element type floor 2
 // Unit: m²K/W
 // Formula: IFERROR(IF(d_Insulation_PredefinedMeasure_Floor_2 <> 0, d_Insulation_Measure_Floor_2 / d_Insulation_PredefinedMeasure_Floor_2, 1) * R_PredefinedMeasure_Floor_2, 0)
 func (c *CalcLevel2) calcRMeasureFloor2() float64 {
@@ -180,8 +162,6 @@ func (c *CalcLevel2) calcRMeasureFloor2() float64 {
 	return c.Lvl0.AdvancedParameters.ThermalResistances.R_PredefinedMeasure_Floor_2
 }
 
-// calcUMeasureWindow1 calculates U_Measure_Window_1
-// element type window 1
 // Unit: W/(m²K)
 // Formula: IFERROR(1 / (IF(Code_MeasureType_Window_1 = "Replace", 0, R_Before_Window_1) + IF(ISNUMBER(R_Measure_Window_1), R_Measure_Window_1, 0)), 0)
 func (c *CalcLevel2) calcUMeasureWindow1() float64 {
@@ -197,8 +177,6 @@ func (c *CalcLevel2) calcUMeasureWindow1() float64 {
 	return 0
 }
 
-// calcUMeasureWindow2 calculates U_Measure_Window_2
-// element type window 2
 // Unit: W/(m²K)
 // Formula: IFERROR(1 / (IF(Code_MeasureType_Window_2 = "Replace", 0, R_Before_Window_2) + IF(ISNUMBER(R_Measure_Window_2), R_Measure_Window_2, 0)), 0)
 func (c *CalcLevel2) calcUMeasureWindow2() float64 {
@@ -214,8 +192,6 @@ func (c *CalcLevel2) calcUMeasureWindow2() float64 {
 	return 0
 }
 
-// calcUMeasureDoor1 calculates U_Measure_Door_1
-// element type door 1
 // Unit: W/(m²K)
 // Formula: IFERROR(1 / (IF(Code_MeasureType_Door_1 = "Replace", 0, R_Before_Door_1) + IF(ISNUMBER(R_Measure_Door_1), R_Measure_Door_1, 0)), 0)
 func (c *CalcLevel2) calcUMeasureDoor1() float64 {

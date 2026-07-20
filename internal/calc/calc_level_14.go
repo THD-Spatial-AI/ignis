@@ -22,7 +22,6 @@ func (c *CalcLevel14) Run() {
 	c.QHt = c.calcQHt()
 }
 
-// calcQHt calculates total heat transfer
 // Excel Formula: q_ht_tr+q_ht_ve
 func (c *CalcLevel14) calcQHt() float64 {
 	return c.Lvl13.QHtTr + c.Lvl13.QHtVe

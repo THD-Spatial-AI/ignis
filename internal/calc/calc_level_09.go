@@ -33,7 +33,7 @@ func (c *CalcLevel9) Run() {
 	c.DeltaUThermalBridging = c.calcDeltaUThermalBridging()
 }
 
-// calcCheckEnvSumExactToEstim checks if the ratio of exact to estimated envelope sum falls within plausible limits
+// checks if the ratio of exact to estimated envelope sum falls within plausible limits
 // Excel Formula: IF(AND(r_EnvTotal_ExactToEstim>=f_PlausiCrit_EnvSum_LowerLimit,r_EnvTotal_ExactToEstim<=f_PlausiCrit_EnvSum_UpperLimit),1,0)
 func (c *CalcLevel9) calcCheckEnvSumExactToEstim() int {
 	if c.Lvl8.REnvTotalExactToEstim >= c.Lvl0.AdvancedParameters.PredefinedCodes.F_PlausiCrit_EnvSum_LowerLimit &&
@@ -43,7 +43,6 @@ func (c *CalcLevel9) calcCheckEnvSumExactToEstim() int {
 	return 0
 }
 
-// calcTypeThermalBridgingActual determines the type of thermal bridging based on various conditions
 // Excel Formula: IF(OR(Code_ThermalBridging_Refurbished="",Code_ThermalBridging_Original=Code_ThermalBridging_Refurbished),Code_ThermalBridging_Original,IF(Code_TypeVariant="Variation",Code_ThermalBridging_Refurbished,IF(Fraction_EnvelopeRefurbished=0,Code_ThermalBridging_Original,IF(Fraction_EnvelopeRefurbished=1,Code_ThermalBridging_Refurbished,Code_ThermalBridging_Original&"("&TEXT(1-Fraction_EnvelopeRefurbished,"##0%")&")."&Code_ThermalBridging_Refurbished&"("&TEXT(Fraction_EnvelopeRefurbished,"##0%")&")"))))
 func (c *CalcLevel9) calcTypeThermalBridgingActual() string {
 	if c.Lvl0.AdvancedParameters.ThermalBridges.Code_ThermalBridging_Refurbished == "" ||
@@ -66,7 +65,6 @@ func (c *CalcLevel9) calcTypeThermalBridgingActual() string {
 	}
 }
 
-// calcDeltaUThermalBridging calculates the delta U value for thermal bridging
 // Excel Formula: IFERROR(IF(Code_ThermalBridging_Refurbished<>"",IF(Code_TypeVariant="Variation",delta_U_ThermalBridging_Refurbished,(1-Fraction_EnvelopeRefurbished)*delta_U_ThermalBridging_Original+Fraction_EnvelopeRefurbished*delta_U_ThermalBridging_Refurbished),delta_U_ThermalBridging_Original),0)
 func (c *CalcLevel9) calcDeltaUThermalBridging() float64 {
 	if c.Lvl0.AdvancedParameters.ThermalBridges.Code_ThermalBridging_Refurbished != "" {
