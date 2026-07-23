@@ -46,7 +46,6 @@ func (c *CalcLevel8) Run() {
 	c.QSol = c.calcQSol()
 }
 
-// calcREnvTotalExactToEstim calculates ratio of exact to estimated envelope sum
 // Excel Formula: IFERROR(A_Exact_Env_Sum/A_Estim_Env_Sum,0)
 func (c *CalcLevel8) calcREnvTotalExactToEstim() float64 {
 	if c.Lvl7.AEstimEnvSum == 0 {
@@ -55,7 +54,6 @@ func (c *CalcLevel8) calcREnvTotalExactToEstim() float64 {
 	return c.Lvl1.A_Exact_Env_Sum / c.Lvl7.AEstimEnvSum
 }
 
-// calcFractionEnvelopeRefurbished calculates fraction of the envelope that has been refurbished
 // Excel Formula: IFERROR((IF(R_Measure_Roof_1>0,f_Measure_Roof_1*A_Calc_Roof_1,0)+IF(R_Measure_Roof_2>0,f_Measure_Roof_2*A_Calc_Roof_2,0)+IF(R_Measure_Wall_1>0,f_Measure_Wall_1*A_Calc_Wall_1,0)+IF(R_Measure_Wall_2>0,f_Measure_Wall_2*A_Calc_Wall_2,0)+IF(R_Measure_Wall_3>0,f_Measure_Wall_3*A_Calc_Wall_3,0)+IF(R_Measure_Floor_1>0,f_Measure_Floor_1*A_Calc_Floor_1,0)+IF(R_Measure_Floor_2>0,f_Measure_Floor_2*A_Calc_Floor_2,0)+IF(R_Measure_Window_1>0,f_Measure_Window_1*A_Calc_Window_1,0)+IF(R_Measure_Window_2>0,f_Measure_Window_2*A_Calc_Window_2,0)+IF(R_Measure_Door_1>0,f_Measure_Door_1*A_Calc_Door_1,0))/SUM(A_Calc_Roof_1:A_Calc_Door_1),0)
 func (c *CalcLevel8) calcFractionEnvelopeRefurbished() float64 {
 	numerator := 0.0
@@ -108,21 +106,18 @@ func (c *CalcLevel8) calcFractionEnvelopeRefurbished() float64 {
 	return numerator / denominator
 }
 
-// calcHTransmissionWall1 calculates heat transmission through wall 1
 // Excel Formula: IF(ISERROR(U_Actual_Wall_1*A_Calc_Wall_1*b_Transmission_Wall_1),0,U_Actual_Wall_1*A_Calc_Wall_1*b_Transmission_Wall_1)
 func (c *CalcLevel8) calcHTransmissionWall1() float64 {
 	result := c.Lvl5.U_Actual_Wall_1 * c.Lvl7.ACalcWall1 * c.Lvl0.AdvancedParameters.HeatLosses.B_Transmission_Wall_1
 	return result
 }
 
-// calcHTransmissionWall3 calculates heat transmission through wall 3
 // Excel Formula: IF(ISERROR(U_Actual_Wall_3*A_Calc_Wall_3*b_Transmission_Wall_3),0,U_Actual_Wall_3*A_Calc_Wall_3*b_Transmission_Wall_3)
 func (c *CalcLevel8) calcHTransmissionWall3() float64 {
 	result := c.Lvl5.U_Actual_Wall_3 * c.Lvl7.ACalcWall3 * c.Lvl0.AdvancedParameters.HeatLosses.B_Transmission_Wall_3
 	return result
 }
 
-// calcQSol calculates total solar energy gain per unit area
 // Excel Formula: IFERROR(SUM(Q_Sol_Hor:Q_Sol_North)/A_C_Ref,0)
 func (c *CalcLevel8) calcQSol() float64 {
 	totalSolarEnergy := c.Lvl7.QSolHor + c.Lvl7.QSolEast + c.Lvl7.QSolSouth + c.Lvl7.QSolWest + c.Lvl7.QSolNorth

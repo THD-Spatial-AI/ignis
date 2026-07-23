@@ -56,7 +56,6 @@ func (c *CalcLevel4) Run() {
 	c.U_Measure_Floor_2 = c.calcUMeasureFloor2()
 }
 
-// calcAEstimGrossWallStorey calculates A_Estim_GrossWall_Storey
 // interim quantity
 // Unit: m²
 // Formula: f_Corr_CeilingHeight * f_ComplexFootprint * (0.7 * A_C_Storey + IF(Code_AttachedNeighbours = "B_N2", 5, IF(Code_AttachedNeighbours = "B_N1", 25, 50)))
@@ -73,23 +72,18 @@ func (c *CalcLevel4) calcAEstimGrossWallStorey() float64 {
 	return c.Lvl0.AdvancedParameters.PredefinedCodes.F_Corr_CeilingHeight * c.Lvl1.F_ComplexFootprint * (0.7*c.Lvl3.A_C_Storey + attachedNeigh)
 }
 
-// calcAEstimRoof calculates A_Estim_Roof
-// roof
 // Unit: m²
 // Formula: f_ComplexRoof * (p_Roof * A_C_Storey + q_Roof)
 func (c *CalcLevel4) calcAEstimRoof() float64 {
 	return c.Lvl1.F_ComplexRoof * (c.Lvl1.P_Roof*c.Lvl3.A_C_Storey + c.Lvl1.Q_Roof)
 }
 
-// calcAEstimUpperCeiling calculates A_Estim_UpperCeiling
-// upper ceiling
 // Unit: m²
 // Formula: p_Ceiling * A_C_Storey + q_Ceiling
 func (c *CalcLevel4) calcAEstimUpperCeiling() float64 {
 	return c.Lvl1.P_Ceiling*c.Lvl3.A_C_Storey + c.Lvl1.Q_Ceiling
 }
 
-// calcAEstimFloor calculates A_Estim_Floor
 // floor above cellar or soil
 // Unit: m²
 // Formula: 1.2 * A_C_Storey + 5
@@ -97,16 +91,12 @@ func (c *CalcLevel4) calcAEstimFloor() float64 {
 	return 1.2*c.Lvl3.A_C_Storey + 5
 }
 
-// calcAEstimWindow calculates A_Estim_Window
-// window
 // Unit: m²
 // Formula: 0.18 * A_C_Ref - A_Estim_Door
 func (c *CalcLevel4) calcAEstimWindow() float64 {
 	return 0.18*c.Lvl2.A_C_Ref - c.Lvl3.A_Estim_Door
 }
 
-// calcACalcDoor1 calculates A_Calc_Door_1
-// door calculation
 // Unit: m²
 // Formula: IF(Code_TypeIntake_EnvelopeArea = "Estimation", A_Estim_Door, A_Door_1)
 func (c *CalcLevel4) calcACalcDoor1() float64 {
@@ -116,8 +106,6 @@ func (c *CalcLevel4) calcACalcDoor1() float64 {
 	return c.Lvl0.BasicParameters.Envelope.A_Door_1
 }
 
-// calcUMeasureRoof1 calculates U_Measure_Roof_1
-// element type roof 1
 // Unit: W/(m²*K)
 // Formula: IFERROR(1/(IF(Code_MeasureType_Roof_1 = "Replace", IF(ISNUMBER(R_Add_UnheatedSpace_Roof_1), R_Add_UnheatedSpace_Roof_1, 0), R_Before_Roof_1) + IF(ISNUMBER(R_Measure_Roof_1), R_Measure_Roof_1, 0)), 0)
 func (c *CalcLevel4) calcUMeasureRoof1() float64 {
@@ -135,8 +123,6 @@ func (c *CalcLevel4) calcUMeasureRoof1() float64 {
 	return 0
 }
 
-// calcUMeasureRoof2 calculates U_Measure_Roof_2
-// element type roof 2
 // Unit: W/(m²*K)
 // Formula: IFERROR(1/(IF(Code_MeasureType_Roof_2 = "Replace", IF(ISNUMBER(R_Add_UnheatedSpace_Roof_2), R_Add_UnheatedSpace_Roof_2, 0), R_Before_Roof_2) + IF(ISNUMBER(R_Measure_Roof_2), R_Measure_Roof_2, 0)), 0)
 func (c *CalcLevel4) calcUMeasureRoof2() float64 {
@@ -154,8 +140,6 @@ func (c *CalcLevel4) calcUMeasureRoof2() float64 {
 	return 0
 }
 
-// calcUMeasureWall1 calculates U_Measure_Wall_1
-// element type wall 1
 // Unit: W/(m²*K)
 // Formula: IFERROR(1/(IF(Code_MeasureType_Wall_1 = "Replace", IF(ISNUMBER(R_Add_UnheatedSpace_Wall_1), R_Add_UnheatedSpace_Wall_1, 0), R_Before_Wall_1) + IF(ISNUMBER(R_Measure_Wall_1), R_Measure_Wall_1, 0)), 0)
 func (c *CalcLevel4) calcUMeasureWall1() float64 {
@@ -173,8 +157,6 @@ func (c *CalcLevel4) calcUMeasureWall1() float64 {
 	return 0
 }
 
-// calcUMeasureWall2 calculates U_Measure_Wall_2
-// element type wall 2
 // Unit: W/(m²*K)
 // Formula: IFERROR(1/(IF(Code_MeasureType_Wall_2 = "Replace", IF(ISNUMBER(R_Add_UnheatedSpace_Wall_2), R_Add_UnheatedSpace_Wall_2, 0), R_Before_Wall_2) + IF(ISNUMBER(R_Measure_Wall_2), R_Measure_Wall_2, 0)), 0)
 func (c *CalcLevel4) calcUMeasureWall2() float64 {
@@ -192,8 +174,6 @@ func (c *CalcLevel4) calcUMeasureWall2() float64 {
 	return 0
 }
 
-// calcUMeasureWall3 calculates U_Measure_Wall_3
-// element type wall 3
 // Unit: W/(m²*K)
 // Formula: IFERROR(1/(IF(Code_MeasureType_Wall_3 = "Replace", IF(ISNUMBER(R_Add_UnheatedSpace_Wall_3), R_Add_UnheatedSpace_Wall_3, 0), R_Before_Wall_3) + IF(ISNUMBER(R_Measure_Wall_3), R_Measure_Wall_3, 0)), 0)
 func (c *CalcLevel4) calcUMeasureWall3() float64 {
@@ -211,8 +191,6 @@ func (c *CalcLevel4) calcUMeasureWall3() float64 {
 	return 0
 }
 
-// calcUMeasureFloor1 calculates U_Measure_Floor_1
-// element type floor 1
 // Unit: W/(m²K)
 // Formula: IFERROR(1/(IF(Code_MeasureType_Floor_1="Replace",IF(ISNUMBER(R_Add_UnheatedSpace_Floor_1),R_Add_UnheatedSpace_Floor_1,0),R_Before_Floor_1)+IF(ISNUMBER(R_Measure_Floor_1),R_Measure_Floor_1,0)),0)
 func (c *CalcLevel4) calcUMeasureFloor1() float64 {
@@ -230,8 +208,6 @@ func (c *CalcLevel4) calcUMeasureFloor1() float64 {
 	return 0
 }
 
-// calcUMeasureFloor2 calculates U_Measure_Floor_2
-// element type floor 2
 // Unit: W/(m²K)
 // Formula: IFERROR(1/(IF(Code_MeasureType_Floor_2="Replace",IF(ISNUMBER(R_Add_UnheatedSpace_Floor_2),R_Add_UnheatedSpace_Floor_2,0),R_Before_Floor_2)+IF(ISNUMBER(R_Measure_Floor_2),R_Measure_Floor_2,0)),0)
 func (c *CalcLevel4) calcUMeasureFloor2() float64 {

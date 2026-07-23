@@ -36,7 +36,6 @@ func (c *CalcLevel10) Run() {
 	c.HTransmissionThermalBridging = c.calcHTransmissionThermalBridging()
 }
 
-// calcCheckEnvAreaExactToEstim checks if the environmental area is exact to estimated based on various conditions
 // Excel Formula: Check_EnvSum_ExactToEstim * IF(Check_ToBeApplied_FloorArea_ExactToEstim=1, Check_FloorArea_ExactToEstim, 1) * Check_WindowArea_ExactToEstim
 func (c *CalcLevel10) calcCheckEnvAreaExactToEstim() int {
 	result := c.Lvl9.CheckEnvSumExactToEstim
@@ -55,7 +54,6 @@ func (c *CalcLevel10) calcCheckEnvAreaExactToEstim() int {
 	return result
 }
 
-// calcHTransmissionThermalBridging calculates the supplemental heat loss due to thermal bridging
 // Excel Formula: SUM(A_Calc_Roof_1:A_Calc_Door_1) * delta_U_ThermalBridging
 func (c *CalcLevel10) calcHTransmissionThermalBridging() float64 {
 	totalArea := c.Lvl5.A_Calc_Roof_1 +
