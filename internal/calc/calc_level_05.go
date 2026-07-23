@@ -61,7 +61,6 @@ func (c *CalcLevel5) Run() {
 	c.H_Transmission_Door_1 = c.calcHTransmissionDoor1()
 }
 
-// calcAEstimWallToCellarOrSoil calculates A_Estim_Wall_ToCellarOrSoil
 // wall bordering at soil or unheated cellar
 // Unit: m²
 // Formula: 0.5*IF(RIGHT(Code_CellarCond,1)="I",1,f_CellarCond)*A_Estim_GrossWall_Storey
@@ -75,7 +74,6 @@ func (c *CalcLevel5) calcAEstimWallToCellarOrSoil() float64 {
 	return 0.5 * cellarCond * c.Lvl4.A_Estim_GrossWall_Storey
 }
 
-// calcREnvFloorExactToEstim calculates r_EnvFloor_ExactToEstim
 // Formula: IFERROR((A_Floor_1+A_Floor_2)/(A_Estim_Floor),0)
 func (c *CalcLevel5) calcREnvFloorExactToEstim() float64 {
 	if c.Lvl4.A_Estim_Floor == 0 {
@@ -84,7 +82,6 @@ func (c *CalcLevel5) calcREnvFloorExactToEstim() float64 {
 	return (c.Lvl0.BasicParameters.Envelope.A_Floor_1 + c.Lvl0.BasicParameters.Envelope.A_Floor_2) / c.Lvl4.A_Estim_Floor
 }
 
-// calcREnvWindowExactToEstim calculates r_EnvWindow_ExactToEstim
 // Formula: IFERROR((A_Window_1+A_Window_2+A_Door_1)/(A_Estim_Window+A_Estim_Door),0)
 func (c *CalcLevel5) calcREnvWindowExactToEstim() float64 {
 	denominator := c.Lvl4.A_Estim_Window + c.Lvl3.A_Estim_Door
@@ -94,8 +91,6 @@ func (c *CalcLevel5) calcREnvWindowExactToEstim() float64 {
 	return (c.Lvl0.BasicParameters.Envelope.A_Window_1 + c.Lvl0.BasicParameters.Envelope.A_Window_2 + c.Lvl0.BasicParameters.Envelope.A_Door_1) / denominator
 }
 
-// calcACalcRoof1 calculates A_Calc_Roof_1
-// element type roof 1
 // Unit: m²
 // Formula: IF($Code_TypeIntake_EnvelopeArea="Estimation",A_Estim_Roof,A_Roof_1)
 func (c *CalcLevel5) calcACalcRoof1() float64 {
@@ -105,8 +100,6 @@ func (c *CalcLevel5) calcACalcRoof1() float64 {
 	return c.Lvl0.BasicParameters.Envelope.A_Roof_1
 }
 
-// calcACalcRoof2 calculates A_Calc_Roof_2
-// element type roof 2
 // Unit: m²
 // Formula: IF($Code_TypeIntake_EnvelopeArea="Estimation",A_Estim_UpperCeiling,A_Roof_2)
 func (c *CalcLevel5) calcACalcRoof2() float64 {
@@ -116,8 +109,6 @@ func (c *CalcLevel5) calcACalcRoof2() float64 {
 	return c.Lvl0.BasicParameters.Envelope.A_Roof_2
 }
 
-// calcACalcFloor1 calculates A_Calc_Floor_1
-// element type floor 1
 // Unit: m²
 // Formula: IF($Code_TypeIntake_EnvelopeArea="Estimation",IF(Code_Estim_ConstructionBorder_Floor="Soil",0,A_Estim_Floor),A_Floor_1)
 func (c *CalcLevel5) calcACalcFloor1() float64 {
@@ -130,8 +121,6 @@ func (c *CalcLevel5) calcACalcFloor1() float64 {
 	return c.Lvl0.BasicParameters.Envelope.A_Floor_1
 }
 
-// calcACalcWindow1 calculates A_Calc_Window_1
-// element type window 1
 // Unit: m²
 // Formula: IF($Code_TypeIntake_EnvelopeArea="Estimation",A_Estim_Window,A_Window_1)
 func (c *CalcLevel5) calcACalcWindow1() float64 {
@@ -141,8 +130,6 @@ func (c *CalcLevel5) calcACalcWindow1() float64 {
 	return c.Lvl0.BasicParameters.Envelope.A_Window_1
 }
 
-// calcUActualRoof1 calculates U_Actual_Roof_1
-// element type roof 1
 // Unit: W/(m²*K)
 // Formula: IF(U_Roof_1>0,(1-f_Measure_Roof_1)*1/(1/U_Roof_1+R_Add_UnheatedSpace_Roof_1),0)+f_Measure_Roof_1*U_Measure_Roof_1
 func (c *CalcLevel5) calcUActualRoof1() float64 {
@@ -153,8 +140,6 @@ func (c *CalcLevel5) calcUActualRoof1() float64 {
 	return result + c.Lvl0.AdvancedParameters.MeasureFractions.F_Measure_Roof_1*c.Lvl4.U_Measure_Roof_1
 }
 
-// calcUActualRoof2 calculates U_Actual_Roof_2
-// element type roof 2
 // Unit: W/(m²*K)
 // Formula: IF(U_Roof_2>0,(1-f_Measure_Roof_2)*1/(1/U_Roof_2+R_Add_UnheatedSpace_Roof_2),0)+f_Measure_Roof_2*U_Measure_Roof_2
 func (c *CalcLevel5) calcUActualRoof2() float64 {
@@ -165,8 +150,6 @@ func (c *CalcLevel5) calcUActualRoof2() float64 {
 	return result + c.Lvl0.AdvancedParameters.MeasureFractions.F_Measure_Roof_2*c.Lvl4.U_Measure_Roof_2
 }
 
-// calcUActualWall1 calculates U_Actual_Wall_1
-// element type wall 1
 // Unit: W/(m²*K)
 // Formula: IF(U_Wall_1>0,(1-f_Measure_Wall_1)*1/(1/U_Wall_1+R_Add_UnheatedSpace_Wall_1),0)+f_Measure_Wall_1*U_Measure_Wall_1
 func (c *CalcLevel5) calcUActualWall1() float64 {
@@ -177,8 +160,6 @@ func (c *CalcLevel5) calcUActualWall1() float64 {
 	return result + c.Lvl0.AdvancedParameters.MeasureFractions.F_Measure_Wall_1*c.Lvl4.U_Measure_Wall_1
 }
 
-// calcUActualWall2 calculates U_Actual_Wall_2
-// element type wall 2
 // Unit: W/(m²*K)
 // Formula: IF(U_Wall_2>0,(1-f_Measure_Wall_2)*1/(1/U_Wall_2+R_Add_UnheatedSpace_Wall_2),0)+f_Measure_Wall_2*U_Measure_Wall_2
 func (c *CalcLevel5) calcUActualWall2() float64 {
@@ -189,8 +170,6 @@ func (c *CalcLevel5) calcUActualWall2() float64 {
 	return result + c.Lvl0.AdvancedParameters.MeasureFractions.F_Measure_Wall_2*c.Lvl4.U_Measure_Wall_2
 }
 
-// calcUActualWall3 calculates U_Actual_Wall_3
-// element type wall 3
 // Unit: W/(m²*K)
 // Formula: IF(U_Wall_3>0,(1-f_Measure_Wall_3)*1/(1/U_Wall_3+R_Add_UnheatedSpace_Wall_3),0)+f_Measure_Wall_3*U_Measure_Wall_3
 func (c *CalcLevel5) calcUActualWall3() float64 {
@@ -201,8 +180,6 @@ func (c *CalcLevel5) calcUActualWall3() float64 {
 	return result + c.Lvl0.AdvancedParameters.MeasureFractions.F_Measure_Wall_3*c.Lvl4.U_Measure_Wall_3
 }
 
-// calcUActualFloor1 calculates U_Actual_Floor_1
-// element type floor 1
 // Unit: W/(m²*K)
 // Formula: IF(U_Floor_1>0,(1-f_Measure_Floor_1)*1/(1/U_Floor_1+R_Add_UnheatedSpace_Floor_1),0)+f_Measure_Floor_1*U_Measure_Floor_1
 func (c *CalcLevel5) calcUActualFloor1() float64 {
@@ -213,8 +190,6 @@ func (c *CalcLevel5) calcUActualFloor1() float64 {
 	return result + c.Lvl0.AdvancedParameters.MeasureFractions.F_Measure_Floor_1*c.Lvl4.U_Measure_Floor_1
 }
 
-// calcUActualFloor2 calculates U_Actual_Floor_2
-// element type floor 2
 // Unit: W/(m²*K)
 // Formula: IF(U_Floor_2>0,(1-f_Measure_Floor_2)*1/(1/U_Floor_2+R_Add_UnheatedSpace_Floor_2),0)+f_Measure_Floor_2*U_Measure_Floor_2
 func (c *CalcLevel5) calcUActualFloor2() float64 {
@@ -225,8 +200,6 @@ func (c *CalcLevel5) calcUActualFloor2() float64 {
 	return result + c.Lvl0.AdvancedParameters.MeasureFractions.F_Measure_Floor_2*c.Lvl4.U_Measure_Floor_2
 }
 
-// calcHTransmissionDoor1 calculates H_Transmission_Door_1
-// element type door 1
 // Unit: W/K
 // Formula: IF(ISERROR(U_Actual_Door_1*A_Calc_Door_1*1),0,U_Actual_Door_1*A_Calc_Door_1*1)
 func (c *CalcLevel5) calcHTransmissionDoor1() float64 {

@@ -26,7 +26,7 @@ func (c *CalcLevel15) Run() {
 	c.GammaHGn = c.calcGammaHGn()
 }
 
-// calcGammaHGn calculates the heat gain utilization ratio
+// the heat gain utilization ratio
 // Excel Formula: IFERROR((q_sol+q_int)/q_ht,0)
 func (c *CalcLevel15) calcGammaHGn() float64 {
 	if c.Lvl14.QHt == 0 {

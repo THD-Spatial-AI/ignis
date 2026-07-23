@@ -54,7 +54,6 @@ func (c *CalcLevel7) Run() {
 	c.QSolNorth = c.calcQSolNorth()
 }
 
-// calcAEstimEnvSum calculates sum of estimated envelope areas
 // Excel Formula: SUM(A_Estim_Roof:A_Estim_Door)
 func (c *CalcLevel7) calcAEstimEnvSum() float64 {
 	return c.Lvl4.A_Estim_Roof +
@@ -66,7 +65,6 @@ func (c *CalcLevel7) calcAEstimEnvSum() float64 {
 		c.Lvl3.A_Estim_Door
 }
 
-// calcACalcWall1 calculates wall area based on envelope type
 // Excel Formula: IF($Code_TypeIntake_EnvelopeArea="Estimation", A_Estim_Wall_ExtAir, A_Wall_1)
 func (c *CalcLevel7) calcACalcWall1() float64 {
 	if c.Lvl0.AdvancedParameters.PredefinedCodes.Code_TypeIntake_EnvelopeArea == "Estimation" {
@@ -75,7 +73,6 @@ func (c *CalcLevel7) calcACalcWall1() float64 {
 	return c.Lvl0.BasicParameters.Envelope.A_Wall_1
 }
 
-// calcACalcWall3 calculates wall area 3 based on envelope type
 // Excel Formula: IF($Code_TypeIntake_EnvelopeArea="Estimation", A_Estim_Wall_ToCellarOrSoil - A_Calc_Wall_2, A_Wall_3)
 func (c *CalcLevel7) calcACalcWall3() float64 {
 	if c.Lvl0.AdvancedParameters.PredefinedCodes.Code_TypeIntake_EnvelopeArea == "Estimation" {
@@ -84,21 +81,18 @@ func (c *CalcLevel7) calcACalcWall3() float64 {
 	return c.Lvl0.BasicParameters.Envelope.A_Wall_3
 }
 
-// calcHTransmissionWall2 calculates heat transmission through wall 2
 // Excel Formula: IF(ISERROR(U_Actual_Wall_2 * A_Calc_Wall_2 * b_Transmission_Wall_2), 0, U_Actual_Wall_2 * A_Calc_Wall_2 * b_Transmission_Wall_2)
 func (c *CalcLevel7) calcHTransmissionWall2() float64 {
 	result := c.Lvl5.U_Actual_Wall_2 * c.Lvl6.ACalcWall2 * c.Lvl0.AdvancedParameters.HeatLosses.B_Transmission_Wall_2
 	return result
 }
 
-// calcHTransmissionFloor2 calculates heat transmission through floor 2
 // Excel Formula: IF(ISERROR(U_Actual_Floor_2 * A_Calc_Floor_2 * b_Transmission_Floor_2), 0, U_Actual_Floor_2 * A_Calc_Floor_2 * b_Transmission_Floor_2)
 func (c *CalcLevel7) calcHTransmissionFloor2() float64 {
 	result := c.Lvl5.U_Actual_Floor_2 * c.Lvl6.ACalcFloor2 * c.Lvl0.AdvancedParameters.HeatLosses.B_Transmission_Floor_2
 	return result
 }
 
-// calcQSolHor calculates solar energy gain through horizontal windows
 // Excel Formula: A_Calc_Window_Horizontal * I_Sol_Hor * F_sh_hor * (1 - F_f) * F_w * g_gl_n
 func (c *CalcLevel7) calcQSolHor() float64 {
 	return c.Lvl1.A_Calc_Window_Horizontal *
@@ -109,7 +103,6 @@ func (c *CalcLevel7) calcQSolHor() float64 {
 		c.Lvl6.GGlN
 }
 
-// calcQSolEast calculates solar energy gain through east windows
 // Excel Formula: A_Calc_Window_East * I_Sol_East * F_sh_vert * (1 - F_f) * F_w * g_gl_n
 func (c *CalcLevel7) calcQSolEast() float64 {
 	return c.Lvl6.ACalcWindowEast *
@@ -120,7 +113,6 @@ func (c *CalcLevel7) calcQSolEast() float64 {
 		c.Lvl6.GGlN
 }
 
-// calcQSolSouth calculates solar energy gain through south windows
 // Excel Formula: A_Calc_Window_South * I_Sol_South * F_sh_vert * (1 - F_f) * F_w * g_gl_n
 func (c *CalcLevel7) calcQSolSouth() float64 {
 	return c.Lvl1.A_Calc_Window_South *
@@ -131,7 +123,6 @@ func (c *CalcLevel7) calcQSolSouth() float64 {
 		c.Lvl6.GGlN
 }
 
-// calcQSolWest calculates solar energy gain through west windows
 // Excel Formula: A_Calc_Window_West * I_Sol_West * F_sh_vert * (1 - F_f) * F_w * g_gl_n
 func (c *CalcLevel7) calcQSolWest() float64 {
 	return c.Lvl6.ACalcWindowWest *
@@ -142,7 +133,6 @@ func (c *CalcLevel7) calcQSolWest() float64 {
 		c.Lvl6.GGlN
 }
 
-// calcQSolNorth calculates solar energy gain through north windows
 // Excel Formula: A_Calc_Window_North * I_Sol_North * F_sh_vert * (1 - F_f) * F_w * g_gl_n
 func (c *CalcLevel7) calcQSolNorth() float64 {
 	return c.Lvl1.A_Calc_Window_North *
