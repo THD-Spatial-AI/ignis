@@ -19,7 +19,10 @@ localhost {
 		respond 204
 	}
 
-	@authorized header X-Api-Key "supersecret123"
+	# Read from IGNIS_API_KEY at container start (see docker.env) rather than
+	# hardcoded here — a real key belongs in an untracked env file, not
+	# committed source.
+	@authorized header X-Api-Key {$IGNIS_API_KEY}
 	handle @authorized {
 		reverse_proxy ignis-app:{$APP_PORT:8080}
 	}
