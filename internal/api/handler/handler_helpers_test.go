@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 	"testing"
@@ -123,9 +124,9 @@ func TestRefurbishmentLabel_beyondKnownPositions(t *testing.T) {
 func TestMatchVariants_missingParams_returns400(t *testing.T) {
 	h := newTestHandler(&mockRepo{})
 	cases := []struct{ path, route string }{
-		{"/variants/DE/match", "/variants/:country_iso2/match"},             // no type or period
-		{"/variants/DE/match?type=SFH", "/variants/:country_iso2/match"},   // missing period
-		{"/variants/DE/match?period=01", "/variants/:country_iso2/match"},  // missing type
+		{"/variants/DE/match", "/variants/:country_iso2/match"},           // no type or period
+		{"/variants/DE/match?type=SFH", "/variants/:country_iso2/match"},  // missing period
+		{"/variants/DE/match?period=01", "/variants/:country_iso2/match"}, // missing type
 	}
 	for _, tc := range cases {
 		w := serve(http.MethodGet, tc.path, tc.route, h.MatchVariants, nil)
@@ -175,6 +176,19 @@ func TestMatchVariants_returnsLabelledVariants(t *testing.T) {
 	}
 }
 
+func TestMatchVariants_repoError_returns500(t *testing.T) {
+	mock := &mockRepo{
+		matchVariants: func(_ context.Context, _, _ string) ([]string, error) {
+			return nil, errors.New("connection refused")
+		},
+	}
+	h := newTestHandler(mock)
+	w := serve(http.MethodGet, "/variants/DE/match?type=SFH&period=01", "/variants/:country_iso2/match", h.MatchVariants, nil)
+	if w.Code != http.StatusInternalServerError {
+		t.Errorf("expected 500, got %d", w.Code)
+	}
+}
+
 func TestMatchVariants_emptyResult_returns200withEmptyList(t *testing.T) {
 	mock := &mockRepo{
 		matchVariants: func(_ context.Context, _, _ string) ([]string, error) {
@@ -195,5 +209,12 @@ func TestMatchVariants_emptyResult_returns200withEmptyList(t *testing.T) {
 	}
 	if len(resp.Data) != 0 {
 		t.Errorf("expected empty data list, got %d entries", len(resp.Data))
+	}
+}
+
+func TestNew_constructsHandlerWithRepo(t *testing.T) {
+	h := New(nil, "tabula")
+	if h == nil || h.repo == nil {
+		t.Fatal("expected New to return a Handler with a non-nil repo")
 	}
 }
