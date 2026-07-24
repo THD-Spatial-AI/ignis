@@ -36,6 +36,9 @@ Architecture documentation (arc42): under development, not yet published.
 
 ## Testing
 
+![test coverage](https://codecov.io/github/THD-Spatial-AI/ignis/graphs/icicle.svg?token=CTUZED1ELJ)
+The top section in the graphic above, represents the entire project. Proceeding with folders and finally individual files. The size and color of each slice is representing the number of statements and the coverage, respectively.
+
 ```bash
 go test ./...
 go test ./... -coverprofile=coverage.out -covermode=atomic
