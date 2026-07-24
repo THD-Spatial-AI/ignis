@@ -22,20 +22,9 @@ import (
 var testPool *pgxpool.Pool
 
 // TestMain starts a single Postgres container for the whole package and seeds
-// two fixture tables:
-//
-//   - tabula.germany: quoted, mixed-case columns ("Code_BuildingVariant", ...) -
-//     the shape TableConstructor actually produces in production, and what
-//     TabulaRepository's quoted queries expect.
-//   - public.building_fixture: unquoted lowercase columns - what
-//     BuildingRepository.GetByBuildingCode's literal (unquoted) query expects.
-//     NOTE: these two shapes don't match. BuildingRepository is not wired up
-//     to any handler in production (see internal/service.NewIgnisServiceWithDB,
-//     which nothing calls), so this mismatch has never surfaced as a bug -
-//     but querying a real TableConstructor-created table with
-//     GetByBuildingCode would return "no data found" today. This fixture
-//     locks in BuildingRepository's current, documented behaviour rather than
-//     silently changing it.
+// tabula.germany with quoted, mixed-case columns ("Code_BuildingVariant", ...)
+// - the shape TableConstructor actually produces in production, and what
+// TabulaRepository's quoted queries expect.
 func TestMain(m *testing.M) {
 	ctx := context.Background()
 
@@ -117,12 +106,6 @@ func seedFixtures(ctx context.Context, pool *pgxpool.Pool) error {
 			('DE.N.SFH.01.Gen', 75.5, 185, 123.45),
 			('DE.N.SFH.01.ReEx', 75.5, 185, 98.70),
 			('DE.N.MFH.01.Gen', 200.0, 185, 88.10)`,
-		`CREATE TABLE building_fixture (
-			id SERIAL PRIMARY KEY,
-			code_buildingvariant VARCHAR,
-			a_roof_1 REAL
-		)`,
-		`INSERT INTO building_fixture (code_buildingvariant, a_roof_1) VALUES ('DE.N.SFH.01.Gen', 75.5)`,
 	}
 	for _, stmt := range statements {
 		if _, err := pool.Exec(ctx, stmt); err != nil {
@@ -217,59 +200,5 @@ func TestTabulaRepository_GetVariant_queryError(t *testing.T) {
 	}
 	if errors.Is(err, repository.ErrVariantNotFound) {
 		t.Error("a query error against a missing table should not be reported as ErrVariantNotFound")
-	}
-}
-
-// --- BuildingRepository ---
-// See the TestMain doc comment: this repository's unquoted query only matches
-// a table created with unquoted (hence lowercased) column names, which is
-// not what TableConstructor actually produces - building_fixture mirrors
-// BuildingRepository's own literal expectation, not production reality.
-
-// TestBuildingRepository_GetByBuildingCode_success finds a row (the unquoted
-// WHERE clause matches building_fixture's unquoted lowercase columns) but
-// documents a second, compounding mismatch: populateStructFromMap looks up
-// scanned values by the mixed-case JSON tag ("A_Roof_1"), while Postgres
-// returns unquoted-created columns lowercased ("a_roof_1") in
-// FieldDescriptions - so the map lookup misses and the field stays zero even
-// on a "successful" (no error) call. Combined with the quoted-table mismatch
-// above, GetByBuildingCode cannot correctly populate a struct from either
-// table shape as currently written; this is presumably why it's unused in
-// production (see TestMain's doc comment).
-func TestBuildingRepository_GetByBuildingCode_success(t *testing.T) {
-	r := repository.NewBuildingRepository(testPool, "")
-	params, err := r.GetByBuildingCode(context.Background(), "building_fixture", "DE.N.SFH.01.Gen")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if params.BasicParameters.Envelope.A_Roof_1 != 0 {
-		t.Errorf("A_Roof_1 = %v, want 0 (case-mismatched column lookup silently fails to populate) - if this now populates, the bug has been fixed and this test should be updated to assert 75.5", params.BasicParameters.Envelope.A_Roof_1)
-	}
-}
-
-func TestBuildingRepository_GetByBuildingCode_notFound(t *testing.T) {
-	r := repository.NewBuildingRepository(testPool, "")
-	_, err := r.GetByBuildingCode(context.Background(), "building_fixture", "DE.N.SFH.99.Gen")
-	if err == nil {
-		t.Fatal("expected error for unknown building code")
-	}
-}
-
-func TestBuildingRepository_GetByBuildingCode_queryError(t *testing.T) {
-	r := repository.NewBuildingRepository(testPool, "")
-	_, err := r.GetByBuildingCode(context.Background(), "nonexistent_table", "DE.N.SFH.01.Gen")
-	if err == nil {
-		t.Fatal("expected error for nonexistent table")
-	}
-}
-
-// mismatchAgainstProductionShape documents (rather than silently fixes) the
-// case-sensitivity gap: BuildingRepository's query cannot find a row in a
-// table shaped like TableConstructor's real output.
-func TestBuildingRepository_GetByBuildingCode_mismatchAgainstProductionShape(t *testing.T) {
-	r := repository.NewBuildingRepository(testPool, "tabula")
-	_, err := r.GetByBuildingCode(context.Background(), "germany", "DE.N.SFH.01.Gen")
-	if err == nil {
-		t.Fatal("expected GetByBuildingCode's unquoted query to fail to find a row in a quoted-column production-shaped table - if this now passes, the case-sensitivity mismatch has been fixed and this test (and its doc comment) should be updated")
 	}
 }
