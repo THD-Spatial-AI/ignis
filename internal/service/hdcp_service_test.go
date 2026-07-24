@@ -1,10 +1,8 @@
 package service
 
 import (
-	"context"
 	"log"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/thd-spatial-ai/ignis/internal/hdcp"
@@ -45,17 +43,6 @@ func TestNewIgnisService(t *testing.T) {
 	if s.logger == nil {
 		t.Error("expected non-nil logger")
 	}
-	if s.repository != nil {
-		t.Error("expected nil repository when constructed without a DB")
-	}
-}
-
-func TestNewIgnisServiceWithDB(t *testing.T) {
-	// NewIgnisServiceWithDB only stores the pool; it never dials, so nil is safe here.
-	s := NewIgnisServiceWithDB(nil, "tabula")
-	if s.repository == nil {
-		t.Error("expected non-nil repository when constructed with a DB")
-	}
 }
 
 func TestNewIgnisServiceWithLogger(t *testing.T) {
@@ -63,30 +50,6 @@ func TestNewIgnisServiceWithLogger(t *testing.T) {
 	s := NewIgnisServiceWithLogger(logger)
 	if s.logger != logger {
 		t.Error("expected the provided logger to be used")
-	}
-}
-
-func TestGetBuildingByCode_noRepository_returnsError(t *testing.T) {
-	s := NewIgnisService()
-	_, err := s.GetBuildingByCode(context.Background(), "germany", "DE.N.SFH.01.Gen")
-	if err == nil {
-		t.Fatal("expected error when repository is not initialized")
-	}
-	if !strings.Contains(err.Error(), "repository not initialized") {
-		t.Errorf("error = %q, want mention of uninitialized repository", err.Error())
-	}
-}
-
-func TestNormalizeCountryName(t *testing.T) {
-	cases := []struct{ in, want string }{
-		{"Germany", "germany"},
-		{" United Kingdom ", "united_kingdom"},
-		{"Czech-Republic", "czech_republic"},
-	}
-	for _, tc := range cases {
-		if got := normalizeCountryName(tc.in); got != tc.want {
-			t.Errorf("normalizeCountryName(%q) = %q, want %q", tc.in, got, tc.want)
-		}
 	}
 }
 

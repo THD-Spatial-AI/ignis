@@ -1,60 +1,11 @@
 package repository
 
 import (
-	"context"
 	"fmt"
 	"reflect"
 
 	"github.com/thd-spatial-ai/ignis/internal/models"
-
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
-
-// BuildingRepository handles database operations for building data.
-type BuildingRepository struct {
-	pool   *pgxpool.Pool
-	schema string
-}
-
-// NewBuildingRepository creates a new building repository.
-// schema is the PostgreSQL schema name (e.g. "tabula"); pass "" to use the search_path default.
-func NewBuildingRepository(pool *pgxpool.Pool, schema string) *BuildingRepository {
-	return &BuildingRepository{pool: pool, schema: schema}
-}
-
-// GetByBuildingCode retrieves a building by building variant code.
-func (r *BuildingRepository) GetByBuildingCode(ctx context.Context, tableName string, buildingCode string) (*models.TabulaBuildingParameters, error) {
-	query := fmt.Sprintf(`SELECT * FROM %s WHERE code_buildingvariant = $1 LIMIT 1`, r.qualifyTable(tableName))
-
-	rows, err := r.pool.Query(ctx, query, buildingCode)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query building data: %w", err)
-	}
-	defer rows.Close()
-
-	if !rows.Next() {
-		return nil, fmt.Errorf("no data found for building code %s", buildingCode)
-	}
-
-	dataMap, err := rowsToDataMap(rows)
-	if err != nil {
-		return nil, err
-	}
-
-	// Initialize and populate TabulaBuildingParameters
-	tabulaData := initializeTabulaData()
-	populateStructFromMap(tabulaData, dataMap)
-
-	return tabulaData, nil
-}
-
-func (r *BuildingRepository) qualifyTable(tableName string) string {
-	if r.schema == "" {
-		return pgx.Identifier{tableName}.Sanitize()
-	}
-	return pgx.Identifier{r.schema, tableName}.Sanitize()
-}
 
 // initializeTabulaData creates a fully initialized TabulaBuildingParameters with all nested structs
 func initializeTabulaData() *models.TabulaBuildingParameters {
