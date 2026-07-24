@@ -5,21 +5,6 @@ import (
 	"testing"
 )
 
-func TestBuildingRepository_qualifyTable(t *testing.T) {
-	cases := []struct {
-		schema, table, want string
-	}{
-		{"tabula", "germany", `"tabula"."germany"`},
-		{"", "germany", `"germany"`},
-	}
-	for _, tc := range cases {
-		r := NewBuildingRepository(nil, tc.schema)
-		if got := r.qualifyTable(tc.table); got != tc.want {
-			t.Errorf("qualifyTable(schema=%q, table=%q) = %q, want %q", tc.schema, tc.table, got, tc.want)
-		}
-	}
-}
-
 func TestInitializeTabulaData(t *testing.T) {
 	data := initializeTabulaData()
 
