@@ -39,7 +39,7 @@ services:
         condition: service_healthy
     # No `ports:` mapping here on purpose — the app is not reachable from the
     # host directly. Only the reverse proxy is exposed; everyone else must go through it.
-    command: ./bin/app          # run the server directly (was: interactive dev shell)
+    command: ./bin/ignis        # run the server directly (was: interactive dev shell)
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:$$APP_PORT/health"]
       interval: 5s
