@@ -8,7 +8,7 @@ build: build-app build-db build-validate
 
 ## build-app: compile the HTTP API server
 build-app:
-	go build -o $(BIN)/app cmd/app/main.go
+	go build -o $(BIN)/ignis cmd/ignis/main.go
 
 ## build-db: compile the database loader (destructive — drops and recreates tables)
 build-db:
@@ -20,7 +20,7 @@ build-validate:
 
 ## run: build and start the HTTP API server
 run: build-app
-	./$(BIN)/app
+	./$(BIN)/ignis
 
 ## create-db: create the database if absent (or drop only the tabula schema if it exists), then populate via build_db
 create-db: build-db
