@@ -1,4 +1,4 @@
-package hdcp
+package pipeline
 
 import (
 	"io"

@@ -12,7 +12,7 @@ This directory contains the TABULA Webtool workbook used to seed the heat demand
 | **Project** | Intelligent Energy Europe, IEE/09/739/SI2.558245 |
 | **License** | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
 
-The workbook contains per-country building typology data (U-values, areas, infiltration rates, climate parameters) and reference heating demand values (`q_h_nd`) used to validate the HDCP pipeline within ±2.5 %.
+The workbook contains per-country building typology data (U-values, areas, infiltration rates, climate parameters) and reference heating demand values (`q_h_nd`) used to validate the calculation pipeline within ±2.5 %.
 
 **Citation:**
 

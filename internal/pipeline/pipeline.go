@@ -1,4 +1,4 @@
-package hdcp
+package pipeline
 
 import (
 	"fmt"
@@ -52,7 +52,7 @@ type Pipeline struct {
 	Lvl17 *calc.CalcLevel17
 }
 
-// NewPipeline initializes the HDCP pipeline with initial calculation level and logger.
+// NewPipeline initializes the heating demand calculation pipeline with initial calculation level and logger.
 func NewPipeline(lvl0 *models.TabulaBuildingParameters, logger *Logger) *Pipeline {
 	return &Pipeline{
 		Lvl0:   lvl0,
