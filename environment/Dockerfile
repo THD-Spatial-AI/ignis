@@ -27,7 +27,7 @@ ENV PATH="${GOROOT}/bin:${PATH}"
 WORKDIR /app
 COPY . .
 RUN go mod tidy \
-    && go build -o bin/app      cmd/app/main.go \
+    && go build -o bin/ignis    cmd/ignis/main.go \
     && go build -o bin/build_db cmd/build_db/main.go \
     && go build -o bin/validate cmd/validate/main.go
 
