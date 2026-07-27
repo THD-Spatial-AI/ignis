@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/thd-spatial-ai/ignis/internal/config"
-	"github.com/thd-spatial-ai/ignis/internal/hdcp"
 	"github.com/thd-spatial-ai/ignis/internal/models"
+	"github.com/thd-spatial-ai/ignis/internal/pipeline"
 	"log"
 	"math"
 	"os"
@@ -190,11 +190,11 @@ func runPipelineTest(pool *pgxpool.Pool, tableName string, rowID int) TestResult
 	// }
 
 	// Create ignis instance and run pipeline
-	logger := hdcp.NewLogger(log.New(os.Stdout, "", 0))
-	pipeline := hdcp.NewPipeline(tabulaData, logger)
+	logger := pipeline.NewLogger(log.New(os.Stdout, "", 0))
+	p := pipeline.NewPipeline(tabulaData, logger)
 
 	// Run the calculation pipeline
-	calculatedQHND, err := pipeline.Run()
+	calculatedQHND, err := p.Run()
 	if err != nil {
 		result.ErrorMessage = fmt.Sprintf("pipeline error: %v", err)
 		return result
