@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/thd-spatial-ai/ignis/internal/hdcp"
 	"github.com/thd-spatial-ai/ignis/internal/models"
+	"github.com/thd-spatial-ai/ignis/internal/pipeline"
 )
 
 // newTestParams returns a fully initialised TabulaBuildingParameters with all
@@ -46,7 +46,7 @@ func TestNewIgnisService(t *testing.T) {
 }
 
 func TestNewIgnisServiceWithLogger(t *testing.T) {
-	logger := hdcp.NewLogger(log.New(os.Stdout, "", 0))
+	logger := pipeline.NewLogger(log.New(os.Stdout, "", 0))
 	s := NewIgnisServiceWithLogger(logger)
 	if s.logger != logger {
 		t.Error("expected the provided logger to be used")
@@ -56,7 +56,7 @@ func TestNewIgnisServiceWithLogger(t *testing.T) {
 func TestCalculateHeatingDemand_success(t *testing.T) {
 	s := NewIgnisService()
 	// An all-zero building is a division-by-zero case in the pipeline's own
-	// arithmetic (see internal/hdcp's own zero-input test) and legitimately
+	// arithmetic (see internal/pipeline's own zero-input test) and legitimately
 	// yields NaN, not an error - the point here is that it completes without panicking.
 	_, err := s.CalculateHeatingDemand(newTestParams())
 	if err != nil {
