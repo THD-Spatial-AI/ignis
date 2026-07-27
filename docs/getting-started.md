@@ -37,7 +37,7 @@ cp .env.example .env
 ## Build
 
 ```bash
-go build -o bin/app       cmd/app/main.go
+go build -o bin/ignis     cmd/ignis/main.go
 go build -o bin/build_db  cmd/build_db/main.go
 go build -o bin/validate  cmd/validate/main.go
 ```
@@ -53,7 +53,7 @@ Loads the TABULA workbook into PostgreSQL. This is destructive: it drops and rec
 ## Run the API
 
 ```bash
-./bin/app   # starts on :8080
+./bin/ignis   # starts on :8080
 ```
 
 ## Validate
