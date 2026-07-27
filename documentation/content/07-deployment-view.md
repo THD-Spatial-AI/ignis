@@ -29,40 +29,7 @@ This file is deliberately standalone rather than a partial override merged with 
 
 **Publishing a new `ignis-app` image**: `.github/workflows/docker-publish.yml` builds and pushes `ghcr.io/thd-spatial-ai/ignis:vX.Y.Z` and `:latest` whenever a `vX.Y.Z` tag is pushed (or the workflow is run manually) — a deliberate release action, not something that happens on every commit. Set `IGNIS_IMAGE_TAG` in `.env` on the deploy machine to pin a specific version rather than always tracking `:latest`. The image is public, so pulling it needs no authentication.
 
-### Deployment workflow
-
-```mermaid
-flowchart TD
-    subgraph release["Release — GitHub Actions"]
-        direction TB
-        tag["git tag vX.Y.Z<br/>git push --tags"] --> workflow["docker-publish.yml runs"]
-        workflow --> build["docker build<br/>environment/Dockerfile"]
-        build --> push["docker push<br/>ghcr.io/thd-spatial-ai/ignis<br/>:vX.Y.Z + :latest"]
-    end
-
-    push ==>|"image now available to pull"| pull
-
-    subgraph host["Deploy — production host (no source, no Go toolchain needed)"]
-        direction TB
-        pull["docker compose -f docker-compose.prod.yml up -d"] --> db["1 . ignis-db starts<br/>postgres:17-alpine"]
-        db -->|"waits until healthy"| app["2 . ignis-app starts<br/>pulls ghcr.io/.../ignis:tag"]
-        app -->|"waits until healthy"| proxy["3 . ignis-reverse-proxy starts<br/>caddy:2.11-alpine"]
-        proxy --> done(["stack up, ready for traffic"])
-
-        seed["one-off, first run only:<br/>docker compose --profile seed run --rm ignis-build-db"] -.->|"seeds TABULA data into"| db
-    end
-
-    classDef releaseStyle fill:#1f6feb,color:#fff,stroke:#1f6feb
-    classDef hostStyle fill:#2da44e,color:#fff,stroke:#2da44e
-    classDef doneStyle fill:#8250df,color:#fff,stroke:#8250df
-    class tag,workflow,build,push releaseStyle
-    class pull,db,app,proxy,seed hostStyle
-    class done doneStyle
-```
-
-The runtime request path (client → proxy → app → db, gated by `X-Api-Key`) is covered separately below in "No host port on app or database."
-
-No source code or Go toolchain appears anywhere on the right-hand side — the deploy host only ever pulls finished images and runs them.
+The deployment workflow — release (tag push → CI build → GHCR push) followed by deploy (ordered container startup) — is shown as a figure below. No source code or Go toolchain appears anywhere on the deploy side: the host only ever pulls finished images and runs them. The runtime request path (client → proxy → app → db, gated by `X-Api-Key`) is covered separately below in "No host port on app or database."
 
 ## Ports
 

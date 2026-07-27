@@ -1,0 +1,5 @@
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.75\textwidth]{figures/07-deployment-workflow.pdf}
+\caption{Deployment workflow: release (pushing a \texttt{vX.Y.Z} tag triggers \texttt{docker-publish.yml}, which builds and pushes \texttt{ignis-app} to GHCR) followed by deploy (\texttt{docker compose -f docker-compose.prod.yml up -d} pulls all three images and starts them in dependency order, gated by health checks). The one-off \texttt{ignis-build-db} seed job is shown separately, since it is invoked manually and only on first run.}
+\end{figure}
