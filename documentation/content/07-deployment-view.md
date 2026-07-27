@@ -6,7 +6,7 @@ ignis runs as three containers, defined in `environment/docker-compose.yml`. The
 
 1. **ignis-reverse-proxy**: Caddy, from the `caddy:2.11-alpine` image. The only container that publishes a host port. Every request passes through it first.
 
-2. **ignis-app**: the `bin/app` binary, built from `environment/Dockerfile`. Listens on the internal port (default 8080), publishes no host port, and reaches the database at `ignis-db`.
+2. **ignis-app**: the `bin/ignis` binary, built from `environment/Dockerfile`. Listens on the internal port (default 8080), publishes no host port, and reaches the database at `ignis-db`.
 
 3. **ignis-db**: PostgreSQL, from `postgres:17-alpine`. Publishes no host port. Its data lives in a named volume (`ignis-db-data`) that survives `docker compose down`/`up`, but not `down -v`.
 
