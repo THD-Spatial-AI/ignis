@@ -3,19 +3,16 @@ title: "HDCP Go"
 message: "If you use this software, please cite it as below."
 type: software
 authors:
-  - name: "THD-Spatial-AI Research Group"
+  - given-names: Jay
+    family-names: Ravani
+    email: jaykumar.ravani@th-deg.de
+    orcid: "https://orcid.org/0009-0008-1307-6983"
     affiliation: "BigGeoData & Spatial AI, Technische Hochschule Deggendorf"
-repository-code: "https://github.com/THD-Spatial-AI/hdcp-go"
-url: "https://github.com/THD-Spatial-AI/hdcp-go"
+repository-code: "https://github.com/THD-Spatial-AI/ignis"
+url: "https://github.com/THD-Spatial-AI/ignis"
 license: MIT
 version: "1.0.0"
-date-released: "2026-01-01"
-abstract: >
-  HDCP Go is a Go implementation of the Heat Demand Calculation Pipeline (HDCP)
-  for estimating and validating building energy performance across European countries.
-  It implements the 17-level TABULA calculation methodology covering building geometry,
-  thermal properties, climate conditions, solar gains, and final heating energy demand,
-  exposed as a REST API.
+date-released: "2026-07-01"
 keywords:
   - heat demand calculation
   - building energy performance
