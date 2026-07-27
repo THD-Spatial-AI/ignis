@@ -724,7 +724,7 @@
 <p>Use <code>disable</code> only for local development against a database on the same machine. Set <code>require</code> in all other environments.</p>
 </div>
 <h2 id="build">Build<a class="headerlink" href="#build" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>go<span class="w"> </span>build<span class="w"> </span>-o<span class="w"> </span>bin/app<span class="w">       </span>cmd/app/main.go
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>go<span class="w"> </span>build<span class="w"> </span>-o<span class="w"> </span>bin/ignis<span class="w">     </span>cmd/ignis/main.go
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>go<span class="w"> </span>build<span class="w"> </span>-o<span class="w"> </span>bin/build_db<span class="w">  </span>cmd/build_db/main.go
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>go<span class="w"> </span>build<span class="w"> </span>-o<span class="w"> </span>bin/validate<span class="w">  </span>cmd/validate/main.go
 </span></code></pre></div>
@@ -733,7 +733,7 @@
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>./bin/build_db
 </span></code></pre></div>
 <h2 id="run-the-api">Run the API<a class="headerlink" href="#run-the-api" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>./bin/app<span class="w">   </span><span class="c1"># starts on :8080</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>./bin/ignis<span class="w">   </span><span class="c1"># starts on :8080</span>
 </span></code></pre></div>
 <h2 id="validate">Validate<a class="headerlink" href="#validate" title="Permanent link">&para;</a></h2>
 <p>Runs the full 17-level pipeline against every row in the database and checks that the result stays within ±2% of the TABULA reference value.</p>
