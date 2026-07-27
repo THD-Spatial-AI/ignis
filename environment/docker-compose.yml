@@ -27,24 +27,40 @@ services:
     container_name: ignis-app
     build:
       context: ./..
-      dockerfile: environment/Dockerfile
+      dockerfile: environment/Dockerfile   # multi-stage: builder (Go toolchain) -> final (binary only)
     env_file: docker.env        # DB connection + CORS config
     environment:
       - APP_PORT=${APP_PORT}    # internal listen port, single source from .env
-    working_dir: /app
-    volumes:
-      - ./../data:/app/data     # mount data directory so build_db can read the Excel workbook
     depends_on:
       ignis-db:
         condition: service_healthy
     # No `ports:` mapping here on purpose — the app is not reachable from the
     # host directly. Only the reverse proxy is exposed; everyone else must go through it.
-    command: ./bin/ignis        # run the server directly (was: interactive dev shell)
+    # No `command:` override needed — the image's own CMD runs the server
+    # directly now; this is a single-purpose image, not a shared toolbox.
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:$$APP_PORT/health"]
       interval: 5s
       timeout: 3s
       retries: 5
+
+  # One-off DB seed/rebuild job, NOT part of the normal `up` path (see
+  # `profiles` below). build_db DROPS and recreates all country tables from
+  # the Excel workbook — invoke deliberately, never automatically on startup:
+  #   docker compose --profile seed run --rm ignis-build-db
+  ignis-build-db:
+    container_name: ignis-build-db
+    profiles: ["seed"]
+    build:
+      context: ./..
+      dockerfile: environment/Dockerfile.build_db
+    # No volume mount for the workbook — tabula-calculator-lite.xlsx is baked
+    # into the image itself (see Dockerfile.build_db), since it's static
+    # reference data, not something that changes independently of a release.
+    env_file: docker.env
+    depends_on:
+      ignis-db:
+        condition: service_healthy
 
   ignis-reverse-proxy:
     image: caddy:2.11-alpine

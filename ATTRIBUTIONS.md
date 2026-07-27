@@ -15,6 +15,8 @@ This project incorporates data and methodology from the following third-party so
 
 > Loga, T., Stein, B., Diefenbach, N., Born, R. (2016): *Deutsche Wohngebäudetypologie. Beispielhafte Maßnahmen zur Verbesserung der Energieeffizienz von typischen Wohngebäuden.* 2nd edition. Institut Wohnen und Umwelt, Darmstadt.
 
+`data/tabula-calculator-lite.xlsx` is a trimmed derivative of the original workbook above (unused sheets removed, the original `Info`/attribution sheet kept intact), published under the same CC BY 4.0 terms — see `data/README.md` for what was removed and why.
+
 ---
 
 ## Go Dependencies
