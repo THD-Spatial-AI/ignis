@@ -44,6 +44,8 @@ docker compose -f docker-compose.quickstart.yml up -d
     curl -k -H "X-Api-Key: supersecret123" https://localhost/health
     ```
 
+    Calling the API from Swagger UI's "Try it out" (this site's [API reference](api.md)) needs one extra step: browser JS can't click through a cert warning the way a manual page load can, so a `fetch()` to an untrusted origin just fails outright. Open `https://localhost` directly in a new tab first and click through the warning — most browsers then trust that origin for the rest of the session, and Swagger UI's calls will go through.
+
 The same "load the database before first use" step above still applies — a fresh `ignis-db` volume has no TABULA data regardless of which compose file started it.
 
 !!! info "Pinning a version"
