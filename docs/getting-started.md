@@ -28,6 +28,31 @@ This starts `ignis-db`, then `ignis-app` once the database is healthy, then `ign
     docker compose --profile seed run --rm ignis-build-db
     ```
 
+### Quickstart (try the API, nothing else installed)
+
+For a machine that only has Docker — no Go toolchain, no `caddy` CLI, no `.env` file to create. Pulls the pre-built `ignis-app` image from GHCR instead of building from source:
+
+```bash
+cd environment
+docker compose -f docker-compose.quickstart.yml up -d
+```
+
+!!! warning "Certificate warning is expected"
+    `docker-compose.yml` reuses a `caddy trust`-installed CA from the host so browsers trust `https://localhost` out of the box. This quickstart file skips that step entirely — Caddy's local CA lives in a Docker-managed volume instead, so nothing on the host trusts it. Click through the browser's warning, or pass `-k` / `--no-check-certificate` / "disable SSL verification" from curl, wget, or Postman:
+
+    ```bash
+    curl -k -H "X-Api-Key: supersecret123" https://localhost/health
+    ```
+
+The same "load the database before first use" step above still applies — a fresh `ignis-db` volume has no TABULA data regardless of which compose file started it.
+
+!!! info "Pinning a version"
+    Defaults to the `latest` published image. To pin a specific release, set `IGNIS_IMAGE_TAG` before starting:
+
+    ```bash
+    IGNIS_IMAGE_TAG=v0.2.1-alpha docker compose -f docker-compose.quickstart.yml up -d
+    ```
+
 ## Manual setup
 
 For local development without containers.

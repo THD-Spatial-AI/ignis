@@ -1,0 +1,76 @@
+# Zero-config compose file: pulls the pre-built ignis-app image, same as
+# docker-compose.prod.yml, but for someone who just wants to try the API —
+# no .env file, no `caddy` install, no `caddy trust` on the host.
+# Usage:  docker compose -f docker-compose.quickstart.yml up -d
+#
+# Trade-off vs. docker-compose.prod.yml: Caddy's local CA lives in a
+# Docker-managed volume instead of a host bind mount, so it's never added to
+# your OS/browser trust store. Requests to https://localhost will show an
+# untrusted-certificate warning — expected here. Click through it in the
+# browser, or pass -k/--no-check-certificate/"disable SSL verification" from
+# curl, wget, or Postman. Not meant for a real deployment: see
+# docker-compose.prod.yml for that (real trust chain or a public domain).
+#
+# Deliberately standalone rather than a partial override merged with another
+# compose file — see docker-compose.prod.yml's header for why merging
+# `volumes:` lists across files here is exactly the ambiguity to avoid.
+#
+# ignis-build-db (the one-off DB rebuild tool) is intentionally not
+# included here — it's a rare, manual admin operation, not part of the
+# normal try-it-out path, and still requires a source checkout to build.
+name: building-simulation
+
+services:
+  ignis-db:
+    image: postgres:17-alpine
+    container_name: ignis-db
+    env_file: docker.env
+    volumes:
+      - ignis-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  ignis-app:
+    container_name: ignis-app
+    # Pre-built by .github/workflows/docker-publish.yml on each vX.Y.Z tag.
+    # Set IGNIS_IMAGE_TAG to pin a version; defaults to `latest`.
+    image: ghcr.io/thd-spatial-ai/ignis:${IGNIS_IMAGE_TAG:-latest}
+    env_file: docker.env
+    environment:
+      - APP_PORT=${APP_PORT:-8080}
+    depends_on:
+      ignis-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:$$APP_PORT/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  ignis-reverse-proxy:
+    image: caddy:2.11-alpine
+    container_name: ignis-reverse-proxy
+    env_file: docker.env
+    environment:
+      - APP_PORT=${APP_PORT:-8080}
+    depends_on:
+      ignis-app:
+        condition: service_healthy
+    ports:
+      - "${HOST_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data/caddy
+    entrypoint:
+      - sh
+      - -c
+      - >
+        export ALLOWED_ORIGINS_PATTERN="^($$(echo "$$ALLOWED_ORIGINS" | sed -e 's/[.]/\\./g' -e 's/,/|/g'))$$" &&
+        exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+
+volumes:
+  ignis-db-data:
+  caddy-data:
