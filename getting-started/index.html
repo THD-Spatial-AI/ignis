@@ -781,6 +781,7 @@
 <p><code>docker-compose.yml</code> reuses a <code>caddy trust</code>-installed CA from the host so browsers trust <code>https://localhost</code> out of the box. This quickstart file skips that step entirely — Caddy's local CA lives in a Docker-managed volume instead, so nothing on the host trusts it. Click through the browser's warning, or pass <code>-k</code> / <code>--no-check-certificate</code> / "disable SSL verification" from curl, wget, or Postman:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>curl<span class="w"> </span>-k<span class="w"> </span>-H<span class="w"> </span><span class="s2">&quot;X-Api-Key: supersecret123&quot;</span><span class="w"> </span>https://localhost/health
 </span></code></pre></div>
+<p>Calling the API from Swagger UI's "Try it out" (this site's <a href="../api/">API reference</a>) needs one extra step: browser JS can't click through a cert warning the way a manual page load can, so a <code>fetch()</code> to an untrusted origin just fails outright. Open <code>https://localhost</code> directly in a new tab first and click through the warning — most browsers then trust that origin for the rest of the session, and Swagger UI's calls will go through.</p>
 </div>
 <p>The same "load the database before first use" step above still applies — a fresh <code>ignis-db</code> volume has no TABULA data regardless of which compose file started it.</p>
 <div class="admonition info">
