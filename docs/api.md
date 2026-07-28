@@ -23,21 +23,29 @@ the API key. The full model is in the spec's description.
     `https://localhost`; in a deployment it is whatever host the proxy is
     published on.
 
+
 ## Testing it yourself
 
 The Swagger UI below can call a locally running ignis directly.
 
-1. Start the stack, from `environment/`: `docker compose up -d`. On a first
-   run, load the TABULA data once: `docker compose exec ignis-app ./bin/build_db`.
-2. Serve these docs locally with `mkdocs serve`. The reverse proxy already
+**Step 1:** Start the stack, from `environment/`: `docker compose up -d`. On a first
+   run, load the TABULA data once: `docker compose --profile seed run --rm ignis-build-db`.
+
+**Step 2:** Serve these docs locally with `mkdocs serve`. The reverse proxy already
    allows requests from `http://localhost:8000` (its default port).
-3. If your browser has never trusted the local proxy's certificate, open
+
+**Step 3:** If your browser has never trusted the local proxy's certificate, open
    `https://localhost` directly once and accept it (or run `caddy trust`).
-4. Click **Authorize** below and enter the API key checked by the reverse
+
+**Step 4:** Click **Authorize** below and enter the API key checked by the reverse
    proxy (`X-Api-Key`; the prototype default is set in
    `environment/Caddyfile`). It applies to every **Try it out** call from
    then on.
-5. Expand an endpoint, click **Try it out**, fill in the parameters, and
+
+**Step 5:** Expand an endpoint, click **Try it out**, fill in the parameters, and
    **Execute**.
+
+!!! bug
+    The Swagger UI might not load correctly, just reload the browser page and it should load correctly.
 
 <swagger-ui src="openapi.yaml"/>
