@@ -366,6 +366,40 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#clone-the-repository" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Clone the repository
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#docker-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docker (recommended)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#manual-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Manual setup
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Manual setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#prerequisites" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -375,8 +409,8 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#configuration" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -386,8 +420,8 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#build" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -397,8 +431,8 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#load-the-database" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -408,8 +442,8 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#run-the-api" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -417,6 +451,11 @@
       
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -531,6 +570,40 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#clone-the-repository" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Clone the repository
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#docker-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docker (recommended)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#manual-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Manual setup
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Manual setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#prerequisites" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -540,8 +613,8 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#configuration" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -551,8 +624,8 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#build" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -562,8 +635,8 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#load-the-database" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -573,8 +646,8 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#run-the-api" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -582,6 +655,11 @@
       
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -641,7 +719,27 @@
 
 
 <h1 id="getting-started">Getting started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h1>
-<h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h2>
+<h2 id="clone-the-repository">Clone the repository<a class="headerlink" href="#clone-the-repository" title="Permanent link">&para;</a></h2>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/thd-spatial-ai/ignis.git
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>ignis
+</span></code></pre></div>
+<p>Both setup paths below start from here.</p>
+<h2 id="docker-recommended">Docker (recommended)<a class="headerlink" href="#docker-recommended" title="Permanent link">&para;</a></h2>
+<p>Runs ignis as three containers — a reverse proxy, the app, and its own PostgreSQL — with nothing else required on the host except Docker itself. The TABULA workbook is baked into the seed image, so there's nothing to download manually.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">cd</span><span class="w"> </span>environment
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>cp<span class="w"> </span>.env.example<span class="w"> </span>.env<span class="w">       </span><span class="c1"># APP_PORT, HOST_HTTPS_PORT, CADDY_DATA_DIR</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
+</span></code></pre></div>
+<p>This starts <code>ignis-db</code>, then <code>ignis-app</code> once the database is healthy, then <code>ignis-reverse-proxy</code> once the app is healthy. Only the proxy publishes a host port (<code>HOST_HTTPS_PORT</code>, default <code>443</code>).</p>
+<div class="admonition warning">
+<p class="admonition-title">Load the database before first use</p>
+<p>A fresh <code>ignis-db</code> volume is empty. Seed it once, using the dedicated <code>seed</code> profile — this is destructive (drops and recreates all tables), so it never runs automatically:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>--profile<span class="w"> </span>seed<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>ignis-build-db
+</span></code></pre></div>
+</div>
+<h2 id="manual-setup">Manual setup<a class="headerlink" href="#manual-setup" title="Permanent link">&para;</a></h2>
+<p>For local development without containers.</p>
+<h3 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -665,9 +763,9 @@
 </tbody>
 </table>
 <p>The Excel workbook is available from <a href="https://episcope.eu/iee-project/tabula/">episcope.eu</a>. Place it in the <code>data/</code> directory before running <code>build_db</code>.</p>
-<h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>
+<h3 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h3>
 <p>Copy <code>.env.example</code> to <code>.env</code> and fill in your values:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>cp<span class="w"> </span>.env.example<span class="w"> </span>.env
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>cp<span class="w"> </span>.env.example<span class="w"> </span>.env
 </span></code></pre></div>
 <table>
 <thead>
@@ -723,21 +821,21 @@
 <p class="admonition-title">DB_SSL_MODE</p>
 <p>Use <code>disable</code> only for local development against a database on the same machine. Set <code>require</code> in all other environments.</p>
 </div>
-<h2 id="build">Build<a class="headerlink" href="#build" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>go<span class="w"> </span>build<span class="w"> </span>-o<span class="w"> </span>bin/ignis<span class="w">     </span>cmd/ignis/main.go
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>go<span class="w"> </span>build<span class="w"> </span>-o<span class="w"> </span>bin/build_db<span class="w">  </span>cmd/build_db/main.go
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>go<span class="w"> </span>build<span class="w"> </span>-o<span class="w"> </span>bin/validate<span class="w">  </span>cmd/validate/main.go
+<h3 id="build">Build<a class="headerlink" href="#build" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>go<span class="w"> </span>build<span class="w"> </span>-o<span class="w"> </span>bin/ignis<span class="w">     </span>cmd/ignis/main.go
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>go<span class="w"> </span>build<span class="w"> </span>-o<span class="w"> </span>bin/build_db<span class="w">  </span>cmd/build_db/main.go
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>go<span class="w"> </span>build<span class="w"> </span>-o<span class="w"> </span>bin/validate<span class="w">  </span>cmd/validate/main.go
 </span></code></pre></div>
-<h2 id="load-the-database">Load the database<a class="headerlink" href="#load-the-database" title="Permanent link">&para;</a></h2>
+<h3 id="load-the-database">Load the database<a class="headerlink" href="#load-the-database" title="Permanent link">&para;</a></h3>
 <p>Loads the TABULA workbook into PostgreSQL. This is destructive: it drops and recreates the <code>tabula</code> schema.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>./bin/build_db
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>./bin/build_db
 </span></code></pre></div>
-<h2 id="run-the-api">Run the API<a class="headerlink" href="#run-the-api" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>./bin/ignis<span class="w">   </span><span class="c1"># starts on :8080</span>
+<h3 id="run-the-api">Run the API<a class="headerlink" href="#run-the-api" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>./bin/ignis<span class="w">   </span><span class="c1"># starts on :8080</span>
 </span></code></pre></div>
 <h2 id="validate">Validate<a class="headerlink" href="#validate" title="Permanent link">&para;</a></h2>
-<p>Runs the full 17-level pipeline against every row in the database and checks that the result stays within ±2% of the TABULA reference value.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>./bin/validate
+<p>Runs the full 17-level pipeline against every row in the database and checks that the result stays within ±2% of the TABULA reference value. Requires the local Go build above — there is no containerized <code>validate</code>.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>./bin/validate
 </span></code></pre></div>
 <p>See the <a href="../validation/">validation report</a> for current results.</p>
 <h2 id="deployment">Deployment<a class="headerlink" href="#deployment" title="Permanent link">&para;</a></h2>

@@ -295,20 +295,22 @@ published on.</p>
 </div>
 <h2 id="testing-it-yourself">Testing it yourself<a class="headerlink" href="#testing-it-yourself" title="Permanent link">¶</a></h2>
 <p>The Swagger UI below can call a locally running ignis directly.</p>
-<ol>
-<li>Start the stack, from <code>environment/</code>: <code>docker compose up -d</code>. On a first
-   run, load the TABULA data once: <code>docker compose exec ignis-app ./bin/build_db</code>.</li>
-<li>Serve these docs locally with <code>mkdocs serve</code>. The reverse proxy already
-   allows requests from <code>http://localhost:8000</code> (its default port).</li>
-<li>If your browser has never trusted the local proxy's certificate, open
-   <code>https://localhost</code> directly once and accept it (or run <code>caddy trust</code>).</li>
-<li>Click <strong>Authorize</strong> below and enter the API key checked by the reverse
+<p><strong>Step 1:</strong> Start the stack, from <code>environment/</code>: <code>docker compose up -d</code>. On a first
+   run, load the TABULA data once: <code>docker compose --profile seed run --rm ignis-build-db</code>.</p>
+<p><strong>Step 2:</strong> Serve these docs locally with <code>mkdocs serve</code>. The reverse proxy already
+   allows requests from <code>http://localhost:8000</code> (its default port).</p>
+<p><strong>Step 3:</strong> If your browser has never trusted the local proxy's certificate, open
+   <code>https://localhost</code> directly once and accept it (or run <code>caddy trust</code>).</p>
+<p><strong>Step 4:</strong> Click <strong>Authorize</strong> below and enter the API key checked by the reverse
    proxy (<code>X-Api-Key</code>; the prototype default is set in
    <code>environment/Caddyfile</code>). It applies to every <strong>Try it out</strong> call from
-   then on.</li>
-<li>Expand an endpoint, click <strong>Try it out</strong>, fill in the parameters, and
-   <strong>Execute</strong>.</li>
-</ol>
+   then on.</p>
+<p><strong>Step 5:</strong> Expand an endpoint, click <strong>Try it out</strong>, fill in the parameters, and
+   <strong>Execute</strong>.</p>
+<div class="admonition bug">
+<p class="admonition-title">Bug</p>
+<p>The Swagger UI might not load correctly, just reload the browser page and it should load correctly.</p>
+</div>
 <p><iframe class="swagger-ui-iframe" frameborder="0" id="615a920f" onload="this.style.display = 'block'; this.style.overflow = 'hidden'; this.style.width = '100%';" src="swagger-615a920f.html" style="display:none;" width="100%"></iframe></p>
 </article>
 </div>
