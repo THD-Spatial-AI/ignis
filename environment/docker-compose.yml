@@ -37,7 +37,7 @@ services:
   ignis-db:
     image: postgres:17-alpine
     container_name: ignis-db
-    env_file: docker.env        # provides POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB
+    env_file: [env/db.env]        # POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB
     volumes:
       - ignis-db-data:/var/lib/postgresql/data   # persists across container recreation
     healthcheck:
@@ -53,7 +53,7 @@ services:
     build:
       context: ./..
       dockerfile: environment/Dockerfile   # multi-stage: builder (Go toolchain) -> final (binary only)
-    env_file: docker.env        # DB connection + CORS config
+    env_file: [env/common.env, env/app.env]        # CORS config + DB connection
     environment:
       - APP_PORT=${APP_PORT:-8080}    # internal listen port; one value for the app, its health check and the proxy
     depends_on:
@@ -84,7 +84,7 @@ services:
     # No volume mount for the workbook — tabula-calculator-lite.xlsx is baked
     # into the image itself (see Dockerfile.build_db), since it's static
     # reference data, not something that changes independently of a release.
-    env_file: docker.env
+    env_file: [env/app.env]
     depends_on:
       ignis-db:
         condition: service_healthy
@@ -92,7 +92,7 @@ services:
   ignis-reverse-proxy:
     image: caddy:2.11-alpine
     container_name: ignis-reverse-proxy
-    env_file: docker.env        # provides ALLOWED_ORIGINS, the single source for CORS
+    env_file: [env/common.env, env/proxy.env]        # ALLOWED_ORIGINS + IGNIS_API_KEY / IGNIS_SITE_ADDRESS
     environment:
       - APP_PORT=${APP_PORT:-8080}    # so the Caddyfile's upstream ignis-app:{$APP_PORT} resolves
     depends_on:
@@ -105,7 +105,7 @@ services:
       - ${CADDY_DATA_DIR:?CADDY_DATA_DIR is not set}:/data/caddy # reuse the host's already-trusted local CA
     # The Caddyfile matches Origin against a regex, but ALLOWED_ORIGINS is a
     # plain comma list (the shape ignis's own Go CORS middleware needs — see
-    # docker.env). Caddyfile placeholders can't transform text, so this builds
+    # env/common.env). Caddyfile placeholders can't transform text, so this builds
     # the regex from that one list at startup instead of hardcoding origins in
     # both places. Same list, two shapes it's actually consumed in — not two
     # things a human has to remember to keep in sync.

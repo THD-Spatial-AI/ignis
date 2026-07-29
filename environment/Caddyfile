@@ -3,11 +3,11 @@
 # except through this proxy — the compose files publish no port for the app.
 #
 # Site address is `localhost` for local development. A real deployment sets
-# IGNIS_SITE_ADDRESS to its own domain (see docker.env), or Caddy will
+# IGNIS_SITE_ADDRESS in env/proxy.env to its own domain, or Caddy will
 # neither serve it nor be able to provision a certificate for it.
 {$IGNIS_SITE_ADDRESS:localhost} {
 	# Single source of truth for allowed origins is ALLOWED_ORIGINS in
-	# docker.env (the same list ignis's own Go CORS middleware reads).
+	# env/common.env (the same list ignis's own Go CORS middleware reads).
 	# ALLOWED_ORIGINS_PATTERN is derived from it at container startup
 	# (see the compose files' entrypoint) into the regex form this
 	# matcher needs — nothing here is hardcoded per origin.
@@ -15,7 +15,7 @@
 
 	@preflight method OPTIONS
 
-	# Read from IGNIS_API_KEY at container start (see docker.env) rather than
+	# Read from IGNIS_API_KEY at container start (see env/proxy.env) rather than
 	# hardcoded here — a real key belongs in an untracked env file, not
 	# committed source. The entrypoint refuses to start Caddy if it is unset,
 	# so this never degrades into an empty matcher.

@@ -1,9 +1,9 @@
 # Try-it-out compose file: pulls the pre-built, CI-published ignis-app and
 # ignis-build-db images from GHCR, so nothing is compiled locally and no Go
 # toolchain, source tree, `caddy` install or `caddy trust` is needed on the
-# host. Needs only Docker, plus this file, docker.env and Caddyfile in the
-# working directory. No `.env` is required: every ${...} in this file has a
-# default (APP_PORT 8080, HOST_HTTPS_PORT 443, IGNIS_IMAGE_TAG latest).
+# host. Needs only Docker, plus this file, the env/ directory and Caddyfile
+# in the working directory. No `.env` is required: every ${...} in this
+# file has a default (APP_PORT 8080, HOST_HTTPS_PORT 443, IGNIS_IMAGE_TAG latest).
 #
 # ---
 # Usage:  docker compose -f docker-compose.quickstart.yml up -d
@@ -28,7 +28,7 @@
 # public domain).
 #
 # All requests are gated behind the X-Api-Key header, matched against
-# IGNIS_API_KEY in docker.env (see Caddyfile). /health is the one exemption,
+# IGNIS_API_KEY in env/proxy.env (see Caddyfile). /health is the one exemption,
 # so container and uptime checks need no key. The committed IGNIS_API_KEY is
 # a local-dev placeholder.
 #
@@ -44,7 +44,7 @@ services:
   ignis-db:
     image: postgres:17-alpine
     container_name: ignis-db
-    env_file: docker.env
+    env_file: [env/db.env]
     volumes:
       - ignis-db-data:/var/lib/postgresql/data
     healthcheck:
@@ -58,7 +58,7 @@ services:
     # Pre-built by .github/workflows/docker-publish.yml on each vX.Y.Z tag.
     # Set IGNIS_IMAGE_TAG to pin a version; defaults to `latest`.
     image: ghcr.io/thd-spatial-ai/ignis:${IGNIS_IMAGE_TAG:-latest}
-    env_file: docker.env
+    env_file: [env/common.env, env/app.env]
     environment:
       - APP_PORT=${APP_PORT:-8080}
     depends_on:
@@ -74,7 +74,7 @@ services:
   ignis-reverse-proxy:
     image: caddy:2.11-alpine
     container_name: ignis-reverse-proxy
-    env_file: docker.env
+    env_file: [env/common.env, env/proxy.env]
     environment:
       - APP_PORT=${APP_PORT:-8080}
     depends_on:
@@ -96,7 +96,7 @@ services:
   ignis-build-db:
     image: ghcr.io/thd-spatial-ai/ignis-build-db:${IGNIS_IMAGE_TAG:-latest}
     profiles: [seed]
-    env_file: docker.env
+    env_file: [env/app.env]
     depends_on:
       ignis-db:
         condition: service_healthy
