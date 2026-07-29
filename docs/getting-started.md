@@ -30,13 +30,19 @@ This starts `ignis-db`, then `ignis-app` once the database is healthy, then `ign
 
 ### Quick-start
 
-Quick-start is intended for trying out APIs without any additional prerequisites apart from docker. For a machine that only has Docker — no Go toolchain, no `caddy` CLI, no `.env` file to create. Pulls the pre-built `ignis-app` image from GHCR instead of building from source:
+Quick-start is intended for trying out APIs without any additional prerequisites apart from docker. For a machine that only has Docker (no Go toolchain, `caddy` CLI, `.env` file required). Pulls the pre-built `ignis-app` image from GHCR instead of building from source:
 
 ```bash
 cd environment
 docker compose -f docker-compose.quickstart.yml up -d
+docker compose --profile seed run --rm ignis-build-db
 ```
+!!! info "Pinning a version"
+    Defaults to the `latest` published image. To pin a specific release, set `IGNIS_IMAGE_TAG` before starting:
 
+    ```bash
+    IGNIS_IMAGE_TAG=v0.2.1-alpha docker compose -f docker-compose.quickstart.yml up -d
+    
 !!! warning "Certificate warning is expected"
     `docker-compose.yml` reuses a `caddy trust`-installed CA from the host so browsers trust `https://localhost` out of the box. This quickstart file skips that step entirely — Caddy's local CA lives in a Docker-managed volume instead, so nothing on the host trusts it. Click through the browser's warning, or pass `-k` / `--no-check-certificate` / "disable SSL verification" from curl, wget, or Postman:
 
@@ -46,13 +52,7 @@ docker compose -f docker-compose.quickstart.yml up -d
 
     Calling the API from Swagger UI's "Try it out" (this site's [API reference](api.md)) needs one extra step: browser JS can't click through a cert warning the way a manual page load can, so a `fetch()` to an untrusted origin just fails outright. Open `https://localhost` directly in a new tab first and click through the warning — most browsers then trust that origin for the rest of the session, and Swagger UI's calls will go through.
 
-The same "load the database before first use" step above still applies — a fresh `ignis-db` volume has no TABULA data regardless of which compose file started it.
 
-!!! info "Pinning a version"
-    Defaults to the `latest` published image. To pin a specific release, set `IGNIS_IMAGE_TAG` before starting:
-
-    ```bash
-    IGNIS_IMAGE_TAG=v0.2.1-alpha docker compose -f docker-compose.quickstart.yml up -d
     ```
 
 ## Manual setup
