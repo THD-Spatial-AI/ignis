@@ -17,7 +17,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 go build -o /out/build_db ./cmd/build_db
+RUN CGO_ENABLED=0 go build -buildvcs=false -o /out/build_db ./cmd/build_db
 
 # ---------------------------------------------------------------------------
 # Stage 2: final — compiled binary + the trimmed TABULA workbook baked in.

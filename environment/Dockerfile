@@ -13,7 +13,10 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 go build -o /out/ignis ./cmd/ignis
+# -buildvcs=false: the build context may contain .git, and the toolchain's
+# VCS stamping shells out to git, which fails on an ownership mismatch in CI.
+# The image is identified by its release tag, so the stamp buys nothing.
+RUN CGO_ENABLED=0 go build -buildvcs=false -o /out/ignis ./cmd/ignis
 
 # ---------------------------------------------------------------------------
 # Stage 2: final — only the compiled server binary, no compiler/source/git
