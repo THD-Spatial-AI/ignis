@@ -2,10 +2,14 @@ package importer
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/thd-spatial-ai/ignis/internal/config"
+	"github.com/xuri/excelize/v2"
 )
 
 // buildFixtureRows constructs a minimal TABULA-shaped [][]string: a header
@@ -189,5 +193,47 @@ func TestLoadWorkbook_missingFile_returnsError(t *testing.T) {
 	})
 	if err := tc.loadWorkbook(); err == nil {
 		t.Error("expected error opening a nonexistent workbook")
+	}
+}
+
+func TestCheckXLSXHeader_unresolvedLFSPointer_namesTheCause(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "workbook.xlsx")
+	pointer := "version https://git-lfs.github.com/spec/v1\noid sha256:deadbeef\nsize 123\n"
+	if err := os.WriteFile(path, []byte(pointer), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	err := checkXLSXHeader(path)
+	if err == nil {
+		t.Fatal("expected an error for an unresolved LFS pointer")
+	}
+	if !strings.Contains(err.Error(), "git lfs install") {
+		t.Errorf("error = %q, want it to mention `git lfs install`", err.Error())
+	}
+}
+
+func TestCheckXLSXHeader_validZip_returnsNil(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "workbook.xlsx")
+	if err := excelize.NewFile().SaveAs(path); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := checkXLSXHeader(path); err != nil {
+		t.Errorf("checkXLSXHeader() on a real .xlsx = %v, want nil", err)
+	}
+}
+
+func TestCheckXLSXHeader_garbageFile_returnsGenericError(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "workbook.xlsx")
+	if err := os.WriteFile(path, []byte("not a zip file at all"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	err := checkXLSXHeader(path)
+	if err == nil {
+		t.Fatal("expected an error for a non-zip file")
+	}
+	if strings.Contains(err.Error(), "git lfs") {
+		t.Errorf("error = %q, should not mention LFS for unrelated garbage", err.Error())
 	}
 }
