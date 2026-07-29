@@ -101,8 +101,11 @@ services:
     ports:
       - "${HOST_HTTPS_PORT:-443}:443" # public entry point; host side assignable per service
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./caddy/entrypoint.sh:/etc/caddy/entrypoint.sh:ro
+      # Directory mount, not per-file: most editors save by writing a temp
+      # file and renaming over the original, which gives it a new inode. A
+      # single-file bind mount stays bound to the old inode, so the
+      # container keeps serving stale content and no Caddy restart fixes it.
+      - ./caddy:/etc/caddy:ro
       - ${CADDY_DATA_DIR:?CADDY_DATA_DIR is not set}:/data/caddy # reuse the host's already-trusted local CA
     # The Caddyfile matches Origin against a regex, but ALLOWED_ORIGINS is a
     # plain comma list (the shape ignis's own Go CORS middleware needs — see

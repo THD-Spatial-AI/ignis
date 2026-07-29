@@ -83,8 +83,9 @@ services:
     ports:
       - "${HOST_HTTPS_PORT:-443}:443"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./caddy/entrypoint.sh:/etc/caddy/entrypoint.sh:ro
+      # Directory mount, not per-file: see docker-compose.yml for why a
+      # single-file bind mount silently serves stale content after an edit.
+      - ./caddy:/etc/caddy:ro
       - caddy-data:/data/caddy
     entrypoint: ["/etc/caddy/entrypoint.sh"]
     command: ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
