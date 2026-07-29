@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -96,15 +97,15 @@ func realisticBuilding() *models.TabulaBuildingParameters {
 		BasicParameters: &models.BasicParameters{
 			BuildingAppearance: &models.BuildingThematic{N_Storey: 2},
 			Envelope: &models.Envelope{
-				A_C_Ref_Input: 150,
-				A_C_IntDim:    150,
-				V_C:           375,
-				A_Roof_1:      75,
-				A_Wall_1:      120,
-				A_Floor_1:     75,
-				A_Window_1:    20,
+				A_C_Ref_Input:  150,
+				A_C_IntDim:     150,
+				V_C:            375,
+				A_Roof_1:       75,
+				A_Wall_1:       120,
+				A_Floor_1:      75,
+				A_Window_1:     20,
 				A_Window_South: 12,
-				A_Door_1:      2,
+				A_Door_1:       2,
 			},
 		},
 		AdvancedParameters: &models.AdvancedParameters{
@@ -113,13 +114,13 @@ func realisticBuilding() *models.TabulaBuildingParameters {
 			Uvalues: &models.Uvalues{
 				U_Roof_1: 0.5, U_Wall_1: 0.8, U_Floor_1: 0.6, U_Window_1: 2.0, U_Door_1: 2.0,
 			},
-			Insulation:    &models.InsulationThicknesses{},
-			SolarGains:    &models.SolarGains{I_Sol_South: 500, I_Sol_Horizontal: 800},
-			ThermalBridges: &models.ThermalBridgeParameters{},
-			HeatLosses:    &models.TransmissionHeatLoss{},
-			ThermalResistances:    &models.ThermalResistances{},
-			InsulationMeasures:    &models.InsulationPredefinedMeasures{},
-			ActualInsulation:      &models.ActualInsulationThicknesses{},
+			Insulation:         &models.InsulationThicknesses{},
+			SolarGains:         &models.SolarGains{I_Sol_South: 500, I_Sol_Horizontal: 800},
+			ThermalBridges:     &models.ThermalBridgeParameters{},
+			HeatLosses:         &models.TransmissionHeatLoss{},
+			ThermalResistances: &models.ThermalResistances{},
+			InsulationMeasures: &models.InsulationPredefinedMeasures{},
+			ActualInsulation:   &models.ActualInsulationThicknesses{},
 			HeatTransfer: &models.HeatTransferCoefficients{
 				Phi_int: 4.0, F_sh_hor: 0.9, F_sh_vert: 0.9, F_f: 0.7, F_w: 0.9, C_m: 165000,
 			},
@@ -204,6 +205,48 @@ func TestCalculateHeatDemand_zeroBuildingProducesNaN_returns500(t *testing.T) {
 	w := serve(http.MethodPost, "/calculate/DE.N.SFH.01.Gen", "/calculate/:code", h.CalculateHeatDemand, []byte("{}"))
 	if w.Code != http.StatusInternalServerError {
 		t.Errorf("expected 500 for NaN result, got %d — body: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestCalculateHeatDemand_repoError_returns500(t *testing.T) {
+	mock := &mockRepo{
+		getVariant: func(_ context.Context, _, _ string) (*models.TabulaBuildingParameters, string, float64, error) {
+			return nil, "", 0, errors.New("connection refused")
+		},
+	}
+	h := newTestHandler(mock)
+	w := serve(http.MethodPost, "/calculate/DE.N.SFH.01.Gen", "/calculate/:code", h.CalculateHeatDemand, nil)
+	if w.Code != http.StatusInternalServerError {
+		t.Errorf("expected 500, got %d", w.Code)
+	}
+}
+
+func TestCalculateHeatDemand_malformedJSONBody_returns400(t *testing.T) {
+	mock := &mockRepo{
+		getVariant: func(_ context.Context, _, _ string) (*models.TabulaBuildingParameters, string, float64, error) {
+			return minimalBuilding(), "DE.N.SFH.01.Gen", 100.0, nil
+		},
+	}
+	h := newTestHandler(mock)
+	w := serve(http.MethodPost, "/calculate/DE.N.SFH.01.Gen", "/calculate/:code", h.CalculateHeatDemand, []byte("not json"))
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for malformed JSON body, got %d", w.Code)
+	}
+}
+
+func TestCalculateHeatDemand_pipelinePanics_returns500(t *testing.T) {
+	mock := &mockRepo{
+		// A nil building triggers a nil-pointer panic inside the pipeline,
+		// which the pipeline itself converts into an error - exercises the
+		// handler's "Pipeline execution failed" branch.
+		getVariant: func(_ context.Context, _, _ string) (*models.TabulaBuildingParameters, string, float64, error) {
+			return nil, "DE.N.SFH.01.Gen", 100.0, nil
+		},
+	}
+	h := newTestHandler(mock)
+	w := serve(http.MethodPost, "/calculate/DE.N.SFH.01.Gen", "/calculate/:code", h.CalculateHeatDemand, []byte("{}"))
+	if w.Code != http.StatusInternalServerError {
+		t.Errorf("expected 500, got %d — body: %s", w.Code, w.Body.String())
 	}
 }
 

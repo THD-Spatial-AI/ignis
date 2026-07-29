@@ -1,7 +1,7 @@
 ![Ignis logo](docs/assets/logo/ignis-logo-dark.svg#gh-dark-mode-only)
 ![Ignis logo](docs/assets/logo/ignis-logo-light.svg#gh-light-mode-only)
 
-[![CI](https://github.com/thd-spatial-ai/ignis/actions/workflows/ci.yml/badge.svg)](https://github.com/thd-spatial-ai/ignis/actions/workflows/ci.yml)&nbsp;&nbsp;&nbsp;[![MkDocs](https://github.com/thd-spatial-ai/ignis/actions/workflows/docs.yml/badge.svg)](https://thd-spatial-ai.github.io/ignis)&nbsp;&nbsp;&nbsp;[![GitHub release](https://img.shields.io/github/v/release/thd-spatial-ai/ignis?include_prereleases&label=release&logo=github)](https://github.com/thd-spatial-ai/ignis/releases)
+[![CI](https://github.com/thd-spatial-ai/ignis/actions/workflows/ci.yml/badge.svg)](https://github.com/thd-spatial-ai/ignis/actions/workflows/ci.yml)&nbsp;&nbsp;&nbsp;[![MkDocs](https://github.com/thd-spatial-ai/ignis/actions/workflows/docs.yml/badge.svg)](https://thd-spatial-ai.github.io/ignis)&nbsp;&nbsp;&nbsp;[![codecov](https://codecov.io/gh/THD-Spatial-AI/ignis/graph/badge.svg?token=CTUZED1ELJ)](https://codecov.io/gh/THD-Spatial-AI/ignis)&nbsp;&nbsp;&nbsp;[![GitHub release](https://img.shields.io/github/v/release/thd-spatial-ai/ignis?include_prereleases&label=release&logo=github)](https://github.com/thd-spatial-ai/ignis/releases)
 
 Go microservice implementing the **EN ISO 13790** annual heating energy demand calculation pipeline derived from [tabula-calculator.xlsx](https://episcope.eu/welcome/) *(Accessed on: 26.06.26)*. The calculation method has been documented in [TABULA CommonCalculationMethod](https://episcope.eu/fileadmin/tabula/public/docs/report/TABULA_CommonCalculationMethod.pdf) *(Accessed on: 26.06.2026)*. The tool covers all European building typologies across 20 countries defined by **TABULA & EPISCOPE (IEE Projects)**.
 
@@ -30,9 +30,17 @@ The results have been validated against the Excel Workbook output. So far **19/2
 
 Full setup and API documentation: [thd-spatial-ai.github.io/ignis](https://thd-spatial-ai.github.io/ignis)
 
+Architecture documentation (arc42): under development, not yet published.
+
 ---
 
 ## Testing
+
+![test coverage](https://codecov.io/github/THD-Spatial-AI/ignis/graphs/icicle.svg?token=CTUZED1ELJ)
+The top section in the graphic above, represents the entire project. Proceeding with folders and finally individual files. The size and color of each slice is representing the number of statements and the coverage, respectively.
+
+> [!NOTE]
+> **AI usage disclaimer:** Some tests in this repository were written with the assistance of AI coding tools, then reviewed and validated by a maintainer before merging.
 
 ```bash
 go test ./...

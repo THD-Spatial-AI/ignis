@@ -1,0 +1,44 @@
+# syntax=docker/dockerfile:1
+
+# One-off DB rebuild job — NOT a long-running service. build_db DROPS and
+# recreates all country tables from the Excel workbook (see cmd/build_db's
+# own startup banner). Never wire this into a container's default startup;
+# it must only run when explicitly invoked (see docker-compose.yml's
+# `ignis-build-db` service, gated behind the `seed` profile).
+
+# ---------------------------------------------------------------------------
+# Stage 1: builder
+# ---------------------------------------------------------------------------
+ARG GO_VERSION=1.26.5
+FROM golang:${GO_VERSION}-bookworm AS builder
+
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+RUN CGO_ENABLED=0 go build -buildvcs=false -o /out/build_db ./cmd/build_db
+
+# ---------------------------------------------------------------------------
+# Stage 2: final — compiled binary + the trimmed TABULA workbook baked in.
+# tabula-calculator-lite.xlsx is static source-of-truth reference data (see
+# data/README.md) — it is read once to seed Postgres and never modified
+# independently, so shipping it inside the image makes a given build_db
+# image tag reproducible: it always seeds the exact same building-variant
+# data, with no dependency on a file being present on whatever host runs it.
+# ---------------------------------------------------------------------------
+FROM debian:bookworm-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN useradd -m -u 10001 appuser
+WORKDIR /app
+COPY --from=builder /out/build_db /app/bin/build_db
+COPY data/tabula-calculator-lite.xlsx /app/data/tabula-calculator-lite.xlsx
+RUN chown -R appuser:appuser /app
+
+USER appuser
+
+ENTRYPOINT ["./bin/build_db"]

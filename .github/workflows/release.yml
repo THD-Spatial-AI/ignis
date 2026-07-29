@@ -31,17 +31,19 @@ jobs:
           mkdir -p dist
 
           MOD_PATH="$(awk '/^module /{print $2}' go.mod)"
-          MAIN_PKG="./cmd"
 
           LDFLAGS="-s -w \
             -X ${MOD_PATH}/internal/version.Version=${VERSION} \
             -X ${MOD_PATH}/internal/version.Commit=${COMMIT} \
             -X ${MOD_PATH}/internal/version.Date=${DATE}"
 
-          GOOS=linux   GOARCH=amd64 go build -trimpath -ldflags "$LDFLAGS" -o "dist/city2tabula_${VERSION}_linux_amd64" "$MAIN_PKG"
-          GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "$LDFLAGS" -o "dist/city2tabula_${VERSION}_windows_amd64.exe" "$MAIN_PKG"
-          GOOS=darwin  GOARCH=amd64 go build -trimpath -ldflags "$LDFLAGS" -o "dist/city2tabula_${VERSION}_darwin_amd64" "$MAIN_PKG"
-          GOOS=darwin  GOARCH=arm64 go build -trimpath -ldflags "$LDFLAGS" -o "dist/city2tabula_${VERSION}_darwin_arm64" "$MAIN_PKG"
+          for bin in ignis build_db validate; do
+            MAIN_PKG="./cmd/${bin}"
+            GOOS=linux   GOARCH=amd64 go build -trimpath -ldflags "$LDFLAGS" -o "dist/${bin}_${VERSION}_linux_amd64" "$MAIN_PKG"
+            GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "$LDFLAGS" -o "dist/${bin}_${VERSION}_windows_amd64.exe" "$MAIN_PKG"
+            GOOS=darwin  GOARCH=amd64 go build -trimpath -ldflags "$LDFLAGS" -o "dist/${bin}_${VERSION}_darwin_amd64" "$MAIN_PKG"
+            GOOS=darwin  GOARCH=arm64 go build -trimpath -ldflags "$LDFLAGS" -o "dist/${bin}_${VERSION}_darwin_arm64" "$MAIN_PKG"
+          done
 
       - name: Upload assets to GitHub release
         uses: softprops/action-gh-release@v2

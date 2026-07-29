@@ -1,0 +1,103 @@
+# Try-it-out compose file: pulls the pre-built, CI-published ignis-app and
+# ignis-build-db images from GHCR, so nothing is compiled locally and no Go
+# toolchain, source tree, `caddy` install or `caddy trust` is needed on the
+# host. Needs only Docker, plus this file, the env/ directory and Caddyfile
+# in the working directory. No `.env` is required: every ${...} in this
+# file has a default (APP_PORT 8080, HOST_HTTPS_PORT 443, IGNIS_IMAGE_TAG latest).
+#
+# ---
+# Usage:  docker compose -f docker-compose.quickstart.yml up -d
+#         docker compose -f docker-compose.quickstart.yml --profile seed run --rm ignis-build-db
+# ---
+#
+# Seed the database once after first start, using the command above.
+# ignis-build-db is gated behind the `seed` profile so it never runs on `up`:
+# it DROPS and recreates all country tables from the TABULA workbook baked
+# into its image. The workbook is in the image itself (see
+# Dockerfile.build_db), so seeding needs no source checkout and no manual
+# download. Until it has run once, the schema is empty and every endpoint
+# that reads it will fail.
+#
+# Trade-off vs. docker-compose.prod.yml: Caddy's local CA lives in a
+# Docker-managed volume (caddy-data) instead of a host bind mount, so it is
+# never added to your OS/browser trust store. Requests to https://localhost
+# will show an untrusted-certificate warning — expected here. Click through
+# it in the browser, or pass -k/--no-check-certificate/"disable SSL
+# verification" from curl, wget, or Postman. Not meant for a real
+# deployment: see docker-compose.prod.yml for that (real trust chain or a
+# public domain).
+#
+# All requests are gated behind the X-Api-Key header, matched against
+# IGNIS_API_KEY in env/proxy.env (see Caddyfile). /health is the one exemption,
+# so container and uptime checks need no key. The committed IGNIS_API_KEY is
+# a local-dev placeholder.
+#
+# Deliberately standalone rather than a partial override merged with
+# docker-compose.yml — see that file's header for the reasoning. The volume
+# definitions differ here too (named caddy-data vs. the ${CADDY_DATA_DIR}
+# bind mount), and Compose merges `volumes:` lists by appending rather than
+# replacing, so an override would leave both mounted at /data/caddy.
+
+name: building-simulation
+
+services:
+  ignis-db:
+    image: postgres:17-alpine
+    container_name: ignis-db
+    env_file: [env/db.env]
+    volumes:
+      - ignis-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  ignis-app:
+    container_name: ignis-app
+    # Pre-built by .github/workflows/docker-publish.yml on each vX.Y.Z tag.
+    # Set IGNIS_IMAGE_TAG to pin a version; defaults to `latest`.
+    image: ghcr.io/thd-spatial-ai/ignis:${IGNIS_IMAGE_TAG:-latest}
+    env_file: [env/common.env, env/app.env]
+    environment:
+      - APP_PORT=${APP_PORT:-8080}
+    depends_on:
+      ignis-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:$$APP_PORT/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  ignis-reverse-proxy:
+    image: caddy:2.11-alpine
+    container_name: ignis-reverse-proxy
+    env_file: [env/common.env, env/proxy.env]
+    environment:
+      - APP_PORT=${APP_PORT:-8080}
+    depends_on:
+      ignis-app:
+        condition: service_healthy
+    ports:
+      - "${HOST_HTTPS_PORT:-443}:443"
+    volumes:
+      # Directory mount, not per-file: see docker-compose.yml for why a
+      # single-file bind mount silently serves stale content after an edit.
+      - ./caddy:/etc/caddy:ro
+      - caddy-data:/data/caddy
+    entrypoint: ["/etc/caddy/entrypoint.sh"]
+    command: ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
+
+  ignis-build-db:
+    image: ghcr.io/thd-spatial-ai/ignis-build-db:${IGNIS_IMAGE_TAG:-latest}
+    profiles: [seed]
+    env_file: [env/app.env]
+    depends_on:
+      ignis-db:
+        condition: service_healthy
+
+volumes:
+  ignis-db-data:
+  caddy-data:

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/thd-spatial-ai/ignis/internal/config"
 	"github.com/thd-spatial-ai/ignis/internal/utils"
+	"io"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -12,6 +14,37 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/xuri/excelize/v2"
 )
+
+// lfsPointerPrefix is how a Git LFS pointer file starts, in place of the
+// real binary content, when `git lfs pull` was never run after clone.
+const lfsPointerPrefix = "version https://git-lfs.github.com"
+
+// checkXLSXHeader reads the first few bytes of path and fails fast with an
+// actionable message if it isn't a real .xlsx (a zip file, signature "PK").
+// Without this, excelize.OpenFile's own error ("zip: not a valid zip file")
+// gives no hint that the real cause is an unresolved Git LFS pointer.
+func checkXLSXHeader(path string) error {
+	f, err := os.Open(path)
+	if err != nil {
+		return fmt.Errorf("opening workbook %s: %w", path, err)
+	}
+	defer f.Close()
+
+	head := make([]byte, len(lfsPointerPrefix))
+	n, err := io.ReadFull(f, head)
+	if err != nil && err != io.ErrUnexpectedEOF {
+		return fmt.Errorf("reading workbook %s: %w", path, err)
+	}
+	head = head[:n]
+
+	if len(head) >= 2 && head[0] == 'P' && head[1] == 'K' {
+		return nil
+	}
+	if strings.HasPrefix(string(head), lfsPointerPrefix) {
+		return fmt.Errorf("%s is a Git LFS pointer, not the workbook itself — run `git lfs install && git lfs pull`", path)
+	}
+	return fmt.Errorf("%s is not a valid .xlsx file (missing zip signature)", path)
+}
 
 type HeaderInfo struct {
 	CellIndex           int
@@ -60,6 +93,9 @@ func (tc *TableConstructor) Run() error {
 }
 
 func (tc *TableConstructor) loadWorkbook() error {
+	if err := checkXLSXHeader(tc.cfg.Data.ExcelFile); err != nil {
+		return err
+	}
 	file, err := excelize.OpenFile(tc.cfg.Data.ExcelFile)
 	tc.xlsxFile = file
 	return err

@@ -1,17 +1,120 @@
+# Development compose file: builds ignis-app and ignis-build-db from source
+# in this checkout, so it is the only one of the three that picks up local
+# code changes. Use docker-compose.quickstart.yml to try the API without a
+# source tree, or docker-compose.prod.yml to deploy a published release.
+#
+# ---
+# Usage:  docker compose up -d
+#         docker compose --profile seed run --rm ignis-build-db
+# ---
+#
+# Host prerequisites beyond Docker: the `caddy` CLI, with `caddy trust` run
+# once, so the local CA in CADDY_DATA_DIR is in your OS and browser trust
+# store and https://localhost is trusted without a warning. The quickstart
+# file skips this at the cost of a certificate warning.
+#
+# .env must define (interpolated on the host, not passed into containers):
+#   CADDY_DATA_DIR   host directory holding the caddy trust-installed CA.
+#                    No default on purpose: a wrong value silently produces
+#                    an untrusted certificate, so a missing one should fail
+#                    validation instead.
+#   APP_PORT         optional, defaults to 8080
+#   HOST_HTTPS_PORT  optional, defaults to 443
+#
+# Compose project name = the concern this stack belongs to. The energy-modelling
+# application is split into concerns, each its own namespace; ignis and buem are
+# both building-simulation concerns, so their containers share this namespace.
+# All three compose files declare the same name, so they address the same
+# containers, network and volumes.
+name: building-simulation
+
+# Container naming convention: <service>-<role>, where role is one of
+# reverse-proxy | app | db. Service name and container_name are kept identical.
+# Other services in this namespace follow the same shape (e.g. buem-app,
+# buem-reverse-proxy, buem-db), so a container name always says both which
+# service it belongs to and what role it plays.
 services:
-  ignis:
-    container_name: ignis-environment
+  ignis-db:
+    image: postgres:17-alpine
+    container_name: ignis-db
+    env_file: [env/db.env]        # POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB
+    volumes:
+      - ignis-db-data:/var/lib/postgresql/data   # persists across container recreation
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    # No `ports:` mapping — reachable only from other containers on this
+    # network, by service name (`ignis-db`), same as the app itself.
+
+  ignis-app:
+    container_name: ignis-app
     build:
       context: ./..
-      dockerfile: environment/Dockerfile
-    env_file: docker.env        # load environment variables into container
-    stdin_open: true
-    tty: true
-    working_dir: /app
-    volumes:
-      - ./../data:/app/data     # mount data directory so build_db can read the Excel workbook
-    extra_hosts:
-      - "host.docker.internal:host-gateway"  # Linux compatibility
+      dockerfile: environment/Dockerfile   # multi-stage: builder (Go toolchain) -> final (binary only)
+    env_file: [env/common.env, env/app.env]        # CORS config + DB connection
+    environment:
+      - APP_PORT=${APP_PORT:-8080}    # internal listen port; one value for the app, its health check and the proxy
+    depends_on:
+      ignis-db:
+        condition: service_healthy
+    # No `ports:` mapping here on purpose — the app is not reachable from the
+    # host directly. Only the reverse proxy is exposed; everyone else must go through it.
+    # No `command:` override needed — the image's own CMD runs the server
+    # directly now; this is a single-purpose image, not a shared toolbox.
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:$$APP_PORT/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  # One-off DB seed/rebuild job, NOT part of the normal `up` path (see
+  # `profiles` below). build_db DROPS and recreates all country tables from
+  # the Excel workbook — invoke deliberately, never automatically on startup:
+  #   docker compose --profile seed run --rm ignis-build-db
+  # No `container_name`: this is only ever started via `run`, which assigns
+  # its own name, and a fixed one would collide rather than help.
+  ignis-build-db:
+    profiles: ["seed"]
+    build:
+      context: ./..
+      dockerfile: environment/Dockerfile.build_db
+    # No volume mount for the workbook — tabula-calculator-lite.xlsx is baked
+    # into the image itself (see Dockerfile.build_db), since it's static
+    # reference data, not something that changes independently of a release.
+    env_file: [env/app.env]
+    depends_on:
+      ignis-db:
+        condition: service_healthy
+
+  ignis-reverse-proxy:
+    image: caddy:2.11-alpine
+    container_name: ignis-reverse-proxy
+    env_file: [env/common.env, env/proxy.env]        # ALLOWED_ORIGINS + IGNIS_API_KEY / IGNIS_SITE_ADDRESS
+    environment:
+      - APP_PORT=${APP_PORT:-8080}    # so the Caddyfile's upstream ignis-app:{$APP_PORT} resolves
+    depends_on:
+      ignis-app:
+        condition: service_healthy
     ports:
-      - "${HOST_PORT}:${APP_PORT}"  # map host port to container port (both configurable)
-    command: bash               # start an interactive shell for development
+      - "${HOST_HTTPS_PORT:-443}:443" # public entry point; host side assignable per service
+    volumes:
+      # Directory mount, not per-file: most editors save by writing a temp
+      # file and renaming over the original, which gives it a new inode. A
+      # single-file bind mount stays bound to the old inode, so the
+      # container keeps serving stale content and no Caddy restart fixes it.
+      - ./caddy:/etc/caddy:ro
+      - ${CADDY_DATA_DIR:?CADDY_DATA_DIR is not set}:/data/caddy # reuse the host's already-trusted local CA
+    # The Caddyfile matches Origin against a regex, but ALLOWED_ORIGINS is a
+    # plain comma list (the shape ignis's own Go CORS middleware needs — see
+    # env/common.env). entrypoint.sh derives ALLOWED_ORIGINS_PATTERN from that
+    # one list at startup instead of hardcoding origins in both places. Same
+    # list, two shapes it's actually consumed in — not two things a human has
+    # to remember to keep in sync.
+    entrypoint: ["/etc/caddy/entrypoint.sh"]
+    command: ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
+
+volumes:
+  ignis-db-data:

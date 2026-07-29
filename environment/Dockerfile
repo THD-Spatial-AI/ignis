@@ -1,55 +1,40 @@
+# syntax=docker/dockerfile:1
+
+# ---------------------------------------------------------------------------
+# Stage 1: builder — has the full Go toolchain + source, never shipped
+# ---------------------------------------------------------------------------
+ARG GO_VERSION=1.26.5
+FROM golang:${GO_VERSION}-bookworm AS builder
+
+WORKDIR /app
+
+# Cache module downloads separately from source changes
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+# -buildvcs=false: the build context may contain .git, and the toolchain's
+# VCS stamping shells out to git, which fails on an ownership mismatch in CI.
+# The image is identified by its release tag, so the stamp buys nothing.
+RUN CGO_ENABLED=0 go build -buildvcs=false -o /out/ignis ./cmd/ignis
+
+# ---------------------------------------------------------------------------
+# Stage 2: final — only the compiled server binary, no compiler/source/git
+# ---------------------------------------------------------------------------
 FROM debian:bookworm-slim
 
-ARG DEBIAN_FRONTEND=noninteractive
-ENV GO_VERSION=1.26.0
-
-# -----------------------------
-# Install system dependencies
-# -----------------------------
+# ca-certificates: outbound TLS: wget: used by the Compose healthcheck below.
+# No postgresql-client / build-essential / git here — ignis talks to Postgres
+# purely over the wire (pgx, pure Go driver), it never shells out to psql.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential git wget ca-certificates \
-    postgresql-client \
+    ca-certificates wget \
     && rm -rf /var/lib/apt/lists/*
 
-# -----------------------------
-# Install Go
-# -----------------------------
-RUN wget -q https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz -O /tmp/go.tar.gz \
-    && rm -rf /usr/local/go \
-    && tar -C /usr/local -xzf /tmp/go.tar.gz \
-    && rm /tmp/go.tar.gz
-ENV GOROOT="/usr/local/go"
-ENV PATH="${GOROOT}/bin:${PATH}"
-
-# -----------------------------
-# Copy and build project (as root)
-# -----------------------------
+RUN useradd -m -u 10001 appuser
 WORKDIR /app
-COPY . .
-RUN go mod tidy \
-    && go build -o bin/app      cmd/app/main.go \
-    && go build -o bin/build_db cmd/build_db/main.go \
-    && go build -o bin/validate cmd/validate/main.go
-
-# -----------------------------
-# Create non-root user and fix permissions
-# -----------------------------
-RUN useradd -m -u 10001 appuser \
-    && mkdir -p /home/appuser/go/bin \
-    && chown -R appuser:appuser /home/appuser /app
-ENV GOPATH="/home/appuser/go"
-ENV PATH="${GOPATH}/bin:${PATH}"
+COPY --from=builder /out/ignis /app/bin/ignis
+RUN chown -R appuser:appuser /app
 
 USER appuser
 
-# -----------------------------
-# Set up shell environment
-# -----------------------------
-RUN echo 'export GOROOT=/usr/local/go' >> /home/appuser/.bashrc \
-    && echo 'export GOPATH=/home/appuser/go' >> /home/appuser/.bashrc \
-    && echo 'export PATH=$GOROOT/bin:$GOPATH/bin:$PATH' >> /home/appuser/.bashrc
-
-# -----------------------------
-# Default command
-# -----------------------------
-CMD ["bash", "-lc", "echo 'Go:' $(go version); exec bash"]
+CMD ["./bin/ignis"]

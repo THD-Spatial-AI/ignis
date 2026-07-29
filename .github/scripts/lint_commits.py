@@ -18,7 +18,7 @@ Rules:
 import re
 import sys
 
-TYPES = {"feat", "fix", "docs", "style", "refactor", "perf", "test", "chore"}
+TYPES = {"feat", "fix", "docs", "style", "refactor", "perf", "test", "chore", "build", "ci", "revert", "wip"}
 PATTERN = re.compile(
     r'^(?P<type>' + '|'.join(TYPES) + r')'
     r'(?:\((?P<scope>[^)]+)\))?'
