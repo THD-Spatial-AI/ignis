@@ -649,10 +649,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-prepare-dockerenv" class="md-nav__link">
+  <a href="#1-prepare-the-env-files" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Prepare docker.env
+        1. Prepare the env/ files
       
     </span>
   </a>
@@ -1091,10 +1091,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-prepare-dockerenv" class="md-nav__link">
+  <a href="#1-prepare-the-env-files" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Prepare docker.env
+        1. Prepare the env/ files
       
     </span>
   </a>
@@ -1224,7 +1224,7 @@
 </tbody>
 </table>
 <h2 id="configuration-files">Configuration files<a class="headerlink" href="#configuration-files" title="Permanent link">&para;</a></h2>
-<p>All three paths read the same two environment files. They are separate on purpose, because they are consumed at different points.</p>
+<p>All three paths read <code>.env</code>, interpolated on the host, plus four files under <code>environment/env/</code> that are passed into the containers. They are separate on purpose: each service gets only the variables it actually reads, so, for instance, the internet-facing reverse proxy never receives a database password.</p>
 <table>
 <thead>
 <tr>
@@ -1240,19 +1240,34 @@
 <td><code>APP_PORT</code>, <code>HOST_HTTPS_PORT</code>, <code>CADDY_DATA_DIR</code>, <code>IGNIS_IMAGE_TAG</code></td>
 </tr>
 <tr>
-<td><code>docker.env</code></td>
-<td>Passed into the containers</td>
-<td><code>DB_*</code>, <code>POSTGRES_*</code>, <code>ALLOWED_ORIGINS</code>, <code>IGNIS_API_KEY</code></td>
+<td><code>env/common.env</code></td>
+<td>app, proxy</td>
+<td><code>ALLOWED_ORIGINS</code></td>
+</tr>
+<tr>
+<td><code>env/db.env</code></td>
+<td>db</td>
+<td><code>POSTGRES_USER</code>, <code>POSTGRES_PASSWORD</code>, <code>POSTGRES_DB</code></td>
+</tr>
+<tr>
+<td><code>env/app.env</code></td>
+<td>app, build_db</td>
+<td><code>DB_HOST</code>, <code>DB_PORT</code>, <code>DB_USER</code>, <code>DB_PASSWORD</code>, <code>DB_NAME</code>, <code>DB_SSL_MODE</code></td>
+</tr>
+<tr>
+<td><code>env/proxy.env</code></td>
+<td>proxy</td>
+<td><code>IGNIS_API_KEY</code>, <code>IGNIS_SITE_ADDRESS</code></td>
 </tr>
 </tbody>
 </table>
-<p>Both live in <code>environment/</code>. <code>docker.env</code> is committed with local development defaults, including a placeholder API key and database password.</p>
+<p>All four live in <code>environment/env/</code> and are committed with local development defaults, including a placeholder API key and database password.</p>
 <div class="admonition danger">
 <p class="admonition-title">Replace the committed defaults before any deployment</p>
-<p><code>docker.env</code> contains <code>IGNIS_API_KEY=supersecret123</code>, <code>POSTGRES_PASSWORD=postgres</code>, and <code>DB_SSL_MODE=disable</code>. These are development placeholders. See <a href="#deployment">Deployment</a>.</p>
+<p><code>env/db.env</code>/<code>env/app.env</code> contain <code>POSTGRES_PASSWORD=postgres</code> and <code>DB_SSL_MODE=disable</code>; <code>env/proxy.env</code> contains <code>IGNIS_API_KEY=supersecret123</code>. These are development placeholders. See <a href="#deployment">Deployment</a>.</p>
 </div>
 <h2 id="authentication">Authentication<a class="headerlink" href="#authentication" title="Permanent link">&para;</a></h2>
-<p>ignis has no authentication of its own. The reverse proxy gates every request behind an <code>X-Api-Key</code> header, matched against <code>IGNIS_API_KEY</code> from <code>docker.env</code>:</p>
+<p>ignis has no authentication of its own. The reverse proxy gates every request behind an <code>X-Api-Key</code> header, matched against <code>IGNIS_API_KEY</code> from <code>env/proxy.env</code>:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>curl<span class="w"> </span>-k<span class="w"> </span>-H<span class="w"> </span><span class="s2">&quot;X-Api-Key: supersecret123&quot;</span><span class="w"> </span>https://localhost/some-endpoint
 </span></code></pre></div>
 <p>Requests without a valid key receive <code>403 Forbidden</code> from the proxy and never reach the app.</p>
@@ -1265,10 +1280,14 @@
 <h2 id="quick-start">Quick start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h2>
 <p>For trying out the API with nothing on the host but Docker. Pulls pre-built images from GHCR, so no Go toolchain, no <code>caddy</code> install, and no <code>.env</code> file are needed.</p>
 <h3 id="1-get-the-files">1. Get the files<a class="headerlink" href="#1-get-the-files" title="Permanent link">&para;</a></h3>
-<p>You need three files in one directory: <code>docker-compose.quickstart.yml</code>, <code>Caddyfile</code>, and <code>docker.env</code>. Cloning the repository is the simplest way to get them:</p>
+<p>You need <code>docker-compose.quickstart.yml</code>, the <code>caddy/</code> directory, and the <code>env/</code> directory, all in one working directory. Cloning the repository is the simplest way to get them:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/thd-spatial-ai/ignis.git
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nb">cd</span><span class="w"> </span>ignis/environment
 </span></code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Docker Desktop: work from a directory under your home folder</p>
+<p>Docker Desktop only shares paths under your home directory (or another folder added under File Sharing) into its VM. A working directory under <code>/tmp</code> fails with a bind-mount error like "not shared from the host", which does not obviously point at the File Sharing setting — clone or copy these files under your home directory instead.</p>
+</div>
 <h3 id="2-start-the-stack">2. Start the stack<a class="headerlink" href="#2-start-the-stack" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.quickstart.yml<span class="w"> </span>up<span class="w"> </span>-d
 </span></code></pre></div>
@@ -1390,7 +1409,7 @@
 </table>
 <div class="admonition warning">
 <p class="admonition-title">Install Git LFS before cloning</p>
-<p><code>data/tabula-calculator-lite.xlsx</code> is stored via Git LFS. Without <code>git lfs install</code>, the checkout contains a small text pointer instead of the workbook, and <code>build_db</code> fails with <code>zip: not a valid zip file</code>.</p>
+<p><code>data/tabula-calculator-lite.xlsx</code> is stored via Git LFS. Without <code>git lfs install</code>, the checkout contains a small text pointer instead of the workbook, and <code>build_db</code> fails naming the cause directly: "is a Git LFS pointer, not the workbook itself — run <code>git lfs install &amp;&amp; git lfs pull</code>".</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>git<span class="w"> </span>lfs<span class="w"> </span>install
 </span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/thd-spatial-ai/ignis.git
 </span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="nb">cd</span><span class="w"> </span>ignis
@@ -1399,7 +1418,7 @@
 </div>
 <p>The workbook is committed to the repository, so there is nothing to download from <a href="https://episcope.eu/iee-project/tabula/">episcope.eu</a>.</p>
 <h3 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h3>
-<p>The manual path reads <code>environment/docker.env</code> for its database and CORS settings. Copy it if you want local values, and point <code>DB_HOST</code> at your own PostgreSQL instance:</p>
+<p>The manual path reads <code>environment/env/app.env</code> for its database settings (and <code>environment/env/common.env</code> for CORS). Copy the values you want, and point <code>DB_HOST</code> at your own PostgreSQL instance:</p>
 <table>
 <thead>
 <tr>
@@ -1477,24 +1496,24 @@
 <p>This path only: there is no containerised <code>validate</code>. See the <a href="../validation/">validation report</a> for current results.</p>
 <hr />
 <h2 id="deployment">Deployment<a class="headerlink" href="#deployment" title="Permanent link">&para;</a></h2>
-<p>Use <code>docker-compose.prod.yml</code>, which pulls published images and needs no source tree on the target machine. Copy four files across: the compose file, <code>.env</code>, <code>docker.env</code>, and <code>Caddyfile</code>.</p>
-<h3 id="1-prepare-dockerenv">1. Prepare <code>docker.env</code><a class="headerlink" href="#1-prepare-dockerenv" title="Permanent link">&para;</a></h3>
+<p>Use <code>docker-compose.prod.yml</code>, which pulls published images and needs no source tree on the target machine. Copy across: the compose file, <code>.env</code>, the <code>env/</code> directory, and the <code>caddy/</code> directory.</p>
+<h3 id="1-prepare-the-env-files">1. Prepare the <code>env/</code> files<a class="headerlink" href="#1-prepare-the-env-files" title="Permanent link">&para;</a></h3>
 <div class="admonition danger">
-<p class="admonition-title">Do not deploy the committed docker.env</p>
+<p class="admonition-title">Do not deploy the committed env/ files</p>
 <p>Change all of the following before starting the stack:</p>
 <ul>
-<li><code>POSTGRES_PASSWORD</code> and <code>DB_PASSWORD</code> to a real credential</li>
-<li><code>DB_SSL_MODE</code> to <code>require</code></li>
-<li><code>IGNIS_API_KEY</code> to a rotated value</li>
-<li><code>ALLOWED_ORIGINS</code> to the real browser origins, or unset for server-to-server only</li>
+<li><code>POSTGRES_PASSWORD</code> (<code>env/db.env</code>) and <code>DB_PASSWORD</code> (<code>env/app.env</code>) to a real credential</li>
+<li><code>DB_SSL_MODE</code> (<code>env/app.env</code>) to <code>require</code></li>
+<li><code>IGNIS_API_KEY</code> (<code>env/proxy.env</code>) to a rotated value</li>
+<li><code>ALLOWED_ORIGINS</code> (<code>env/common.env</code>) to the real browser origins, or unset for server-to-server only</li>
 </ul>
 </div>
 <h3 id="2-prepare-env">2. Prepare <code>.env</code><a class="headerlink" href="#2-prepare-env" title="Permanent link">&para;</a></h3>
 <p><code>CADDY_DATA_DIR</code> is required, <code>APP_PORT</code> and <code>HOST_HTTPS_PORT</code> default to <code>8080</code> and <code>443</code>. Set <code>IGNIS_IMAGE_TAG</code> to pin a release, which is strongly advised for anything you do not want moving underneath you.</p>
 <h3 id="3-set-the-site-address">3. Set the site address<a class="headerlink" href="#3-set-the-site-address" title="Permanent link">&para;</a></h3>
 <div class="admonition warning">
-<p class="admonition-title">The Caddyfile ships with <code>localhost</code> as its site address</p>
-<p>Change it to the deployment's real domain, or Caddy will neither serve it nor provision a certificate for it.</p>
+<p class="admonition-title">Set IGNIS_SITE_ADDRESS before deploying</p>
+<p>It defaults to <code>localhost</code>. Set it in <code>env/proxy.env</code> to the deployment's real domain, or Caddy will neither serve it nor provision a certificate for it. TLS-ALPN-01 (Caddy's default ACME challenge) works entirely over port 443, which is all the compose file publishes, so no port change is needed.</p>
 </div>
 <h3 id="4-pull-start-seed">4. Pull, start, seed<a class="headerlink" href="#4-pull-start-seed" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.prod.yml<span class="w"> </span>--profile<span class="w"> </span>seed<span class="w"> </span>pull
