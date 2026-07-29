@@ -45,7 +45,7 @@ The Swagger UI below can call a locally running ignis directly.
 **Step 5:** Expand an endpoint, click **Try it out**, fill in the parameters, and
    **Execute**.
 
-!!! bug
+!!! bug "Swagger UI Bug"
     The Swagger UI might not load correctly, just reload the browser page and it should load correctly.
 
 <swagger-ui src="openapi.yaml"/>
