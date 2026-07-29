@@ -23,7 +23,8 @@ jobs:
             dockerfile: environment/Dockerfile.build_db
     steps:
       - uses: actions/checkout@v4
-
+        with:
+          lfs: true
       - uses: docker/setup-buildx-action@v3
 
       - name: Log in to GitHub Container Registry
