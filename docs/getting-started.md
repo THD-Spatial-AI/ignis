@@ -35,6 +35,7 @@ Quick-start is intended for trying out APIs without any additional prerequisites
 ```bash
 cd environment
 docker compose -f docker-compose.quickstart.yml up -d
+cp .env.example .env
 docker compose --profile seed run --rm ignis-build-db
 ```
 !!! info "Pinning a version"
