@@ -99,14 +99,10 @@ services:
       - "${HOST_HTTPS_PORT:-443}:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy/entrypoint.sh:/etc/caddy/entrypoint.sh:ro
       - ${CADDY_DATA_DIR:?CADDY_DATA_DIR is not set}:/data/caddy
-    entrypoint:
-      - sh
-      - -c
-      - >
-        : "$${IGNIS_API_KEY:?IGNIS_API_KEY is not set}" &&
-        export ALLOWED_ORIGINS_PATTERN="^($$(echo "$$ALLOWED_ORIGINS" | sed -e 's/[.]/\\./g' -e 's/,/|/g'))$$" &&
-        exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+    entrypoint: ["/etc/caddy/entrypoint.sh"]
+    command: ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
 
   ignis-build-db:
     image: ghcr.io/thd-spatial-ai/ignis-build-db:${IGNIS_IMAGE_TAG:-latest}

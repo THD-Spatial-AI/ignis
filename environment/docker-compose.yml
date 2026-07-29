@@ -102,22 +102,16 @@ services:
       - "${HOST_HTTPS_PORT:-443}:443" # public entry point; host side assignable per service
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy/entrypoint.sh:/etc/caddy/entrypoint.sh:ro
       - ${CADDY_DATA_DIR:?CADDY_DATA_DIR is not set}:/data/caddy # reuse the host's already-trusted local CA
     # The Caddyfile matches Origin against a regex, but ALLOWED_ORIGINS is a
     # plain comma list (the shape ignis's own Go CORS middleware needs — see
-    # env/common.env). Caddyfile placeholders can't transform text, so this builds
-    # the regex from that one list at startup instead of hardcoding origins in
-    # both places. Same list, two shapes it's actually consumed in — not two
-    # things a human has to remember to keep in sync.
-    # The leading `:` test fails the container closed if IGNIS_API_KEY is
-    # unset, rather than starting Caddy with an empty key matcher.
-    entrypoint:
-      - sh
-      - -c
-      - >
-        : "$${IGNIS_API_KEY:?IGNIS_API_KEY is not set}" &&
-        export ALLOWED_ORIGINS_PATTERN="^($$(echo "$$ALLOWED_ORIGINS" | sed -e 's/[.]/\\./g' -e 's/,/|/g'))$$" &&
-        exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+    # env/common.env). entrypoint.sh derives ALLOWED_ORIGINS_PATTERN from that
+    # one list at startup instead of hardcoding origins in both places. Same
+    # list, two shapes it's actually consumed in — not two things a human has
+    # to remember to keep in sync.
+    entrypoint: ["/etc/caddy/entrypoint.sh"]
+    command: ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
 
 volumes:
   ignis-db-data:
