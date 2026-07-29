@@ -91,6 +91,9 @@ services:
     depends_on:
       ignis-app:
         condition: service_healthy
+    # TLS-ALPN-01 (Caddy's default ACME challenge) works entirely over 443,
+    # so IGNIS_SITE_ADDRESS can be set to a real domain without publishing
+    # port 80. Publish 80 too only if an HTTP-to-HTTPS redirect is wanted.
     ports:
       - "${HOST_HTTPS_PORT:-443}:443"
     volumes:

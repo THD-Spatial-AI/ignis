@@ -2,10 +2,10 @@
 # and no CORS-preflight handling of its own, so it must never be reachable
 # except through this proxy — the compose files publish no port for the app.
 #
-# Site address is `localhost` for local development. A real deployment must
-# change this to its own domain, or Caddy will neither serve it nor be able
-# to provision a certificate for it.
-localhost {
+# Site address is `localhost` for local development. A real deployment sets
+# IGNIS_SITE_ADDRESS to its own domain (see docker.env), or Caddy will
+# neither serve it nor be able to provision a certificate for it.
+{$IGNIS_SITE_ADDRESS:localhost} {
 	# Single source of truth for allowed origins is ALLOWED_ORIGINS in
 	# docker.env (the same list ignis's own Go CORS middleware reads).
 	# ALLOWED_ORIGINS_PATTERN is derived from it at container startup
