@@ -772,23 +772,24 @@
 </span></code></pre></div>
 </div>
 <h3 id="quick-start">Quick-start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h3>
-<p>Quick-start is intended for trying out APIs without any additional prerequisites apart from docker. For a machine that only has Docker — no Go toolchain, no <code>caddy</code> CLI, no <code>.env</code> file to create. Pulls the pre-built <code>ignis-app</code> image from GHCR instead of building from source:</p>
+<p>Quick-start is intended for trying out APIs without any additional prerequisites apart from docker. For a machine that only has Docker (no Go toolchain, <code>caddy</code> CLI, <code>.env</code> file required). Pulls the pre-built <code>ignis-app</code> image from GHCR instead of building from source:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">cd</span><span class="w"> </span>environment
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.quickstart.yml<span class="w"> </span>up<span class="w"> </span>-d
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>docker<span class="w"> </span>compose<span class="w"> </span>--profile<span class="w"> </span>seed<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>ignis-build-db
 </span></code></pre></div>
+<div class="admonition info">
+<p class="admonition-title">Pinning a version</p>
+<p>Defaults to the <code>latest</code> published image. To pin a specific release, set <code>IGNIS_IMAGE_TAG</code> before starting:</p>
+<p>```bash
+IGNIS_IMAGE_TAG=v0.2.1-alpha docker compose -f docker-compose.quickstart.yml up -d</p>
+</div>
 <div class="admonition warning">
 <p class="admonition-title">Certificate warning is expected</p>
 <p><code>docker-compose.yml</code> reuses a <code>caddy trust</code>-installed CA from the host so browsers trust <code>https://localhost</code> out of the box. This quickstart file skips that step entirely — Caddy's local CA lives in a Docker-managed volume instead, so nothing on the host trusts it. Click through the browser's warning, or pass <code>-k</code> / <code>--no-check-certificate</code> / "disable SSL verification" from curl, wget, or Postman:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>curl<span class="w"> </span>-k<span class="w"> </span>-H<span class="w"> </span><span class="s2">&quot;X-Api-Key: supersecret123&quot;</span><span class="w"> </span>https://localhost/health
 </span></code></pre></div>
 <p>Calling the API from Swagger UI's "Try it out" (this site's <a href="../api/">API reference</a>) needs one extra step: browser JS can't click through a cert warning the way a manual page load can, so a <code>fetch()</code> to an untrusted origin just fails outright. Open <code>https://localhost</code> directly in a new tab first and click through the warning — most browsers then trust that origin for the rest of the session, and Swagger UI's calls will go through.</p>
-</div>
-<p>The same "load the database before first use" step above still applies — a fresh <code>ignis-db</code> volume has no TABULA data regardless of which compose file started it.</p>
-<div class="admonition info">
-<p class="admonition-title">Pinning a version</p>
-<p>Defaults to the <code>latest</code> published image. To pin a specific release, set <code>IGNIS_IMAGE_TAG</code> before starting:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nv">IGNIS_IMAGE_TAG</span><span class="o">=</span>v0.2.1-alpha<span class="w"> </span>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.quickstart.yml<span class="w"> </span>up<span class="w"> </span>-d
-</span></code></pre></div>
+<p>```</p>
 </div>
 <h2 id="manual-setup">Manual setup<a class="headerlink" href="#manual-setup" title="Permanent link">&para;</a></h2>
 <p>For local development without containers.</p>
@@ -818,7 +819,7 @@
 <p>The Excel workbook is available from <a href="https://episcope.eu/iee-project/tabula/">episcope.eu</a>. Place it in the <code>data/</code> directory before running <code>build_db</code>.</p>
 <h3 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h3>
 <p>Copy <code>.env.example</code> to <code>.env</code> and fill in your values:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>cp<span class="w"> </span>.env.example<span class="w"> </span>.env
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>cp<span class="w"> </span>.env.example<span class="w"> </span>.env
 </span></code></pre></div>
 <table>
 <thead>
@@ -875,20 +876,20 @@
 <p>Use <code>disable</code> only for local development against a database on the same machine. Set <code>require</code> in all other environments.</p>
 </div>
 <h3 id="build">Build<a class="headerlink" href="#build" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>go<span class="w"> </span>build<span class="w"> </span>-o<span class="w"> </span>bin/ignis<span class="w">     </span>cmd/ignis/main.go
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>go<span class="w"> </span>build<span class="w"> </span>-o<span class="w"> </span>bin/build_db<span class="w">  </span>cmd/build_db/main.go
-</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>go<span class="w"> </span>build<span class="w"> </span>-o<span class="w"> </span>bin/validate<span class="w">  </span>cmd/validate/main.go
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>go<span class="w"> </span>build<span class="w"> </span>-o<span class="w"> </span>bin/ignis<span class="w">     </span>cmd/ignis/main.go
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>go<span class="w"> </span>build<span class="w"> </span>-o<span class="w"> </span>bin/build_db<span class="w">  </span>cmd/build_db/main.go
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>go<span class="w"> </span>build<span class="w"> </span>-o<span class="w"> </span>bin/validate<span class="w">  </span>cmd/validate/main.go
 </span></code></pre></div>
 <h3 id="load-the-database">Load the database<a class="headerlink" href="#load-the-database" title="Permanent link">&para;</a></h3>
 <p>Loads the TABULA workbook into PostgreSQL. This is destructive: it drops and recreates the <code>tabula</code> schema.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>./bin/build_db
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>./bin/build_db
 </span></code></pre></div>
 <h3 id="run-the-api">Run the API<a class="headerlink" href="#run-the-api" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>./bin/ignis<span class="w">   </span><span class="c1"># starts on :8080</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>./bin/ignis<span class="w">   </span><span class="c1"># starts on :8080</span>
 </span></code></pre></div>
 <h2 id="validate">Validate<a class="headerlink" href="#validate" title="Permanent link">&para;</a></h2>
 <p>Runs the full 17-level pipeline against every row in the database and checks that the result stays within ±2% of the TABULA reference value. Requires the local Go build above — there is no containerized <code>validate</code>.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>./bin/validate
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>./bin/validate
 </span></code></pre></div>
 <p>See the <a href="../validation/">validation report</a> for current results.</p>
 <h2 id="deployment">Deployment<a class="headerlink" href="#deployment" title="Permanent link">&para;</a></h2>
