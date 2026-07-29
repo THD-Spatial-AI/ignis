@@ -1,6 +1,31 @@
+# Development compose file: builds ignis-app and ignis-build-db from source
+# in this checkout, so it is the only one of the three that picks up local
+# code changes. Use docker-compose.quickstart.yml to try the API without a
+# source tree, or docker-compose.prod.yml to deploy a published release.
+#
+# ---
+# Usage:  docker compose up -d
+#         docker compose --profile seed run --rm ignis-build-db
+# ---
+#
+# Host prerequisites beyond Docker: the `caddy` CLI, with `caddy trust` run
+# once, so the local CA in CADDY_DATA_DIR is in your OS and browser trust
+# store and https://localhost is trusted without a warning. The quickstart
+# file skips this at the cost of a certificate warning.
+#
+# .env must define (interpolated on the host, not passed into containers):
+#   CADDY_DATA_DIR   host directory holding the caddy trust-installed CA.
+#                    No default on purpose: a wrong value silently produces
+#                    an untrusted certificate, so a missing one should fail
+#                    validation instead.
+#   APP_PORT         optional, defaults to 8080
+#   HOST_HTTPS_PORT  optional, defaults to 443
+#
 # Compose project name = the concern this stack belongs to. The energy-modelling
 # application is split into concerns, each its own namespace; ignis and buem are
 # both building-simulation concerns, so their containers share this namespace.
+# All three compose files declare the same name, so they address the same
+# containers, network and volumes.
 name: building-simulation
 
 # Container naming convention: <service>-<role>, where role is one of
@@ -30,7 +55,7 @@ services:
       dockerfile: environment/Dockerfile   # multi-stage: builder (Go toolchain) -> final (binary only)
     env_file: docker.env        # DB connection + CORS config
     environment:
-      - APP_PORT=${APP_PORT}    # internal listen port, single source from .env
+      - APP_PORT=${APP_PORT:-8080}    # internal listen port; one value for the app, its health check and the proxy
     depends_on:
       ignis-db:
         condition: service_healthy
@@ -48,8 +73,9 @@ services:
   # `profiles` below). build_db DROPS and recreates all country tables from
   # the Excel workbook — invoke deliberately, never automatically on startup:
   #   docker compose --profile seed run --rm ignis-build-db
+  # No `container_name`: this is only ever started via `run`, which assigns
+  # its own name, and a fixed one would collide rather than help.
   ignis-build-db:
-    container_name: ignis-build-db
     profiles: ["seed"]
     build:
       context: ./..
@@ -67,7 +93,7 @@ services:
     container_name: ignis-reverse-proxy
     env_file: docker.env        # provides ALLOWED_ORIGINS, the single source for CORS
     environment:
-      - APP_PORT=${APP_PORT}    # so the Caddyfile's upstream ignis-app:{$APP_PORT} resolves
+      - APP_PORT=${APP_PORT:-8080}    # so the Caddyfile's upstream ignis-app:{$APP_PORT} resolves
     depends_on:
       ignis-app:
         condition: service_healthy
@@ -75,17 +101,20 @@ services:
       - "${HOST_HTTPS_PORT:-443}:443" # public entry point; host side assignable per service
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - ${CADDY_DATA_DIR}:/data/caddy # reuse the host's already-trusted local CA
+      - ${CADDY_DATA_DIR:?CADDY_DATA_DIR is not set}:/data/caddy # reuse the host's already-trusted local CA
     # The Caddyfile matches Origin against a regex, but ALLOWED_ORIGINS is a
     # plain comma list (the shape ignis's own Go CORS middleware needs — see
     # docker.env). Caddyfile placeholders can't transform text, so this builds
     # the regex from that one list at startup instead of hardcoding origins in
     # both places. Same list, two shapes it's actually consumed in — not two
     # things a human has to remember to keep in sync.
+    # The leading `:` test fails the container closed if IGNIS_API_KEY is
+    # unset, rather than starting Caddy with an empty key matcher.
     entrypoint:
       - sh
       - -c
       - >
+        : "$${IGNIS_API_KEY:?IGNIS_API_KEY is not set}" &&
         export ALLOWED_ORIGINS_PATTERN="^($$(echo "$$ALLOWED_ORIGINS" | sed -e 's/[.]/\\./g' -e 's/,/|/g'))$$" &&
         exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
 

@@ -1,23 +1,43 @@
-# Zero-config compose file: pulls the pre-built ignis-app image, same as
-# docker-compose.prod.yml, but for someone who just wants to try the API —
-# no .env file, no `caddy` install, no `caddy trust` on the host.
+# Try-it-out compose file: pulls the pre-built, CI-published ignis-app and
+# ignis-build-db images from GHCR, so nothing is compiled locally and no Go
+# toolchain, source tree, `caddy` install or `caddy trust` is needed on the
+# host. Needs only Docker, plus this file, docker.env and Caddyfile in the
+# working directory. No `.env` is required: every ${...} in this file has a
+# default (APP_PORT 8080, HOST_HTTPS_PORT 443, IGNIS_IMAGE_TAG latest).
+#
+# ---
 # Usage:  docker compose -f docker-compose.quickstart.yml up -d
+#         docker compose -f docker-compose.quickstart.yml --profile seed run --rm ignis-build-db
+# ---
+#
+# Seed the database once after first start, using the command above.
+# ignis-build-db is gated behind the `seed` profile so it never runs on `up`:
+# it DROPS and recreates all country tables from the TABULA workbook baked
+# into its image. The workbook is in the image itself (see
+# Dockerfile.build_db), so seeding needs no source checkout and no manual
+# download. Until it has run once, the schema is empty and every endpoint
+# that reads it will fail.
 #
 # Trade-off vs. docker-compose.prod.yml: Caddy's local CA lives in a
-# Docker-managed volume instead of a host bind mount, so it's never added to
-# your OS/browser trust store. Requests to https://localhost will show an
-# untrusted-certificate warning — expected here. Click through it in the
-# browser, or pass -k/--no-check-certificate/"disable SSL verification" from
-# curl, wget, or Postman. Not meant for a real deployment: see
-# docker-compose.prod.yml for that (real trust chain or a public domain).
+# Docker-managed volume (caddy-data) instead of a host bind mount, so it is
+# never added to your OS/browser trust store. Requests to https://localhost
+# will show an untrusted-certificate warning — expected here. Click through
+# it in the browser, or pass -k/--no-check-certificate/"disable SSL
+# verification" from curl, wget, or Postman. Not meant for a real
+# deployment: see docker-compose.prod.yml for that (real trust chain or a
+# public domain).
 #
-# Deliberately standalone rather than a partial override merged with another
-# compose file — see docker-compose.prod.yml's header for why merging
-# `volumes:` lists across files here is exactly the ambiguity to avoid.
+# All requests are gated behind the X-Api-Key header, matched against
+# IGNIS_API_KEY in docker.env (see Caddyfile). /health is the one exemption,
+# so container and uptime checks need no key. The committed IGNIS_API_KEY is
+# a local-dev placeholder.
 #
-# ignis-build-db (the one-off DB rebuild tool) is intentionally not
-# included here — it's a rare, manual admin operation, not part of the
-# normal try-it-out path, and still requires a source checkout to build.
+# Deliberately standalone rather than a partial override merged with
+# docker-compose.yml — see that file's header for the reasoning. The volume
+# definitions differ here too (named caddy-data vs. the ${CADDY_DATA_DIR}
+# bind mount), and Compose merges `volumes:` lists by appending rather than
+# replacing, so an override would leave both mounted at /data/caddy.
+
 name: building-simulation
 
 services:
@@ -68,8 +88,17 @@ services:
       - sh
       - -c
       - >
+        : "$${IGNIS_API_KEY:?IGNIS_API_KEY is not set}" &&
         export ALLOWED_ORIGINS_PATTERN="^($$(echo "$$ALLOWED_ORIGINS" | sed -e 's/[.]/\\./g' -e 's/,/|/g'))$$" &&
         exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+
+  ignis-build-db:
+    image: ghcr.io/thd-spatial-ai/ignis-build-db:${IGNIS_IMAGE_TAG:-latest}
+    profiles: [seed]
+    env_file: docker.env
+    depends_on:
+      ignis-db:
+        condition: service_healthy
 
 volumes:
   ignis-db-data:

@@ -1,17 +1,54 @@
-# Deploy-time compose file: pulls the pre-built, CI-published ignis-app
-# image instead of building from source (this machine has no Go toolchain,
-# no source tree — only this file + .env/docker.env + Caddyfile).
-# Usage:  docker compose -f docker-compose.prod.yml up -d
+# Deploy-time compose file: pulls the pre-built, CI-published ignis-app and
+# ignis-build-db images from GHCR instead of building from source, for a
+# target machine with no Go toolchain and no source tree — only this file,
+# .env, docker.env and Caddyfile.
+#
+# ---
+# Usage:  docker compose -f docker-compose.prod.yml pull
+#         docker compose -f docker-compose.prod.yml up -d
+# ---
+#
+# `pull` first, deliberately: IGNIS_IMAGE_TAG defaults to `latest`, and a
+# host that already has `latest` cached will keep running the old build
+# after a release without anything on that host revealing it. Pin a version
+# in .env instead where the deployment should not move.
+#
+# .env must define (consumed by ${...} interpolation on the host, not passed
+# into the containers as-is):
+#   APP_PORT         the app's internal listen port, shared by the app, its
+#                    health check, and the Caddyfile's upstream
+#   HOST_HTTPS_PORT  the proxy's published port (defaults to 443)
+#   CADDY_DATA_DIR   host directory holding the trusted local CA; no default
+#                    on purpose, so a missing value fails validation rather
+#                    than silently writing certificates somewhere unexpected
+#   IGNIS_IMAGE_TAG  optional; pins both images to one release tag
+#
+# docker.env on a deploy target must NOT be the committed development copy.
+# Set a real POSTGRES_PASSWORD/DB_PASSWORD, DB_SSL_MODE=require, a rotated
+# IGNIS_API_KEY, and the real browser origins in ALLOWED_ORIGINS. Both
+# images are pinned by IGNIS_IMAGE_TAG together, since the app and the seed
+# job must come from the same release.
+#
+# The Caddyfile's site address must match the deployment's real domain, not
+# `localhost`, or Caddy will not serve or provision a certificate for it.
+#
+# Seeding is a one-off admin operation, gated behind the `seed` profile so it
+# never runs on `up`. It DROPS and recreates all country tables from the
+# TABULA workbook baked into the ignis-build-db image, so it needs no source
+# checkout, but run it deliberately and never against a populated production
+# database you care about:
+#   docker compose -f docker-compose.prod.yml --profile seed run --rm ignis-build-db
+#
+# All requests are gated behind the X-Api-Key header, matched against
+# IGNIS_API_KEY in docker.env (see Caddyfile), with /health exempt so
+# orchestrators and uptime checks need no key. ignis itself has no
+# authentication, so it must never be reachable except through this proxy.
 #
 # Deliberately standalone rather than a partial override merged with
 # docker-compose.yml: Compose's merge rules mean a service left with BOTH
 # `build:` (from the base file) and `image:` (from an override) can still
-# fall back to building locally if no matching image is cached — exactly
-# the thing this file exists to avoid on a source-less deploy target.
-#
-# ignis-build-db (the one-off DB rebuild tool) is intentionally not
-# included here — it's a rare, manual admin operation, not part of the
-# normal deploy path, and still requires a source checkout to build.
+# fall back to building locally if no matching image is cached — exactly the
+# thing this file exists to avoid on a source-less deploy target.
 name: building-simulation
 
 services:
@@ -34,7 +71,7 @@ services:
     image: ghcr.io/thd-spatial-ai/ignis:${IGNIS_IMAGE_TAG:-latest}
     env_file: docker.env
     environment:
-      - APP_PORT=${APP_PORT}
+      - APP_PORT=${APP_PORT:-8080}
     depends_on:
       ignis-db:
         condition: service_healthy
@@ -49,7 +86,7 @@ services:
     container_name: ignis-reverse-proxy
     env_file: docker.env
     environment:
-      - APP_PORT=${APP_PORT}
+      - APP_PORT=${APP_PORT:-8080}
     depends_on:
       ignis-app:
         condition: service_healthy
@@ -57,13 +94,22 @@ services:
       - "${HOST_HTTPS_PORT:-443}:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - ${CADDY_DATA_DIR}:/data/caddy
+      - ${CADDY_DATA_DIR:?CADDY_DATA_DIR is not set}:/data/caddy
     entrypoint:
       - sh
       - -c
       - >
+        : "$${IGNIS_API_KEY:?IGNIS_API_KEY is not set}" &&
         export ALLOWED_ORIGINS_PATTERN="^($$(echo "$$ALLOWED_ORIGINS" | sed -e 's/[.]/\\./g' -e 's/,/|/g'))$$" &&
         exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+
+  ignis-build-db:
+    image: ghcr.io/thd-spatial-ai/ignis-build-db:${IGNIS_IMAGE_TAG:-latest}
+    profiles: [seed]
+    env_file: docker.env
+    depends_on:
+      ignis-db:
+        condition: service_healthy
 
 volumes:
   ignis-db-data:

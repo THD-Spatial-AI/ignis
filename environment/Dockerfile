@@ -3,7 +3,8 @@
 # ---------------------------------------------------------------------------
 # Stage 1: builder — has the full Go toolchain + source, never shipped
 # ---------------------------------------------------------------------------
-FROM golang:1.26.5-bookworm AS builder
+ARG GO_VERSION=1.26.5
+FROM golang:${GO_VERSION}-bookworm AS builder
 
 WORKDIR /app
 

@@ -1,33 +1,60 @@
+# Reverse proxy and auth gate for ignis. ignis itself has no authentication
+# and no CORS-preflight handling of its own, so it must never be reachable
+# except through this proxy — the compose files publish no port for the app.
+#
+# Site address is `localhost` for local development. A real deployment must
+# change this to its own domain, or Caddy will neither serve it nor be able
+# to provision a certificate for it.
 localhost {
 	# Single source of truth for allowed origins is ALLOWED_ORIGINS in
 	# docker.env (the same list ignis's own Go CORS middleware reads).
 	# ALLOWED_ORIGINS_PATTERN is derived from it at container startup
-	# (see docker-compose.yml's entrypoint) into the regex form this
+	# (see the compose files' entrypoint) into the regex form this
 	# matcher needs — nothing here is hardcoded per origin.
 	@allowed_origin header_regexp Origin {$ALLOWED_ORIGINS_PATTERN}
 
-	# Preflight (OPTIONS): answered here, never forwarded to the app.
-	# X-Api-Key is a proxy-only concept — ignis's own CORS middleware
-	# (internal/api/middleware/middleware.go) doesn't know it exists,
-	# and it shouldn't have to.
 	@preflight method OPTIONS
-	handle @preflight {
-		header @allowed_origin Access-Control-Allow-Origin "{http.regexp.allowed_origin.1}"
-		header Access-Control-Allow-Methods "GET, POST, OPTIONS"
-		header Access-Control-Allow-Headers "Content-Type, X-Api-Key"
-		header Access-Control-Max-Age "86400"
-		respond 204
-	}
 
 	# Read from IGNIS_API_KEY at container start (see docker.env) rather than
 	# hardcoded here — a real key belongs in an untracked env file, not
-	# committed source.
+	# committed source. The entrypoint refuses to start Caddy if it is unset,
+	# so this never degrades into an empty matcher.
 	@authorized header X-Api-Key {$IGNIS_API_KEY}
-	handle @authorized {
-		reverse_proxy ignis-app:{$APP_PORT:8080}
-	}
 
-	handle {
-		respond "Forbidden: missing or invalid API key" 403
+	# Responses differ by request Origin, so caches must key on it.
+	header Vary Origin
+
+	# `route` keeps these handlers in the order written. Without it Caddy
+	# sorts `handle` blocks by path-matcher specificity, which would move
+	# /health ahead of the preflight block and change which one answers an
+	# OPTIONS /health.
+	route {
+		# Preflight (OPTIONS): answered here, never forwarded to the app.
+		# X-Api-Key is a proxy-only concept — ignis's own CORS middleware
+		# (internal/api/middleware/middleware.go) doesn't know it exists,
+		# and it shouldn't have to.
+		handle @preflight {
+			header @allowed_origin Access-Control-Allow-Origin "{http.regexp.allowed_origin.1}"
+			header Access-Control-Allow-Methods "GET, POST, OPTIONS"
+			header Access-Control-Allow-Headers "Content-Type, X-Api-Key"
+			header Access-Control-Max-Age "86400"
+			respond 204
+		}
+
+		# Deliberately outside the authorised route: container health checks,
+		# orchestrators and uptime monitors must not need the API key. This
+		# path is publicly reachable on any deployment, so keep its response
+		# to liveness only — no version, config or database detail.
+		handle /health {
+			reverse_proxy ignis-app:{$APP_PORT:8080}
+		}
+
+		handle @authorized {
+			reverse_proxy ignis-app:{$APP_PORT:8080}
+		}
+
+		handle {
+			respond "Forbidden: missing or invalid API key" 403
+		}
 	}
 }

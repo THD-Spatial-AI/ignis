@@ -1,27 +1,30 @@
-name: Publish Docker image
+name: Publish Docker images
 
-# Deliberate release trigger, not every commit: a pushed vX.Y.Z tag, or a
-# manual run from the Actions tab. This is the "Package" step of the CI
-# pipeline chain (Checkout -> Compile -> Test -> Build -> Package -> E2E ->
-# Deployable System) — go.yml already covers Compile/Test; this covers
-# Package (build the image, tag it, push it to a registry).
 on:
   push:
     tags: [ "v*.*.*" ]
   workflow_dispatch:
 
-env:
-  IMAGE_NAME: ghcr.io/thd-spatial-ai/ignis
-
 jobs:
-  build-and-push:
-    name: Build & push ignis-app image
+  publish:
+    name: Build and push ${{ matrix.name }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+    strategy:
+      matrix:
+        include:
+          - name: ignis-app
+            image: ghcr.io/thd-spatial-ai/ignis
+            dockerfile: environment/Dockerfile
+          - name: ignis-build-db
+            image: ghcr.io/thd-spatial-ai/ignis-build-db
+            dockerfile: environment/Dockerfile.build_db
     steps:
       - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -30,16 +33,25 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Resolve image tags
-        id: tags
-        run: |
-          REF_TAG="${GITHUB_REF_NAME}"
-          echo "tags=${IMAGE_NAME}:${REF_TAG},${IMAGE_NAME}:latest" >> "$GITHUB_OUTPUT"
+      - name: Derive tags and labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ matrix.image }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=ref,event=branch
+            type=sha,format=short
+          flavor: latest=auto
 
-      - name: Build & push (multi-stage Dockerfile, environment/Dockerfile)
+      - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: environment/Dockerfile
+          file: ${{ matrix.dockerfile }}
           push: true
-          tags: ${{ steps.tags.outputs.tags }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
