@@ -39,6 +39,10 @@ func RequestLogger() gin.HandlerFunc {
 		latency := time.Since(startTime)
 		statusCode := c.Writer.Status()
 
+		if path == "/health" && statusCode == http.StatusOK {
+			return
+		}
+
 		log.Printf("%s %s - %d (%s)", method, path, statusCode, latency)
 	}
 }

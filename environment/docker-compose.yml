@@ -65,9 +65,10 @@ services:
     # directly now; this is a single-purpose image, not a shared toolbox.
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:$$APP_PORT/health"]
-      interval: 5s
+      interval: 30s
       timeout: 3s
-      retries: 5
+      retries: 3
+      start_period: 10s
 
   # One-off DB seed/rebuild job, NOT part of the normal `up` path (see
   # `profiles` below). build_db DROPS and recreates all country tables from
