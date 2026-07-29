@@ -28,9 +28,9 @@ This starts `ignis-db`, then `ignis-app` once the database is healthy, then `ign
     docker compose --profile seed run --rm ignis-build-db
     ```
 
-### Quickstart (try the API, nothing else installed)
+### Quick-start
 
-For a machine that only has Docker — no Go toolchain, no `caddy` CLI, no `.env` file to create. Pulls the pre-built `ignis-app` image from GHCR instead of building from source:
+Quick-start is intended for trying out APIs without any additional prerequisites apart from docker. For a machine that only has Docker — no Go toolchain, no `caddy` CLI, no `.env` file to create. Pulls the pre-built `ignis-app` image from GHCR instead of building from source:
 
 ```bash
 cd environment
