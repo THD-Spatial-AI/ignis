@@ -39,7 +39,7 @@ The Swagger UI below can call a locally running ignis directly.
 
 **Step 4:** Click **Authorize** below and enter the API key checked by the reverse
    proxy (`X-Api-Key`; the prototype default is set in
-   `environment/Caddyfile`). It applies to every **Try it out** call from
+   `environment/env/proxy.env`). It applies to every **Try it out** call from
    then on.
 
 **Step 5:** Expand an endpoint, click **Try it out**, fill in the parameters, and

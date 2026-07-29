@@ -12,21 +12,24 @@ Three setup paths are available. Pick one:
 
 ## Configuration files
 
-All three paths read the same two environment files. They are separate on purpose, because they are consumed at different points.
+All three paths read `.env`, interpolated on the host, plus four files under `environment/env/` that are passed into the containers. They are separate on purpose: each service gets only the variables it actually reads, so, for instance, the internet-facing reverse proxy never receives a database password.
 
 | File | Read by | Holds |
 |---|---|---|
 | `.env` | Docker Compose, on the host | `APP_PORT`, `HOST_HTTPS_PORT`, `CADDY_DATA_DIR`, `IGNIS_IMAGE_TAG` |
-| `docker.env` | Passed into the containers | `DB_*`, `POSTGRES_*`, `ALLOWED_ORIGINS`, `IGNIS_API_KEY` |
+| `env/common.env` | app, proxy | `ALLOWED_ORIGINS` |
+| `env/db.env` | db | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` |
+| `env/app.env` | app, build_db | `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_SSL_MODE` |
+| `env/proxy.env` | proxy | `IGNIS_API_KEY`, `IGNIS_SITE_ADDRESS` |
 
-Both live in `environment/`. `docker.env` is committed with local development defaults, including a placeholder API key and database password.
+All four live in `environment/env/` and are committed with local development defaults, including a placeholder API key and database password.
 
 !!! danger "Replace the committed defaults before any deployment"
-    `docker.env` contains `IGNIS_API_KEY=supersecret123`, `POSTGRES_PASSWORD=postgres`, and `DB_SSL_MODE=disable`. These are development placeholders. See [Deployment](#deployment).
+    `env/db.env`/`env/app.env` contain `POSTGRES_PASSWORD=postgres` and `DB_SSL_MODE=disable`; `env/proxy.env` contains `IGNIS_API_KEY=supersecret123`. These are development placeholders. See [Deployment](#deployment).
 
 ## Authentication
 
-ignis has no authentication of its own. The reverse proxy gates every request behind an `X-Api-Key` header, matched against `IGNIS_API_KEY` from `docker.env`:
+ignis has no authentication of its own. The reverse proxy gates every request behind an `X-Api-Key` header, matched against `IGNIS_API_KEY` from `env/proxy.env`:
 
 ```bash
 curl -k -H "X-Api-Key: supersecret123" https://localhost/some-endpoint
@@ -47,12 +50,15 @@ For trying out the API with nothing on the host but Docker. Pulls pre-built imag
 
 ### 1. Get the files
 
-You need three files in one directory: `docker-compose.quickstart.yml`, `Caddyfile`, and `docker.env`. Cloning the repository is the simplest way to get them:
+You need `docker-compose.quickstart.yml`, the `caddy/` directory, and the `env/` directory, all in one working directory. Cloning the repository is the simplest way to get them:
 
 ```bash
 git clone https://github.com/thd-spatial-ai/ignis.git
 cd ignis/environment
 ```
+
+!!! warning "Docker Desktop: work from a directory under your home folder"
+    Docker Desktop only shares paths under your home directory (or another folder added under File Sharing) into its VM. A working directory under `/tmp` fails with a bind-mount error like "not shared from the host", which does not obviously point at the File Sharing setting — clone or copy these files under your home directory instead.
 
 ### 2. Start the stack
 
@@ -183,7 +189,7 @@ For local development without containers.
 | Git LFS | required for the TABULA workbook |
 
 !!! warning "Install Git LFS before cloning"
-    `data/tabula-calculator-lite.xlsx` is stored via Git LFS. Without `git lfs install`, the checkout contains a small text pointer instead of the workbook, and `build_db` fails with `zip: not a valid zip file`.
+    `data/tabula-calculator-lite.xlsx` is stored via Git LFS. Without `git lfs install`, the checkout contains a small text pointer instead of the workbook, and `build_db` fails naming the cause directly: "is a Git LFS pointer, not the workbook itself — run `git lfs install && git lfs pull`".
 
     ```bash
     git lfs install
@@ -197,7 +203,7 @@ The workbook is committed to the repository, so there is nothing to download fro
 
 ### Configuration
 
-The manual path reads `environment/docker.env` for its database and CORS settings. Copy it if you want local values, and point `DB_HOST` at your own PostgreSQL instance:
+The manual path reads `environment/env/app.env` for its database settings (and `environment/env/common.env` for CORS). Copy the values you want, and point `DB_HOST` at your own PostgreSQL instance:
 
 | Variable | Description | Default |
 |---|---|---|
@@ -256,17 +262,17 @@ This path only: there is no containerised `validate`. See the [validation report
 
 ## Deployment
 
-Use `docker-compose.prod.yml`, which pulls published images and needs no source tree on the target machine. Copy four files across: the compose file, `.env`, `docker.env`, and `Caddyfile`.
+Use `docker-compose.prod.yml`, which pulls published images and needs no source tree on the target machine. Copy across: the compose file, `.env`, the `env/` directory, and the `caddy/` directory.
 
-### 1. Prepare `docker.env`
+### 1. Prepare the `env/` files
 
-!!! danger "Do not deploy the committed docker.env"
+!!! danger "Do not deploy the committed env/ files"
     Change all of the following before starting the stack:
 
-    - `POSTGRES_PASSWORD` and `DB_PASSWORD` to a real credential
-    - `DB_SSL_MODE` to `require`
-    - `IGNIS_API_KEY` to a rotated value
-    - `ALLOWED_ORIGINS` to the real browser origins, or unset for server-to-server only
+    - `POSTGRES_PASSWORD` (`env/db.env`) and `DB_PASSWORD` (`env/app.env`) to a real credential
+    - `DB_SSL_MODE` (`env/app.env`) to `require`
+    - `IGNIS_API_KEY` (`env/proxy.env`) to a rotated value
+    - `ALLOWED_ORIGINS` (`env/common.env`) to the real browser origins, or unset for server-to-server only
 
 ### 2. Prepare `.env`
 
@@ -274,8 +280,8 @@ Use `docker-compose.prod.yml`, which pulls published images and needs no source 
 
 ### 3. Set the site address
 
-!!! warning "The Caddyfile ships with `localhost` as its site address"
-    Change it to the deployment's real domain, or Caddy will neither serve it nor provision a certificate for it.
+!!! warning "Set IGNIS_SITE_ADDRESS before deploying"
+    It defaults to `localhost`. Set it in `env/proxy.env` to the deployment's real domain, or Caddy will neither serve it nor provision a certificate for it. TLS-ALPN-01 (Caddy's default ACME challenge) works entirely over port 443, which is all the compose file publishes, so no port change is needed.
 
 ### 4. Pull, start, seed
 
