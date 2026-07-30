@@ -52,7 +52,7 @@ Pipeline validated against the TABULA reference values (±2% tolerance on `q_h_n
 ## Validation methodology
 
 - **Tolerance:** ±2% on `q_h_nd` (annual heating energy demand, kWh/(m²·a))
-- **Reference:** TABULA Excel workbook (`data/tabula-calculator.xlsx`)
+- **Reference:** TABULA Excel workbook (`data/tabula-calculator-lite.xlsx`)
 - **Pipeline:** 17-level cascading calculation: geometry, envelope, U-values, climate, solar gains, thermal bridges, heat transfer coefficients
 
 ---
@@ -60,7 +60,7 @@ Pipeline validated against the TABULA reference values (±2% tolerance on `q_h_n
 ## Running validation
 
 ```bash
-go build -o bin/validate cmd/validate/main.go
+go build -buildvcs=false -o bin/ ./cmd/...
 ./bin/validate
 ```
 

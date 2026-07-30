@@ -28,8 +28,8 @@ the API key. The full model is in the spec's description.
 
 The Swagger UI below can call a locally running ignis directly.
 
-**Step 1:** Start the stack, from `environment/`: `docker compose up -d`. On a first
-   run, load the TABULA data once: `docker compose --profile seed run --rm ignis-build-db`.
+**Step 1:** Start the stack, from `environment/`: `docker compose -f docker-compose.quickstart.yml up -d`.
+   On a first run, load the TABULA data once: `docker compose -f docker-compose.quickstart.yml --profile seed run --rm ignis-build-db`.
 
 **Step 2:** Serve these docs locally with `mkdocs serve`. The reverse proxy already
    allows requests from `http://localhost:8000` (its default port).
