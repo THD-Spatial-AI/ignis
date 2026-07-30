@@ -295,8 +295,8 @@ published on.</p>
 </div>
 <h2 id="testing-it-yourself">Testing it yourself<a class="headerlink" href="#testing-it-yourself" title="Permanent link">¶</a></h2>
 <p>The Swagger UI below can call a locally running ignis directly.</p>
-<p><strong>Step 1:</strong> Start the stack, from <code>environment/</code>: <code>docker compose up -d</code>. On a first
-   run, load the TABULA data once: <code>docker compose --profile seed run --rm ignis-build-db</code>.</p>
+<p><strong>Step 1:</strong> Start the stack, from <code>environment/</code>: <code>docker compose -f docker-compose.quickstart.yml up -d</code>.
+   On a first run, load the TABULA data once: <code>docker compose -f docker-compose.quickstart.yml --profile seed run --rm ignis-build-db</code>.</p>
 <p><strong>Step 2:</strong> Serve these docs locally with <code>mkdocs serve</code>. The reverse proxy already
    allows requests from <code>http://localhost:8000</code> (its default port).</p>
 <p><strong>Step 3:</strong> If your browser has never trusted the local proxy's certificate, open
