@@ -1,5 +1,46 @@
 # API reference
 
+## What you can do
+
+- **Look up a building's typical energy profile.** Give ignis a country, a
+  building type (e.g. single-family house), and a construction period, and
+  `/api/v1/variants/{country}/match` returns the matching TABULA archetypes —
+  the "existing state" and its refurbishment levels (medium, advanced) — each
+  with a code you can pass to the next two endpoints.
+- **See the full physical parameter set behind a result.** `/api/v1/data/{code}`
+  returns every input the calculation used for that archetype: envelope areas,
+  U-values, climate data, solar gains, and more (~200 fields). `/api/v1/fields`
+  explains what each one means, in plain language.
+- **Calculate the annual heating demand.** `/api/v1/calculate/{code}` runs the
+  ISO 13790 pipeline and returns `q_h_nd` in kWh/(m²·a).
+- **Override any input to model a specific scenario**, instead of accepting
+  the archetype's textbook defaults — the same calculate endpoint accepts an
+  optional JSON body:
+
+    | You want to change | Field(s) |
+    |---|---|
+    | The building's actual floor area | `A_ref` |
+    | How cold/mild the local climate is | `HeatingDays`, `Theta_e`, `theta_i` |
+    | How much sun the site gets | `I_Sol_South`, `I_Sol_East`, `I_Sol_West`, `I_Sol_North`, `I_Sol_Hor` |
+    | Extra heat loss at wall/roof/window junctions | `delta_U_ThermalBridging_Original`, `delta_U_ThermalBridging_Refurbished` |
+
+    Every field is independent and optional — send just the one you want to
+    change, and every other input still comes from the archetype's TABULA
+    defaults. See `CalculateRequest` in the reference below for exact types
+    and validation rules (e.g. `HeatingDays` and the solar-irradiance fields
+    must not be negative).
+
+!!! example "A milder winter than the archetype assumes"
+    ```bash
+    curl -sk https://localhost/api/v1/calculate/DE.N.SFH.01.Gen.ReEx.001.001 \
+      -H "X-Api-Key: ..." -H "Content-Type: application/json" \
+      -d '{"HeatingDays": 150}'
+    ```
+    Returns the same archetype's `q_h_nd`, recalculated for a 150-heating-day
+    winter instead of the TABULA default — every other input unchanged.
+
+## Interactive reference
+
 The interactive reference below is generated from the OpenAPI spec
 ([`openapi.yaml`](openapi.yaml)), the machine-readable source of truth for
 every endpoint, schema, and error. Download it to generate a client, load it
