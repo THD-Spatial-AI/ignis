@@ -5,6 +5,18 @@
 # Site address is `localhost` for local development. A real deployment sets
 # IGNIS_SITE_ADDRESS in env/proxy.env to its own domain, or Caddy will
 # neither serve it nor be able to provision a certificate for it.
+
+# Caddy defaults to advertising HTTP/3 (Alt-Svc: h3) on every response. The
+# compose files only publish the HTTPS port as TCP, so browsers that cache
+# that Alt-Svc header and switch to QUIC on a later request get no response
+# at all — this looked like intermittent request failures against a healthy
+# backend. h2 over the published TCP port is all that's actually reachable.
+{
+	servers {
+		protocols h1 h2
+	}
+}
+
 {$IGNIS_SITE_ADDRESS:localhost} {
 	# Single source of truth for allowed origins is ALLOWED_ORIGINS in
 	# env/common.env (the same list ignis's own Go CORS middleware reads).
