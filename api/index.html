@@ -194,6 +194,24 @@
     </label>
 <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
 <li class="md-nav__item">
+<a class="md-nav__link" href="#what-you-can-do">
+<span class="md-ellipsis">
+      
+        What you can do
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#interactive-reference">
+<span class="md-ellipsis">
+      
+        Interactive reference
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
 <a class="md-nav__link" href="#how-to-consume-the-api">
 <span class="md-ellipsis">
       
@@ -241,6 +259,24 @@
     </label>
 <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
 <li class="md-nav__item">
+<a class="md-nav__link" href="#what-you-can-do">
+<span class="md-ellipsis">
+      
+        What you can do
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#interactive-reference">
+<span class="md-ellipsis">
+      
+        Interactive reference
+      
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
 <a class="md-nav__link" href="#how-to-consume-the-api">
 <span class="md-ellipsis">
       
@@ -272,6 +308,66 @@
 <svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"></path></svg>
 </a>
 <h1 id="api-reference">API reference<a class="headerlink" href="#api-reference" title="Permanent link">¶</a></h1>
+<h2 id="what-you-can-do">What you can do<a class="headerlink" href="#what-you-can-do" title="Permanent link">¶</a></h2>
+<ul>
+<li><strong>Look up a building's typical energy profile.</strong> Give ignis a country, a
+  building type (e.g. single-family house), and a construction period, and
+  <code>/api/v1/variants/{country}/match</code> returns the matching TABULA archetypes —
+  the "existing state" and its refurbishment levels (medium, advanced) — each
+  with a code you can pass to the next two endpoints.</li>
+<li><strong>See the full physical parameter set behind a result.</strong> <code>/api/v1/data/{code}</code>
+  returns every input the calculation used for that archetype: envelope areas,
+  U-values, climate data, solar gains, and more (~200 fields). <code>/api/v1/fields</code>
+  explains what each one means, in plain language.</li>
+<li><strong>Calculate the annual heating demand.</strong> <code>/api/v1/calculate/{code}</code> runs the
+  ISO 13790 pipeline and returns <code>q_h_nd</code> in kWh/(m²·a).</li>
+<li>
+<p><strong>Override any input to model a specific scenario</strong>, instead of accepting
+  the archetype's textbook defaults — the same calculate endpoint accepts an
+  optional JSON body:</p>
+<table>
+<thead>
+<tr>
+<th>You want to change</th>
+<th>Field(s)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The building's actual floor area</td>
+<td><code>A_ref</code></td>
+</tr>
+<tr>
+<td>How cold/mild the local climate is</td>
+<td><code>HeatingDays</code>, <code>Theta_e</code>, <code>theta_i</code></td>
+</tr>
+<tr>
+<td>How much sun the site gets</td>
+<td><code>I_Sol_South</code>, <code>I_Sol_East</code>, <code>I_Sol_West</code>, <code>I_Sol_North</code>, <code>I_Sol_Hor</code></td>
+</tr>
+<tr>
+<td>Extra heat loss at wall/roof/window junctions</td>
+<td><code>delta_U_ThermalBridging_Original</code>, <code>delta_U_ThermalBridging_Refurbished</code></td>
+</tr>
+</tbody>
+</table>
+<p>Every field is independent and optional — send just the one you want to
+change, and every other input still comes from the archetype's TABULA
+defaults. See <code>CalculateRequest</code> in the reference below for exact types
+and validation rules (e.g. <code>HeatingDays</code> and the solar-irradiance fields
+must not be negative).</p>
+</li>
+</ul>
+<div class="admonition example">
+<p class="admonition-title">A milder winter than the archetype assumes</p>
+<p><div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a href="#__codelineno-0-1" id="__codelineno-0-1" name="__codelineno-0-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span>https://localhost/api/v1/calculate/DE.N.SFH.01.Gen.ReEx.001.001<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-0-2"><a href="#__codelineno-0-2" id="__codelineno-0-2" name="__codelineno-0-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"X-Api-Key: ..."</span><span class="w"> </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-0-3"><a href="#__codelineno-0-3" id="__codelineno-0-3" name="__codelineno-0-3"></a><span class="w">  </span>-d<span class="w"> </span><span class="s1">'{"HeatingDays": 150}'</span>
+</span></code></pre></div>
+Returns the same archetype's <code>q_h_nd</code>, recalculated for a 150-heating-day
+winter instead of the TABULA default — every other input unchanged.</p>
+</div>
+<h2 id="interactive-reference">Interactive reference<a class="headerlink" href="#interactive-reference" title="Permanent link">¶</a></h2>
 <p>The interactive reference below is generated from the OpenAPI spec
 (<a href="../openapi.yaml"><code>openapi.yaml</code></a>), the machine-readable source of truth for
 every endpoint, schema, and error. Download it to generate a client, load it
