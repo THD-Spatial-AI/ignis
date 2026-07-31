@@ -231,7 +231,10 @@ components:
 
   responses:
     BadRequest:
-      description: Invalid input (unknown country, malformed code, invalid A_ref)
+      description: >
+        Invalid input (unknown country, malformed code, or an invalid
+        CalculateRequest override — A_ref not greater than 0, HeatingDays or
+        I_Sol_* negative, or a thermal-bridging ΔU negative)
       content:
         application/json:
           schema:
@@ -379,14 +382,72 @@ components:
 
     CalculateRequest:
       type: object
+      description: >
+        Every field is an optional override of the corresponding TABULA record
+        value; omit a field to keep its TABULA default. Fields map 1:1 onto the
+        AdvancedParameters groups documented in /api/v1/fields (ClimateConditions,
+        SolarGains, ThermalBridges) plus A_ref, the floor area override.
       properties:
         A_ref:
           type: number
           format: double
           description: >
-            Overrides the reference floor area from the TABULA record. Must be
-            greater than 0.
+            Overrides the reference floor area (A_C_Ref_Input) from the TABULA
+            record. Must be greater than 0.
           example: 150.0
+        HeatingDays:
+          type: integer
+          description: Overrides ClimateConditions.HeatingDays. Must not be negative.
+          example: 200
+        Theta_e:
+          type: number
+          format: double
+          description: Overrides ClimateConditions.Theta_e (external design temperature, °C). Unbounded.
+          example: -5.0
+        theta_i:
+          type: number
+          format: double
+          description: Overrides ClimateConditions.Theta_i (internal design temperature, °C). Unbounded.
+          example: 20.0
+        I_Sol_South:
+          type: number
+          format: double
+          description: Overrides SolarGains.I_Sol_South (Wh/m²·a). Must not be negative.
+          example: 400.0
+        I_Sol_East:
+          type: number
+          format: double
+          description: Overrides SolarGains.I_Sol_East (Wh/m²·a). Must not be negative.
+          example: 150.0
+        I_Sol_West:
+          type: number
+          format: double
+          description: Overrides SolarGains.I_Sol_West (Wh/m²·a). Must not be negative.
+          example: 150.0
+        I_Sol_North:
+          type: number
+          format: double
+          description: Overrides SolarGains.I_Sol_North (Wh/m²·a). Must not be negative.
+          example: 80.0
+        I_Sol_Hor:
+          type: number
+          format: double
+          description: Overrides SolarGains.I_Sol_Horizontal (Wh/m²·a). Must not be negative.
+          example: 500.0
+        delta_U_ThermalBridging_Original:
+          type: number
+          format: double
+          description: >
+            Overrides ThermalBridges.Delta_U_ThermalBridging_Original (W/m²K,
+            added to the envelope's U-values). Must not be negative.
+          example: 0.1
+        delta_U_ThermalBridging_Refurbished:
+          type: number
+          format: double
+          description: >
+            Overrides ThermalBridges.Delta_U_ThermalBridging_Refurbished (W/m²K,
+            added to the envelope's U-values). Must not be negative.
+          example: 0.05
 
     CalculateResponse:
       type: object
