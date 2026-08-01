@@ -13,7 +13,17 @@ import (
 	"github.com/thd-spatial-ai/ignis/internal/utils"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 )
+
+// A caller who sends a field name we don't recognize (e.g. a typo like
+// "srufaces") most likely intended to override something and would
+// otherwise silently keep the TABULA default with no signal that anything
+// was wrong. binding.EnableDecoderDisallowUnknownFields is a package-level
+// gin setting, not a per-request option, so it's flipped once here.
+func init() {
+	binding.EnableDecoderDisallowUnknownFields = true
+}
 
 // CalculateHeatDemand handles POST /api/v1/calculate/:code.
 //
