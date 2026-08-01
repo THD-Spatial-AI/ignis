@@ -23,6 +23,9 @@
     | How cold/mild the local climate is | `HeatingDays`, `Theta_e`, `theta_i` |
     | How much sun the site gets | `I_Sol_South`, `I_Sol_East`, `I_Sol_West`, `I_Sol_North`, `I_Sol_Hor` |
     | Extra heat loss at wall/roof/window junctions | `delta_U_ThermalBridging_Original`, `delta_U_ThermalBridging_Refurbished` |
+    | The building's actual room height or storey count | `h_room`, `n_Storey` |
+    | How airtight the building is, or how much it's ventilated | `n_air_infiltration`, `n_air_use` |
+    | How much heat the building's structure can store | `c_m` |
 
     Every field is independent and optional — send just the one you want to
     change, and every other input still comes from the archetype's TABULA
@@ -38,6 +41,82 @@
     ```
     Returns the same archetype's `q_h_nd`, recalculated for a 150-heating-day
     winter instead of the TABULA default — every other input unchanged.
+
+- **Describe a real building's actual walls, windows, roof, and floor**,
+  instead of the archetype's generic "wall 1 / wall 2" slots — the same
+  `calculate` endpoint accepts an optional `surfaces` list, one entry per
+  physical element:
+
+??? example "Example of a building with five surfaces instead of TABULA's two slots"
+    ```json
+    {
+      "surfaces": [
+        {
+          "id": "wall-north",
+          "type": "wall",
+          "area": 45.0,
+          "u_value": 0.85,
+          "azimuth": 0
+        },
+        {
+          "id": "wall-south",
+          "type": "wall",
+          "area": 45.0,
+          "u_value": 0.85,
+          "azimuth": 180
+        },
+        {
+          "id": "win-south",
+          "type": "window",
+          "area": 8.0,
+          "u_value": 1.2,
+          "azimuth": 180
+        },
+        {
+          "id": "roof-1",
+          "type": "roof",
+          "area": 90.0,
+          "u_value": 0.4,
+          "azimuth": -1
+        },
+        {
+          "id": "floor-1",
+          "type": "floor",
+          "area": 90.0,
+          "u_value": 0.5,
+          "azimuth": -1
+        }
+      ]
+    }
+    ```
+
+    A real building rarely matches TABULA's assumption of one or two
+    representative surfaces per category. `surfaces` lets you list as many
+    as the building actually has; ignis combines them into the equivalent
+    single area and U-value per category the calculation needs — an
+    area-weighted average, which is exact for how heat loss through
+    surfaces in the same category adds up, not an approximation. A category
+    you don't list keeps the archetype's default for that category. Window
+    `azimuth` also determines which direction's sunlight that window
+    counts toward (rounded to the nearest of North/East/South/West, or
+    Horizontal for a skylight); a window with no `azimuth` given is assumed
+    to face South.
+
+??? example "Example request for a building with five windows instead of TABULA's default two slots"
+
+    ```bash
+    curl -sk https://localhost/api/v1/calculate/DE.N.SFH.01.Gen.ReEx.001.001 \
+      -H "X-Api-Key: ..." -H "Content-Type: application/json" \
+      -d '{"surfaces": [
+        {"id": "w1", "type": "window", "area": 3.0, "u_value": 1.1, "azimuth": 90},
+        {"id": "w2", "type": "window", "area": 3.0, "u_value": 1.1, "azimuth": 90},
+        {"id": "w3", "type": "window", "area": 4.5, "u_value": 1.3, "azimuth": 180},
+        {"id": "w4", "type": "window", "area": 2.0, "u_value": 1.1, "azimuth": 270},
+        {"id": "w5", "type": "window", "area": 1.5, "u_value": 1.5, "azimuth": 0}
+      ]}'
+    ```
+    Every window's own area, U-value, and orientation counts individually —
+    not squeezed into TABULA's two generic window slots.
 
 ## Interactive reference
 

@@ -34,13 +34,45 @@ import (
 //	  "I_Sol_North": 80.0,
 //	  "I_Sol_Hor": 500.0,
 //	  "delta_U_ThermalBridging_Original": 0.1,
-//	  "delta_U_ThermalBridging_Refurbished": 0.05
+//	  "delta_U_ThermalBridging_Refurbished": 0.05,
+//	  "h_room": 2.8,
+//	  "n_Storey": 3,
+//	  "surfaces": [
+//	    {"id": "wall-1", "type": "wall", "area": 60.0, "u_value": 0.8, "azimuth": 180},
+//	    {"id": "win-1", "type": "window", "area": 8.0, "u_value": 1.2, "azimuth": 90}
+//	  ]
 //	}
 //
 // A_ref overrides the reference floor area (A_C_Ref_Input); the rest override
 // the matching AdvancedParameters fields used by the climate/solar-gain/
 // thermal-bridging calc levels. Omit the body entirely to use TABULA defaults
 // throughout.
+//
+// h_room overrides the archetype's assumed room height (BuildingAppearance.H_room,
+// meters) — feeds the ventilation heat transfer coefficient directly (calc_level_01.go),
+// so this is often a large lever: TABULA's generic default is frequently a poor
+// match for a specific real building (a lecture hall or workshop can easily run
+// 4-5m against a 2.5m archetype default). n_Storey overrides the assumed storey
+// count (BuildingAppearance.N_Storey), which feeds the envelope-area *estimation*
+// path (calc_level_02.go/03.go/06.go) — has less effect once real surfaces are
+// also given, since those bypass estimation for the categories they cover.
+//
+// surfaces replaces TABULA's fixed 2-3 slots per element category with an
+// arbitrary list of individual physical surfaces (as a real building's
+// geometry has, rather than a generic archetype). Surfaces are grouped by
+// type ("roof", "wall", "floor", "window", or "door") and collapsed into an
+// area-weighted equivalent (summed area, area-weighted average U-value)
+// before the pipeline runs — mathematically exact, since U-values are
+// conductances and conductances in parallel add weighted by area. Window
+// surfaces are additionally bucketed by azimuth into ignis's five existing
+// solar-gain orientations (nearest of North/East/South/West, or Horizontal
+// if tilt is near 0); a window with no azimuth given defaults to South.
+// Any category with no surfaces given keeps its TABULA default.
+//
+// Caveat: for a variant with a nonzero measure fraction (i.e. not "Existing
+// state" — check GET /api/v1/data/:code), only the raw U-value term is
+// affected by surfaces or U_<Type>_1 overrides; the separate refurbishment
+// blend term is untouched, so the override only partially moves the result.
 //
 // Response:
 //
@@ -77,20 +109,31 @@ func (h *Handler) CalculateHeatDemand(c *gin.Context) {
 	// Apply optional body overrides. ShouldBindJSON tolerates an empty
 	// JSON object {} — any present field replaces the TABULA default.
 	var overrides struct {
-		ARef                             *float64 `json:"A_ref"`
-		HeatingDays                      *int     `json:"HeatingDays"`
-		ThetaE                           *float64 `json:"Theta_e"`
-		ThetaI                           *float64 `json:"theta_i"`
-		ISolSouth                        *float64 `json:"I_Sol_South"`
-		ISolEast                         *float64 `json:"I_Sol_East"`
-		ISolWest                         *float64 `json:"I_Sol_West"`
-		ISolNorth                        *float64 `json:"I_Sol_North"`
-		ISolHorizontal                   *float64 `json:"I_Sol_Hor"`
-		DeltaUThermalBridgingOriginal    *float64 `json:"delta_U_ThermalBridging_Original"`
-		DeltaUThermalBridgingRefurbished *float64 `json:"delta_U_ThermalBridging_Refurbished"`
+		ARef                             *float64  `json:"A_ref"`
+		HeatingDays                      *int      `json:"HeatingDays"`
+		ThetaE                           *float64  `json:"Theta_e"`
+		ThetaI                           *float64  `json:"theta_i"`
+		ISolSouth                        *float64  `json:"I_Sol_South"`
+		ISolEast                         *float64  `json:"I_Sol_East"`
+		ISolWest                         *float64  `json:"I_Sol_West"`
+		ISolNorth                        *float64  `json:"I_Sol_North"`
+		ISolHorizontal                   *float64  `json:"I_Sol_Hor"`
+		DeltaUThermalBridgingOriginal    *float64  `json:"delta_U_ThermalBridging_Original"`
+		DeltaUThermalBridgingRefurbished *float64  `json:"delta_U_ThermalBridging_Refurbished"`
+		HRoom                            *float64  `json:"h_room"`
+		NStorey                          *int      `json:"n_Storey"`
+		NAirInfiltration                 *float64  `json:"n_air_infiltration"`
+		NAirUse                          *float64  `json:"n_air_use"`
+		CM                               *float64  `json:"c_m"`
+		Surfaces                         []Surface `json:"surfaces"`
 	}
 	if err := c.ShouldBindJSON(&overrides); err != nil && !errors.Is(err, io.EOF) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body: " + err.Error()})
+		return
+	}
+
+	if err := aggregateSurfaces(overrides.Surfaces, building); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -162,6 +205,41 @@ func (h *Handler) CalculateHeatDemand(c *gin.Context) {
 			return
 		}
 		building.AdvancedParameters.ThermalBridges.Delta_U_ThermalBridging_Refurbished = *overrides.DeltaUThermalBridgingRefurbished
+	}
+	if overrides.HRoom != nil {
+		if *overrides.HRoom <= 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "h_room must be a positive number"})
+			return
+		}
+		building.BasicParameters.BuildingAppearance.H_room = *overrides.HRoom
+	}
+	if overrides.NStorey != nil {
+		if *overrides.NStorey <= 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "n_Storey must be a positive number"})
+			return
+		}
+		building.BasicParameters.BuildingAppearance.N_Storey = *overrides.NStorey
+	}
+	if overrides.NAirInfiltration != nil {
+		if *overrides.NAirInfiltration < 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "n_air_infiltration must not be negative"})
+			return
+		}
+		building.AdvancedParameters.AirInfiltration.N_air_infiltration = *overrides.NAirInfiltration
+	}
+	if overrides.NAirUse != nil {
+		if *overrides.NAirUse < 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "n_air_use must not be negative"})
+			return
+		}
+		building.AdvancedParameters.AirInfiltration.N_air_use = *overrides.NAirUse
+	}
+	if overrides.CM != nil {
+		if *overrides.CM <= 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "c_m must be a positive number"})
+			return
+		}
+		building.AdvancedParameters.HeatTransfer.C_m = *overrides.CM
 	}
 
 	svc := service.NewIgnisService()

@@ -34,7 +34,7 @@ info:
     url: https://github.com/thd-spatial-ai/ignis/blob/main/LICENSE
   contact:
     name: THD-Spatial-AI
-    url: https://github.com/thd-spatial-ai/ignis
+    url: https://github.com/thd-spatial-ai/
 
 servers:
   - url: https://localhost
@@ -233,8 +233,10 @@ components:
     BadRequest:
       description: >
         Invalid input (unknown country, malformed code, or an invalid
-        CalculateRequest override — A_ref not greater than 0, HeatingDays or
-        I_Sol_* negative, or a thermal-bridging ΔU negative)
+        CalculateRequest override — A_ref, h_room, n_Storey, or c_m not greater
+        than 0, HeatingDays, I_Sol_*, n_air_infiltration, or n_air_use negative,
+        a thermal-bridging ΔU negative, or a surface with an unknown type /
+        non-positive area / non-positive u_value)
       content:
         application/json:
           schema:
@@ -448,6 +450,98 @@ components:
             Overrides ThermalBridges.Delta_U_ThermalBridging_Refurbished (W/m²K,
             added to the envelope's U-values). Must not be negative.
           example: 0.05
+        h_room:
+          type: number
+          format: double
+          description: >
+            Overrides BuildingAppearance.H_room (m), the archetype's assumed room
+            height. Feeds the ventilation heat transfer coefficient directly —
+            often a large lever, since TABULA's generic default is frequently a
+            poor match for a specific real building. Must be greater than 0.
+          example: 2.8
+        n_Storey:
+          type: integer
+          description: >
+            Overrides BuildingAppearance.N_Storey, the archetype's assumed storey
+            count. Feeds the envelope-area *estimation* path — has less effect
+            once real surfaces are also given, since those bypass estimation for
+            the categories they cover. Must be greater than 0.
+          example: 3
+        n_air_infiltration:
+          type: number
+          format: double
+          description: >
+            Overrides AirInfiltration.N_air_infiltration (1/h), the uncontrolled
+            air-change rate through gaps and cracks. Must not be negative.
+          example: 0.2
+        n_air_use:
+          type: number
+          format: double
+          description: >
+            Overrides AirInfiltration.N_air_use (1/h), the ventilation air-change
+            rate during occupancy. Must not be negative.
+          example: 0.4
+        c_m:
+          type: number
+          format: double
+          description: >
+            Overrides HeatTransfer.C_m (J/(m²K)), the internal heat capacity per m²
+            of useful floor area — feeds the gain-utilization time constant
+            (calc_level_12.go). Must be greater than 0.
+          example: 165000
+        surfaces:
+          type: array
+          description: >
+            Replaces TABULA's fixed 2-3 slots per element category with an
+            arbitrary list of individual physical surfaces, as a real
+            building's geometry has rather than a generic archetype.
+            Surfaces are grouped by type and collapsed into an area-weighted
+            equivalent (summed area, area-weighted average U-value) before
+            the pipeline runs — mathematically exact, since U-values are
+            conductances and conductances in parallel add weighted by area.
+            A category with no surfaces given keeps its TABULA default.
+          items:
+            $ref: "#/components/schemas/Surface"
+
+    Surface:
+      type: object
+      description: >
+        One physical building element. Shape mirrors BuEM's
+        envelope.elements[] so the same source data can drive both models.
+      properties:
+        id:
+          type: string
+          description: Caller-assigned identifier, used only in error messages.
+          example: wall-1
+        type:
+          type: string
+          enum: [roof, wall, floor, window, door]
+        area:
+          type: number
+          format: double
+          description: m². Must be greater than 0.
+          example: 60.0
+        u_value:
+          type: number
+          format: double
+          description: W/(m²K). Must be greater than 0.
+          example: 0.8
+        azimuth:
+          type: number
+          format: double
+          description: >
+            Degrees, 0=N/90=E/180=S/270=W. Windows only: rounds to the
+            nearest of ignis's five solar-gain buckets (N/E/S/W/Horizontal).
+            Defaults to South (180) if omitted.
+          example: 180
+        tilt:
+          type: number
+          format: double
+          description: >
+            Degrees. Windows only: within 5° of 0 buckets the window as
+            Horizontal (skylight) regardless of azimuth.
+          example: 90
+      required: [id, type, area, u_value]
 
     CalculateResponse:
       type: object

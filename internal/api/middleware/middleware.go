@@ -10,7 +10,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const maxRequestBodyBytes = 1024 // 1 KB — sufficient for {"A_ref": 150.0}
+// 64 KB — the scalar overrides (A_ref, HeatingDays, ...) need under 1 KB,
+// but the surfaces override (issue #5) is an arbitrary-length list of
+// individual building elements, so the cap has to hold a realistically
+// detailed building (tens to low hundreds of surfaces), not just a handful
+// of scalars.
+const maxRequestBodyBytes = 64 * 1024
 
 // RequestBodyLimit rejects bodies larger than maxRequestBodyBytes.
 // Protects the calculate endpoint from oversized payloads.
