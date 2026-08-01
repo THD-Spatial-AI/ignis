@@ -1,0 +1,25 @@
+{
+  "A_ref": 150.0,
+  "HeatingDays": 200,
+  "Theta_e": -5.0,
+  "theta_i": 20.0,
+  "I_Sol_South": 400.0,
+  "I_Sol_East": 150.0,
+  "I_Sol_West": 150.0,
+  "I_Sol_North": 80.0,
+  "I_Sol_Hor": 500.0,
+  "delta_U_ThermalBridging_Original": 0.1,
+  "delta_U_ThermalBridging_Refurbished": 0.05,
+  "h_room": 2.8,
+  "n_Storey": 3,
+  "n_air_infiltration": 0.15,
+  "n_air_use": 0.4,
+  "c_m": 165000,
+  "surfaces": [
+    {"id": "wall-1", "type": "wall", "area": 60.0, "u_value": 0.8, "azimuth": 180},
+    {"id": "wall-2", "type": "wall", "area": 45.0, "u_value": 0.8, "azimuth": 90},
+    {"id": "roof-1", "type": "roof", "area": 75.0, "u_value": 0.5},
+    {"id": "win-1", "type": "window", "area": 8.0, "u_value": 1.2, "azimuth": 90},
+    {"id": "win-2", "type": "window", "area": 4.0, "u_value": 1.2, "azimuth": 180, "tilt": 0}
+  ]
+}

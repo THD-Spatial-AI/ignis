@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/THD-Spatial-AI/ignis/schemas/response",
+  "title": "ignis POST /api/v1/calculate/:code Response Schema",
+  "description": "Response body for a successful POST /api/v1/calculate/:code.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["variant_code", "q_h_nd", "unit"],
+  "properties": {
+    "variant_code": {
+      "type": "string",
+      "description": "The TABULA Code_BuildingVariant this result was calculated for, echoed back from the request path."
+    },
+    "q_h_nd": {
+      "type": "number",
+      "description": "Annual heating demand, rounded to two decimal places."
+    },
+    "unit": {
+      "const": "kWh/(m2.a)"
+    }
+  }
+}
