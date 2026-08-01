@@ -193,6 +193,23 @@ func TestCalculateHeatDemand_zeroARef_returns400(t *testing.T) {
 	}
 }
 
+// TestCalculateHeatDemand_unknownField_returns400 proves a typo'd field name
+// (e.g. "srufaces" instead of "surfaces") is rejected rather than silently
+// ignored, leaving the TABULA default in place with no signal anything was wrong.
+func TestCalculateHeatDemand_unknownField_returns400(t *testing.T) {
+	mock := &mockRepo{
+		getVariant: func(_ context.Context, _, _ string) (*models.TabulaBuildingParameters, string, float64, error) {
+			return minimalBuilding(), "DE.N.SFH.01.Gen", 100.0, nil
+		},
+	}
+	h := newTestHandler(mock)
+	body, _ := json.Marshal(map[string]float64{"srufaces": 1})
+	w := serve(http.MethodPost, "/calculate/DE.N.SFH.01.Gen", "/calculate/:code", h.CalculateHeatDemand, body)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for unknown field, got %d", w.Code)
+	}
+}
+
 func TestCalculateHeatDemand_negativeHeatingDays_returns400(t *testing.T) {
 	mock := &mockRepo{
 		getVariant: func(_ context.Context, _, _ string) (*models.TabulaBuildingParameters, string, float64, error) {
