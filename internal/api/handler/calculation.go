@@ -122,6 +122,9 @@ func (h *Handler) CalculateHeatDemand(c *gin.Context) {
 		DeltaUThermalBridgingRefurbished *float64  `json:"delta_U_ThermalBridging_Refurbished"`
 		HRoom                            *float64  `json:"h_room"`
 		NStorey                          *int      `json:"n_Storey"`
+		NAirInfiltration                 *float64  `json:"n_air_infiltration"`
+		NAirUse                          *float64  `json:"n_air_use"`
+		CM                               *float64  `json:"c_m"`
 		Surfaces                         []Surface `json:"surfaces"`
 	}
 	if err := c.ShouldBindJSON(&overrides); err != nil && !errors.Is(err, io.EOF) {
@@ -216,6 +219,27 @@ func (h *Handler) CalculateHeatDemand(c *gin.Context) {
 			return
 		}
 		building.BasicParameters.BuildingAppearance.N_Storey = *overrides.NStorey
+	}
+	if overrides.NAirInfiltration != nil {
+		if *overrides.NAirInfiltration < 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "n_air_infiltration must not be negative"})
+			return
+		}
+		building.AdvancedParameters.AirInfiltration.N_air_infiltration = *overrides.NAirInfiltration
+	}
+	if overrides.NAirUse != nil {
+		if *overrides.NAirUse < 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "n_air_use must not be negative"})
+			return
+		}
+		building.AdvancedParameters.AirInfiltration.N_air_use = *overrides.NAirUse
+	}
+	if overrides.CM != nil {
+		if *overrides.CM <= 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "c_m must be a positive number"})
+			return
+		}
+		building.AdvancedParameters.HeatTransfer.C_m = *overrides.CM
 	}
 
 	svc := service.NewIgnisService()

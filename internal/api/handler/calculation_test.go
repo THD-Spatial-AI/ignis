@@ -297,6 +297,81 @@ func TestCalculateHeatDemand_hRoomOverride_changesResult(t *testing.T) {
 	}
 }
 
+func TestCalculateHeatDemand_negativeNAirInfiltration_returns400(t *testing.T) {
+	mock := &mockRepo{
+		getVariant: func(_ context.Context, _, _ string) (*models.TabulaBuildingParameters, string, float64, error) {
+			return realisticBuilding(), "DE.N.SFH.01.Gen", 100.0, nil
+		},
+	}
+	h := newTestHandler(mock)
+	body, _ := json.Marshal(map[string]float64{"n_air_infiltration": -0.1})
+	w := serve(http.MethodPost, "/calculate/DE.N.SFH.01.Gen", "/calculate/:code", h.CalculateHeatDemand, body)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for negative n_air_infiltration, got %d", w.Code)
+	}
+}
+
+func TestCalculateHeatDemand_negativeNAirUse_returns400(t *testing.T) {
+	mock := &mockRepo{
+		getVariant: func(_ context.Context, _, _ string) (*models.TabulaBuildingParameters, string, float64, error) {
+			return realisticBuilding(), "DE.N.SFH.01.Gen", 100.0, nil
+		},
+	}
+	h := newTestHandler(mock)
+	body, _ := json.Marshal(map[string]float64{"n_air_use": -0.1})
+	w := serve(http.MethodPost, "/calculate/DE.N.SFH.01.Gen", "/calculate/:code", h.CalculateHeatDemand, body)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for negative n_air_use, got %d", w.Code)
+	}
+}
+
+func TestCalculateHeatDemand_zeroCM_returns400(t *testing.T) {
+	mock := &mockRepo{
+		getVariant: func(_ context.Context, _, _ string) (*models.TabulaBuildingParameters, string, float64, error) {
+			return realisticBuilding(), "DE.N.SFH.01.Gen", 100.0, nil
+		},
+	}
+	h := newTestHandler(mock)
+	body, _ := json.Marshal(map[string]float64{"c_m": 0})
+	w := serve(http.MethodPost, "/calculate/DE.N.SFH.01.Gen", "/calculate/:code", h.CalculateHeatDemand, body)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for zero c_m, got %d", w.Code)
+	}
+}
+
+// TestCalculateHeatDemand_cMOverride_changesResult proves c_m reaches the pipeline
+// (calc_level_12.go's time constant tau = C_m / (H_tr + H_ve), which feeds the gain
+// utilization factor).
+func TestCalculateHeatDemand_cMOverride_changesResult(t *testing.T) {
+	mock := &mockRepo{
+		getVariant: func(_ context.Context, _, _ string) (*models.TabulaBuildingParameters, string, float64, error) {
+			return realisticBuilding(), "DE.N.SFH.01.Gen", 100.0, nil
+		},
+	}
+	h := newTestHandler(mock)
+
+	baseline := serve(http.MethodPost, "/calculate/DE.N.SFH.01.Gen", "/calculate/:code", h.CalculateHeatDemand, []byte("{}"))
+	if baseline.Code != http.StatusOK {
+		t.Fatalf("baseline: expected 200, got %d — body: %s", baseline.Code, baseline.Body.String())
+	}
+	overridden := serve(http.MethodPost, "/calculate/DE.N.SFH.01.Gen", "/calculate/:code", h.CalculateHeatDemand,
+		[]byte(`{"c_m": 45}`))
+	if overridden.Code != http.StatusOK {
+		t.Fatalf("overridden: expected 200, got %d — body: %s", overridden.Code, overridden.Body.String())
+	}
+
+	var baseResp, overrideResp map[string]any
+	if err := json.Unmarshal(baseline.Body.Bytes(), &baseResp); err != nil {
+		t.Fatalf("baseline response is not valid JSON: %v", err)
+	}
+	if err := json.Unmarshal(overridden.Body.Bytes(), &overrideResp); err != nil {
+		t.Fatalf("overridden response is not valid JSON: %v", err)
+	}
+	if baseResp["q_h_nd"] == overrideResp["q_h_nd"] {
+		t.Errorf("expected c_m override to change q_h_nd, got identical value %v for both", baseResp["q_h_nd"])
+	}
+}
+
 // TestCalculateHeatDemand_heatingDaysOverride_changesResult proves the override actually
 // reaches the pipeline: zero heating days must produce a lower q_h_nd than the building's
 // default 185 heating days (realisticBuilding), not an identical result.

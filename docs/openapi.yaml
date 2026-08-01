@@ -233,9 +233,10 @@ components:
     BadRequest:
       description: >
         Invalid input (unknown country, malformed code, or an invalid
-        CalculateRequest override — A_ref, h_room, or n_Storey not greater than 0,
-        HeatingDays or I_Sol_* negative, a thermal-bridging ΔU negative, or a
-        surface with an unknown type / non-positive area / non-positive u_value)
+        CalculateRequest override — A_ref, h_room, n_Storey, or c_m not greater
+        than 0, HeatingDays, I_Sol_*, n_air_infiltration, or n_air_use negative,
+        a thermal-bridging ΔU negative, or a surface with an unknown type /
+        non-positive area / non-positive u_value)
       content:
         application/json:
           schema:
@@ -466,6 +467,28 @@ components:
             once real surfaces are also given, since those bypass estimation for
             the categories they cover. Must be greater than 0.
           example: 3
+        n_air_infiltration:
+          type: number
+          format: double
+          description: >
+            Overrides AirInfiltration.N_air_infiltration (1/h), the uncontrolled
+            air-change rate through gaps and cracks. Must not be negative.
+          example: 0.2
+        n_air_use:
+          type: number
+          format: double
+          description: >
+            Overrides AirInfiltration.N_air_use (1/h), the ventilation air-change
+            rate during occupancy. Must not be negative.
+          example: 0.4
+        c_m:
+          type: number
+          format: double
+          description: >
+            Overrides HeatTransfer.C_m (J/(m²K)), the internal heat capacity per m²
+            of useful floor area — feeds the gain-utilization time constant
+            (calc_level_12.go). Must be greater than 0.
+          example: 165000
         surfaces:
           type: array
           description: >
