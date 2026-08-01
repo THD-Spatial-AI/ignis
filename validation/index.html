@@ -741,6 +741,14 @@
 <li><strong>Reference:</strong> TABULA Excel workbook (<code>data/tabula-calculator-lite.xlsx</code>)</li>
 <li><strong>Pipeline:</strong> 17-level cascading calculation: geometry, envelope, U-values, climate, solar gains, thermal bridges, heat transfer coefficients</li>
 </ul>
+<div class="admonition note">
+<p class="admonition-title">Scope</p>
+<p>This runs the pipeline directly against each database row's unmodified
+TABULA defaults — it never goes through the <code>/api/v1/calculate/{code}</code>
+HTTP handler, so it doesn't exercise that endpoint's optional overrides
+(<code>A_ref</code>, <code>surfaces</code>, etc.). Those are additive: a request with no body
+reaches the exact same code path this validation covers.</p>
+</div>
 <hr />
 <h2 id="running-validation">Running validation<a class="headerlink" href="#running-validation" title="Permanent link">&para;</a></h2>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>go<span class="w"> </span>build<span class="w"> </span>-buildvcs<span class="o">=</span><span class="nb">false</span><span class="w"> </span>-o<span class="w"> </span>bin/<span class="w"> </span>./cmd/...
