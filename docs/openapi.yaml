@@ -34,7 +34,7 @@ info:
     url: https://github.com/thd-spatial-ai/ignis/blob/main/LICENSE
   contact:
     name: THD-Spatial-AI
-    url: https://github.com/thd-spatial-ai/ignis
+    url: https://github.com/thd-spatial-ai/
 
 servers:
   - url: https://localhost
@@ -234,7 +234,8 @@ components:
       description: >
         Invalid input (unknown country, malformed code, or an invalid
         CalculateRequest override — A_ref not greater than 0, HeatingDays or
-        I_Sol_* negative, or a thermal-bridging ΔU negative)
+        I_Sol_* negative, a thermal-bridging ΔU negative, or a surface with
+        an unknown type / non-positive area / non-positive u_value)
       content:
         application/json:
           schema:
@@ -448,6 +449,59 @@ components:
             Overrides ThermalBridges.Delta_U_ThermalBridging_Refurbished (W/m²K,
             added to the envelope's U-values). Must not be negative.
           example: 0.05
+        surfaces:
+          type: array
+          description: >
+            Replaces TABULA's fixed 2-3 slots per element category with an
+            arbitrary list of individual physical surfaces, as a real
+            building's geometry has rather than a generic archetype.
+            Surfaces are grouped by type and collapsed into an area-weighted
+            equivalent (summed area, area-weighted average U-value) before
+            the pipeline runs — mathematically exact, since U-values are
+            conductances and conductances in parallel add weighted by area.
+            A category with no surfaces given keeps its TABULA default.
+          items:
+            $ref: "#/components/schemas/Surface"
+
+    Surface:
+      type: object
+      description: >
+        One physical building element. Shape mirrors BuEM's
+        envelope.elements[] so the same source data can drive both models.
+      properties:
+        id:
+          type: string
+          description: Caller-assigned identifier, used only in error messages.
+          example: wall-1
+        type:
+          type: string
+          enum: [roof, wall, floor, window, door]
+        area:
+          type: number
+          format: double
+          description: m². Must be greater than 0.
+          example: 60.0
+        u_value:
+          type: number
+          format: double
+          description: W/(m²K). Must be greater than 0.
+          example: 0.8
+        azimuth:
+          type: number
+          format: double
+          description: >
+            Degrees, 0=N/90=E/180=S/270=W. Windows only: rounds to the
+            nearest of ignis's five solar-gain buckets (N/E/S/W/Horizontal).
+            Defaults to South (180) if omitted.
+          example: 180
+        tilt:
+          type: number
+          format: double
+          description: >
+            Degrees. Windows only: within 5° of 0 buckets the window as
+            Horizontal (skylight) regardless of azimuth.
+          example: 90
+      required: [id, type, area, u_value]
 
     CalculateResponse:
       type: object

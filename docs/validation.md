@@ -55,6 +55,13 @@ Pipeline validated against the TABULA reference values (±2% tolerance on `q_h_n
 - **Reference:** TABULA Excel workbook (`data/tabula-calculator-lite.xlsx`)
 - **Pipeline:** 17-level cascading calculation: geometry, envelope, U-values, climate, solar gains, thermal bridges, heat transfer coefficients
 
+!!! note "Scope"
+    This runs the pipeline directly against each database row's unmodified
+    TABULA defaults — it never goes through the `/api/v1/calculate/{code}`
+    HTTP handler, so it doesn't exercise that endpoint's optional overrides
+    (`A_ref`, `surfaces`, etc.). Those are additive: a request with no body
+    reaches the exact same code path this validation covers.
+
 ---
 
 ## Running validation
