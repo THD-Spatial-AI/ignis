@@ -23,6 +23,7 @@
     | How cold/mild the local climate is | `HeatingDays`, `Theta_e`, `theta_i` |
     | How much sun the site gets | `I_Sol_South`, `I_Sol_East`, `I_Sol_West`, `I_Sol_North`, `I_Sol_Hor` |
     | Extra heat loss at wall/roof/window junctions | `delta_U_ThermalBridging_Original`, `delta_U_ThermalBridging_Refurbished` |
+    | The building's actual room height or storey count | `h_room`, `n_Storey` |
 
     Every field is independent and optional — send just the one you want to
     change, and every other input still comes from the archetype's TABULA

@@ -35,6 +35,8 @@ import (
 //	  "I_Sol_Hor": 500.0,
 //	  "delta_U_ThermalBridging_Original": 0.1,
 //	  "delta_U_ThermalBridging_Refurbished": 0.05,
+//	  "h_room": 2.8,
+//	  "n_Storey": 3,
 //	  "surfaces": [
 //	    {"id": "wall-1", "type": "wall", "area": 60.0, "u_value": 0.8, "azimuth": 180},
 //	    {"id": "win-1", "type": "window", "area": 8.0, "u_value": 1.2, "azimuth": 90}
@@ -45,6 +47,15 @@ import (
 // the matching AdvancedParameters fields used by the climate/solar-gain/
 // thermal-bridging calc levels. Omit the body entirely to use TABULA defaults
 // throughout.
+//
+// h_room overrides the archetype's assumed room height (BuildingAppearance.H_room,
+// meters) — feeds the ventilation heat transfer coefficient directly (calc_level_01.go),
+// so this is often a large lever: TABULA's generic default is frequently a poor
+// match for a specific real building (a lecture hall or workshop can easily run
+// 4-5m against a 2.5m archetype default). n_Storey overrides the assumed storey
+// count (BuildingAppearance.N_Storey), which feeds the envelope-area *estimation*
+// path (calc_level_02.go/03.go/06.go) — has less effect once real surfaces are
+// also given, since those bypass estimation for the categories they cover.
 //
 // surfaces replaces TABULA's fixed 2-3 slots per element category with an
 // arbitrary list of individual physical surfaces (as a real building's
@@ -109,6 +120,8 @@ func (h *Handler) CalculateHeatDemand(c *gin.Context) {
 		ISolHorizontal                   *float64  `json:"I_Sol_Hor"`
 		DeltaUThermalBridgingOriginal    *float64  `json:"delta_U_ThermalBridging_Original"`
 		DeltaUThermalBridgingRefurbished *float64  `json:"delta_U_ThermalBridging_Refurbished"`
+		HRoom                            *float64  `json:"h_room"`
+		NStorey                          *int      `json:"n_Storey"`
 		Surfaces                         []Surface `json:"surfaces"`
 	}
 	if err := c.ShouldBindJSON(&overrides); err != nil && !errors.Is(err, io.EOF) {
@@ -189,6 +202,20 @@ func (h *Handler) CalculateHeatDemand(c *gin.Context) {
 			return
 		}
 		building.AdvancedParameters.ThermalBridges.Delta_U_ThermalBridging_Refurbished = *overrides.DeltaUThermalBridgingRefurbished
+	}
+	if overrides.HRoom != nil {
+		if *overrides.HRoom <= 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "h_room must be a positive number"})
+			return
+		}
+		building.BasicParameters.BuildingAppearance.H_room = *overrides.HRoom
+	}
+	if overrides.NStorey != nil {
+		if *overrides.NStorey <= 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "n_Storey must be a positive number"})
+			return
+		}
+		building.BasicParameters.BuildingAppearance.N_Storey = *overrides.NStorey
 	}
 
 	svc := service.NewIgnisService()

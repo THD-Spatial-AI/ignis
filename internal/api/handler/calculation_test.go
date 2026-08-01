@@ -235,6 +235,68 @@ func TestCalculateHeatDemand_negativeThermalBridging_returns400(t *testing.T) {
 	}
 }
 
+func TestCalculateHeatDemand_zeroHRoom_returns400(t *testing.T) {
+	mock := &mockRepo{
+		getVariant: func(_ context.Context, _, _ string) (*models.TabulaBuildingParameters, string, float64, error) {
+			return realisticBuilding(), "DE.N.SFH.01.Gen", 100.0, nil
+		},
+	}
+	h := newTestHandler(mock)
+	body, _ := json.Marshal(map[string]float64{"h_room": 0})
+	w := serve(http.MethodPost, "/calculate/DE.N.SFH.01.Gen", "/calculate/:code", h.CalculateHeatDemand, body)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for zero h_room, got %d", w.Code)
+	}
+}
+
+func TestCalculateHeatDemand_zeroNStorey_returns400(t *testing.T) {
+	mock := &mockRepo{
+		getVariant: func(_ context.Context, _, _ string) (*models.TabulaBuildingParameters, string, float64, error) {
+			return realisticBuilding(), "DE.N.SFH.01.Gen", 100.0, nil
+		},
+	}
+	h := newTestHandler(mock)
+	body, _ := json.Marshal(map[string]int{"n_Storey": 0})
+	w := serve(http.MethodPost, "/calculate/DE.N.SFH.01.Gen", "/calculate/:code", h.CalculateHeatDemand, body)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for zero n_Storey, got %d", w.Code)
+	}
+}
+
+// TestCalculateHeatDemand_hRoomOverride_changesResult proves h_room reaches the
+// pipeline: realisticBuilding() leaves H_room at its zero value (no ventilation
+// heat loss contribution — see calc_level_01.go's H_Ventilation formula), so a
+// positive override must produce a different q_h_nd, not an identical one.
+func TestCalculateHeatDemand_hRoomOverride_changesResult(t *testing.T) {
+	mock := &mockRepo{
+		getVariant: func(_ context.Context, _, _ string) (*models.TabulaBuildingParameters, string, float64, error) {
+			return realisticBuilding(), "DE.N.SFH.01.Gen", 100.0, nil
+		},
+	}
+	h := newTestHandler(mock)
+
+	baseline := serve(http.MethodPost, "/calculate/DE.N.SFH.01.Gen", "/calculate/:code", h.CalculateHeatDemand, []byte("{}"))
+	if baseline.Code != http.StatusOK {
+		t.Fatalf("baseline: expected 200, got %d — body: %s", baseline.Code, baseline.Body.String())
+	}
+	overridden := serve(http.MethodPost, "/calculate/DE.N.SFH.01.Gen", "/calculate/:code", h.CalculateHeatDemand,
+		[]byte(`{"h_room": 2.8}`))
+	if overridden.Code != http.StatusOK {
+		t.Fatalf("overridden: expected 200, got %d — body: %s", overridden.Code, overridden.Body.String())
+	}
+
+	var baseResp, overrideResp map[string]any
+	if err := json.Unmarshal(baseline.Body.Bytes(), &baseResp); err != nil {
+		t.Fatalf("baseline response is not valid JSON: %v", err)
+	}
+	if err := json.Unmarshal(overridden.Body.Bytes(), &overrideResp); err != nil {
+		t.Fatalf("overridden response is not valid JSON: %v", err)
+	}
+	if baseResp["q_h_nd"] == overrideResp["q_h_nd"] {
+		t.Errorf("expected h_room override to change q_h_nd, got identical value %v for both", baseResp["q_h_nd"])
+	}
+}
+
 // TestCalculateHeatDemand_heatingDaysOverride_changesResult proves the override actually
 // reaches the pipeline: zero heating days must produce a lower q_h_nd than the building's
 // default 185 heating days (realisticBuilding), not an identical result.

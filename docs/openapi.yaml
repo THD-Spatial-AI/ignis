@@ -233,9 +233,9 @@ components:
     BadRequest:
       description: >
         Invalid input (unknown country, malformed code, or an invalid
-        CalculateRequest override — A_ref not greater than 0, HeatingDays or
-        I_Sol_* negative, a thermal-bridging ΔU negative, or a surface with
-        an unknown type / non-positive area / non-positive u_value)
+        CalculateRequest override — A_ref, h_room, or n_Storey not greater than 0,
+        HeatingDays or I_Sol_* negative, a thermal-bridging ΔU negative, or a
+        surface with an unknown type / non-positive area / non-positive u_value)
       content:
         application/json:
           schema:
@@ -449,6 +449,23 @@ components:
             Overrides ThermalBridges.Delta_U_ThermalBridging_Refurbished (W/m²K,
             added to the envelope's U-values). Must not be negative.
           example: 0.05
+        h_room:
+          type: number
+          format: double
+          description: >
+            Overrides BuildingAppearance.H_room (m), the archetype's assumed room
+            height. Feeds the ventilation heat transfer coefficient directly —
+            often a large lever, since TABULA's generic default is frequently a
+            poor match for a specific real building. Must be greater than 0.
+          example: 2.8
+        n_Storey:
+          type: integer
+          description: >
+            Overrides BuildingAppearance.N_Storey, the archetype's assumed storey
+            count. Feeds the envelope-area *estimation* path — has less effect
+            once real surfaces are also given, since those bypass estimation for
+            the categories they cover. Must be greater than 0.
+          example: 3
         surfaces:
           type: array
           description: >
