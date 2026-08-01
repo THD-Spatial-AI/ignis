@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 BIN   := bin
 
-.PHONY: build build-app build-db build-validate run create-db test validate clean
+.PHONY: build build-app build-db build-validate run create-db test schema-check validate clean
 
 ## build: compile all binaries into bin/
 build: build-app build-db build-validate
@@ -39,6 +39,10 @@ create-db: build-db
 ## test: run all unit tests
 test:
 	go test ./...
+
+## schema-check: validate schemas/*.json against their example payloads
+schema-check:
+	python3 test/schema_check.py
 
 ## validate: build and run the accuracy validation against the database
 validate: build-validate

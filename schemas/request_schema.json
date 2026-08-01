@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/THD-Spatial-AI/ignis/schemas/request",
+  "title": "ignis POST /api/v1/calculate/:code Request Schema",
+  "description": "Optional JSON body for POST /api/v1/calculate/:code. Every field overrides the corresponding TABULA record default for the variant named in the path; omit any field to keep the TABULA value. An empty object {} or an empty body is valid and uses TABULA defaults throughout.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "A_ref": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "Overrides the reference floor area (A_C_Ref_Input), m²."
+    },
+    "HeatingDays": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Overrides the heating season length, days."
+    },
+    "Theta_e": {
+      "type": "number",
+      "description": "Overrides the external design temperature, °C. May be negative."
+    },
+    "theta_i": {
+      "type": "number",
+      "description": "Overrides the internal design temperature, °C."
+    },
+    "I_Sol_South": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Overrides south-facing solar irradiance, W/m²."
+    },
+    "I_Sol_East": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Overrides east-facing solar irradiance, W/m²."
+    },
+    "I_Sol_West": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Overrides west-facing solar irradiance, W/m²."
+    },
+    "I_Sol_North": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Overrides north-facing solar irradiance, W/m²."
+    },
+    "I_Sol_Hor": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Overrides horizontal solar irradiance, W/m²."
+    },
+    "delta_U_ThermalBridging_Original": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Overrides the thermal-bridging U-value delta for the original (unrefurbished) envelope, W/m²K."
+    },
+    "delta_U_ThermalBridging_Refurbished": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Overrides the thermal-bridging U-value delta for the refurbished envelope, W/m²K."
+    },
+    "h_room": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "Overrides the archetype's assumed room height, m. Feeds the ventilation heat transfer coefficient directly."
+    },
+    "n_Storey": {
+      "type": "integer",
+      "exclusiveMinimum": 0,
+      "description": "Overrides the assumed storey count. Feeds the envelope-area estimation path; has less effect once real surfaces are also given."
+    },
+    "n_air_infiltration": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Overrides the infiltration air change rate, 1/h."
+    },
+    "n_air_use": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Overrides the use-related air change rate, 1/h."
+    },
+    "c_m": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "Overrides the effective heat capacity, J/K."
+    },
+    "surfaces": {
+      "type": "array",
+      "description": "Replaces TABULA's fixed 2-3 slots per element category with an arbitrary list of individual physical surfaces. Surfaces are grouped by type and collapsed into an area-weighted equivalent before the pipeline runs. Any category with no surfaces given keeps its TABULA default.",
+      "items": {
+        "$ref": "#/$defs/surface"
+      }
+    }
+  },
+  "$defs": {
+    "surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "area", "u_value"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Caller-assigned identifier for this surface, used only in error messages."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["roof", "wall", "floor", "window", "door"],
+          "description": "Element category this surface belongs to."
+        },
+        "area": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Surface area, m²."
+        },
+        "u_value": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Thermal transmittance, W/m²K."
+        },
+        "azimuth": {
+          "type": "number",
+          "description": "Degrees, 0=N/90=E/180=S/270=W. Windows only; defaults to South (180) if omitted."
+        },
+        "tilt": {
+          "type": "number",
+          "description": "Degrees; windows only. Near 0 buckets the window as horizontal (skylight)."
+        }
+      }
+    }
+  }
+}
