@@ -52,7 +52,7 @@ services:
     container_name: ignis-app
     build:
       context: ./..
-      dockerfile: environment/Dockerfile   # multi-stage: builder (Go toolchain) -> final (binary only)
+      dockerfile: environment/ignis-app.dockerfile   # multi-stage: builder (Go toolchain) -> final (binary only)
     env_file: [env/common.env, env/app.env]        # CORS config + DB connection
     environment:
       - APP_PORT=${APP_PORT:-8080}    # internal listen port; one value for the app, its health check and the proxy
@@ -80,9 +80,9 @@ services:
     profiles: ["seed"]
     build:
       context: ./..
-      dockerfile: environment/Dockerfile.build_db
+      dockerfile: environment/ignis-db.dockerfile
     # No volume mount for the workbook — tabula-calculator-lite.xlsx is baked
-    # into the image itself (see Dockerfile.build_db), since it's static
+    # into the image itself (see ignis-db.dockerfile), since it's static
     # reference data, not something that changes independently of a release.
     env_file: [env/app.env]
     depends_on:

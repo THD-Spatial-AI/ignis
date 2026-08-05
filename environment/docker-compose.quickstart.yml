@@ -14,7 +14,7 @@
 # ignis-build-db is gated behind the `seed` profile so it never runs on `up`:
 # it DROPS and recreates all country tables from the TABULA workbook baked
 # into its image. The workbook is in the image itself (see
-# Dockerfile.build_db), so seeding needs no source checkout and no manual
+# ignis-db.dockerfile), so seeding needs no source checkout and no manual
 # download. Until it has run once, the schema is empty and every endpoint
 # that reads it will fail.
 #

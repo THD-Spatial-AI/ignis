@@ -17,10 +17,10 @@ jobs:
         include:
           - name: ignis-app
             image: ghcr.io/thd-spatial-ai/ignis
-            dockerfile: environment/Dockerfile
+            dockerfile: environment/ignis-app.dockerfile
           - name: ignis-build-db
             image: ghcr.io/thd-spatial-ai/ignis-build-db
-            dockerfile: environment/Dockerfile.build_db
+            dockerfile: environment/ignis-db.dockerfile
     steps:
       - uses: actions/checkout@v4
         with:
