@@ -31,7 +31,7 @@ Sheets kept:
 
 Result: **11 MB**, down from the original **28 MB** — everything else (roughly two-thirds of the file, including a single sheet, `Calc.Set.System`, that alone exceeded the size of the sheet actually used) was unused by this tool.
 
-This is a derivative of TABULA Webtool data and remains under the same **CC BY 4.0** license as the original — see attribution above and in [`ATTRIBUTIONS.md`](../ATTRIBUTIONS.md). It is what `environment/Dockerfile.build_db` bakes into the `ignis-build-db` image (see that file's comments): the data is static source-of-truth reference data, read once to seed Postgres and never modified independently afterward, so shipping it inside the image — rather than mounting it in at runtime — makes a given image tag fully reproducible.
+This is a derivative of TABULA Webtool data and remains under the same **CC BY 4.0** license as the original — see attribution above and in [`ATTRIBUTIONS.md`](../ATTRIBUTIONS.md). It is what `environment/ignis-db.dockerfile` bakes into the `ignis-build-db` image (see that file's comments): the data is static source-of-truth reference data, read once to seed Postgres and never modified independently afterward, so shipping it inside the image — rather than mounting it in at runtime — makes a given image tag fully reproducible.
 
 ## Usage
 
@@ -42,7 +42,7 @@ go build -o bin/build_db cmd/build_db/main.go
 ./bin/build_db
 ```
 
-Inside Docker (`environment/Dockerfile.build_db`), only `tabula-calculator-lite.xlsx` is present in the image at all, so there's no ambiguity there.
+Inside Docker (`environment/ignis-db.dockerfile`), only `tabula-calculator-lite.xlsx` is present in the image at all, so there's no ambiguity there.
 
 !!! warning "Destructive operation"
     Running `build_db` drops and recreates all TABULA country tables. Do not run against a database that holds production data without a backup.
