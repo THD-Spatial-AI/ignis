@@ -11,13 +11,17 @@ import (
 	"github.com/thd-spatial-ai/ignis/internal/version"
 )
 
+func versionString() string {
+	return fmt.Sprintf("%s (commit %s, built %s)", version.Version, version.Commit, version.Date)
+}
+
 // Setup app server and routes
 func main() {
 	showVersion := flag.Bool("version", false, "print version and exit")
 	flag.BoolVar(showVersion, "v", false, "print version and exit (shorthand)")
 	flag.Parse()
 	if *showVersion {
-		fmt.Printf("%s (commit %s, built %s)\n", version.Version, version.Commit, version.Date)
+		fmt.Println(versionString())
 		os.Exit(0)
 	}
 
