@@ -5,6 +5,7 @@ build_db
 validate
 *.exe
 *.exe~
+dist/
 
 # Environment
 .env
