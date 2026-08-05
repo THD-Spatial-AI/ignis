@@ -15,12 +15,19 @@ func versionString() string {
 	return fmt.Sprintf("%s (commit %s, built %s)", version.Version, version.Commit, version.Date)
 }
 
+// parseVersionFlag reports whether args request the version string, so the
+// flag-handling decision can be tested without starting a server or exiting.
+func parseVersionFlag(args []string) bool {
+	fs := flag.NewFlagSet("ignis", flag.ExitOnError)
+	showVersion := fs.Bool("version", false, "print version and exit")
+	fs.BoolVar(showVersion, "v", false, "print version and exit (shorthand)")
+	fs.Parse(args)
+	return *showVersion
+}
+
 // Setup app server and routes
 func main() {
-	showVersion := flag.Bool("version", false, "print version and exit")
-	flag.BoolVar(showVersion, "v", false, "print version and exit (shorthand)")
-	flag.Parse()
-	if *showVersion {
+	if parseVersionFlag(os.Args[1:]) {
 		fmt.Println(versionString())
 		os.Exit(0)
 	}
