@@ -65,7 +65,11 @@
 			reverse_proxy ignis-app:{$APP_PORT:8080}
 		}
 
+		# Without the CORS header here too, a missing/wrong X-Api-Key shows up
+		# in the browser as an opaque CORS failure instead of this 403 —
+		# indistinguishable from a real CORS misconfiguration during debugging.
 		handle {
+			header @allowed_origin Access-Control-Allow-Origin "{http.regexp.allowed_origin.1}"
 			respond "Forbidden: missing or invalid API key" 403
 		}
 	}

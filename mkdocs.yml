@@ -24,12 +24,17 @@ theme:
     - navigation.footer
     - navigation.indexes
     - navigation.instant
+    - navigation.tabs
+    - navigation.tabs.sticky
     - navigation.top
+    - navigation.path
     - navigation.tracking
+    - navigation.sections
     - search.highlight
     - search.share
     - search.suggest
     - toc.follow
+    - toc.integrate
   language: en
   palette:
     - media: "(prefers-color-scheme)"
