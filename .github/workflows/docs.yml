@@ -51,6 +51,11 @@ jobs:
           restore-keys: |
             mkdocs-material-
       - run: pip install -r docs/requirements.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Lint OpenAPI specification
+        run: npx @redocly/cli lint docs/openapi/openapi.yaml --format=github-actions
       - run: mkdocs build
       # arc42 PDF is intentionally not copied into site/: the architecture
       # documentation is still under development and not ready to be public.
