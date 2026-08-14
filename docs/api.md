@@ -1,6 +1,6 @@
 # API reference
 
-The interactive reference below is generated from the OpenAPI spec ([`openapi.yaml`](openapi.yaml)). Download it to generate a client or import it into Postman.
+The interactive reference lives in its own standalone page — [`api/index.html`](api/index.html) — so it can be opened directly without running `mkdocs serve`. It renders [`api/openapi.yaml`](api/openapi.yaml); download that file to generate a client or import it into Postman.
 
 ## Authentication
 
@@ -70,19 +70,14 @@ The body also accepts an optional `surfaces` list, one entry per physical elemen
 
 ## Testing it yourself
 
-The Swagger UI below can call a locally running ignis directly.
+[Open the API reference](api/index.html) and it can call a locally running ignis directly — no `mkdocs serve` needed to view it.
 
 **Step 1:** Start the stack, from `environment/`: `docker compose -f docker-compose.quickstart.yml up -d`. On a first run, load the TABULA data once: `docker compose -f docker-compose.quickstart.yml --profile seed run --rm ignis-build-db`.
 
-**Step 2:** Serve these docs locally with `mkdocs serve`. The reverse proxy already allows requests from `http://localhost:8000` (its default port).
+**Step 2:** Serve `docs/api/` on `http://localhost:8000` (`python -m http.server 8000` from that directory works) — the reverse proxy's `ALLOWED_ORIGINS` allows that origin already. Opening the file directly (`file://`) works for reading the reference, but **Try it out** needs an allowed origin.
 
 **Step 3:** If your browser has never trusted the local proxy's certificate, open `https://localhost` directly once and accept it, or run `caddy trust`.
 
-**Step 4:** Click **Authorize** below and enter the API key checked by the reverse proxy (`X-Api-Key`; the prototype default is set in `environment/env/proxy.env`). It applies to every **Try it out** call from then on.
+**Step 4:** Click **Authorize** and enter the API key checked by the reverse proxy (`X-Api-Key`; the prototype default is set in `environment/env/proxy.env`). It applies to every **Try it out** call from then on.
 
 **Step 5:** Expand an endpoint, click **Try it out**, fill in the parameters, then **Execute**.
-
-!!! bug "Swagger UI bug"
-    The Swagger UI sometimes fails to load. Reload the browser page and it should come up correctly.
-
-<swagger-ui src="openapi.yaml"/>

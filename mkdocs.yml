@@ -63,8 +63,6 @@ theme:
 plugins:
   - search:
       separator: '[\s\u200b\-_,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
-  - swagger-ui-tag:
-      tryItOutEnabled: true
 
 # Extensions
 markdown_extensions:
