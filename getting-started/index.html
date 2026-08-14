@@ -975,7 +975,7 @@
 <p>The reverse proxy gates every request behind an <code>X-Api-Key</code> header, matched against <code>IGNIS_API_KEY</code> from <code>env/proxy.env</code>. Requests without a valid key receive <code>403 Forbidden</code> and never reach the app.</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>curl<span class="w"> </span>-k<span class="w"> </span>-H<span class="w"> </span><span class="s2">&quot;X-Api-Key: supersecret123&quot;</span><span class="w"> </span>https://localhost/some-endpoint
 </span></code></pre></div>
-<p><code>/health</code> is the single exemption, so container health checks and uptime monitors need no credential.</p>
+<p><code>/ignis/health</code> is the single exemption, so container health checks and uptime monitors need no credential.</p>
 <div class="admonition danger">
 <p class="admonition-title">Never expose ignis directly</p>
 <p>Authentication lives entirely in the proxy, so ignis itself must never be reachable except through it. None of the compose files publish a port for the app, and that should not change.</p>
@@ -1093,7 +1093,7 @@
 <p>The TABULA workbook is baked into the <code>ignis-build-db</code> image, so there is nothing to download.</p>
 <h2 id="verifying">Verifying<a class="headerlink" href="#verifying" title="Permanent link">&para;</a></h2>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>&lt;compose<span class="w"> </span>prefix&gt;<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ignis-db<span class="w"> </span>psql<span class="w"> </span>-U<span class="w"> </span>postgres<span class="w"> </span>-d<span class="w"> </span>ignis<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;\dt tabula.*&quot;</span>
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>curl<span class="w"> </span>-k<span class="w"> </span>-s<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">&#39;%{http_code}\n&#39;</span><span class="w"> </span>https://localhost/health
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>curl<span class="w"> </span>-k<span class="w"> </span>-s<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">&#39;%{http_code}\n&#39;</span><span class="w"> </span>https://localhost/ignis/health
 </span></code></pre></div>
 <p>The first lists the seeded tables. The second returns <code>200</code>. Drop <code>-k</code> on the Docker-from-source path, where the certificate chains to the CA you trusted.</p>
 <h2 id="tearing-down">Tearing down<a class="headerlink" href="#tearing-down" title="Permanent link">&para;</a></h2>
@@ -1212,7 +1212,7 @@
 </div>
 <p>Seed only on first deployment. Running it against a populated database drops every country table.</p>
 <h3 id="5-verify">5. Verify<a class="headerlink" href="#5-verify" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">&#39;%{http_code}\n&#39;</span><span class="w"> </span>https://your-domain/health
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">&#39;%{http_code}\n&#39;</span><span class="w"> </span>https://your-domain/ignis/health
 </span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">&#39;%{http_code}\n&#39;</span><span class="w"> </span>https://your-domain/
 </span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>curl<span class="w"> </span>-s<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">&#39;%{http_code}\n&#39;</span><span class="w"> </span>-H<span class="w"> </span><span class="s2">&quot;X-Api-Key: your-key&quot;</span><span class="w"> </span>https://your-domain/
 </span></code></pre></div>
@@ -1220,7 +1220,7 @@
 <hr />
 <h2 id="health-checks">Health checks<a class="headerlink" href="#health-checks" title="Permanent link">&para;</a></h2>
 <p>Compose orders startup by health: <code>ignis-app</code> waits for a healthy <code>ignis-db</code>, and <code>ignis-reverse-proxy</code> waits for a healthy <code>ignis-app</code>.</p>
-<p><code>/health</code> reports process liveness only and does not test the database connection, so a healthy container does not by itself mean the schema is seeded or reachable.</p>
+<p><code>/ignis/health</code> reports process liveness only and does not test the database connection, so a healthy container does not by itself mean the schema is seeded or reachable.</p>
 
 
 

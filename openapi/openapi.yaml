@@ -60,7 +60,7 @@ security:
   - ApiKeyAuth: []
 
 paths:
-  /health:
+  /ignis/health:
     get:
       tags: [Health]
       summary: Liveness check
