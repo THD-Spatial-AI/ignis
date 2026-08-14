@@ -38,8 +38,8 @@
 
 	# `route` keeps these handlers in the order written. Without it Caddy
 	# sorts `handle` blocks by path-matcher specificity, which would move
-	# /health ahead of the preflight block and change which one answers an
-	# OPTIONS /health.
+	# /ignis/health ahead of the preflight block and change which one
+	# answers an OPTIONS /ignis/health.
 	route {
 		# Preflight (OPTIONS): answered here, never forwarded to the app.
 		# X-Api-Key is a proxy-only concept — ignis's own CORS middleware
@@ -56,8 +56,12 @@
 		# Deliberately outside the authorised route: container health checks,
 		# orchestrators and uptime monitors must not need the API key. This
 		# path is publicly reachable on any deployment, so keep its response
-		# to liveness only — no version, config or database detail.
-		handle /health {
+		# to liveness only — no version, config or database detail. Nested
+		# under /ignis/ (not bare /health) so it doesn't collide with sibling
+		# services' own health checks once this sits behind the shared
+		# Orchestrator (see BuEM/weather's /v1/weather/health for the same
+		# reasoning).
+		handle /ignis/health {
 			reverse_proxy ignis-app:{$APP_PORT:8080}
 		}
 

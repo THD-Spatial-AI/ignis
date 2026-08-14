@@ -13,9 +13,9 @@ import (
 func TestHealthCheck(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	r.GET("/health", HealthCheck)
+	r.GET("/ignis/health", HealthCheck)
 
-	req := httptest.NewRequest(http.MethodGet, "/health", nil)
+	req := httptest.NewRequest(http.MethodGet, "/ignis/health", nil)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
@@ -38,7 +38,7 @@ func TestRegisterRoutes_registersExpectedRoutes(t *testing.T) {
 
 	want := map[string]bool{
 		"GET /favicon.ico":                         false,
-		"GET /health":                              false,
+		"GET /ignis/health":                              false,
 		"GET /api/v1/data/:code":                   false,
 		"GET /api/v1/variants/:country_iso2":       false,
 		"GET /api/v1/variants/:country_iso2/match": false,

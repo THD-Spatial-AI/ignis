@@ -64,7 +64,7 @@ services:
     # No `command:` override needed — the image's own CMD runs the server
     # directly now; this is a single-purpose image, not a shared toolbox.
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:$$APP_PORT/health"]
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:$$APP_PORT/ignis/health"]
       interval: 30s
       timeout: 3s
       retries: 3

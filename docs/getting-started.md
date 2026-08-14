@@ -40,7 +40,7 @@ The reverse proxy gates every request behind an `X-Api-Key` header, matched agai
 curl -k -H "X-Api-Key: supersecret123" https://localhost/some-endpoint
 ```
 
-`/health` is the single exemption, so container health checks and uptime monitors need no credential.
+`/ignis/health` is the single exemption, so container health checks and uptime monitors need no credential.
 
 !!! danger "Never expose ignis directly"
     Authentication lives entirely in the proxy, so ignis itself must never be reachable except through it. None of the compose files publish a port for the app, and that should not change.
@@ -159,7 +159,7 @@ The TABULA workbook is baked into the `ignis-build-db` image, so there is nothin
 
 ```bash
 <compose prefix> exec ignis-db psql -U postgres -d ignis -c "\dt tabula.*"
-curl -k -s -o /dev/null -w '%{http_code}\n' https://localhost/health
+curl -k -s -o /dev/null -w '%{http_code}\n' https://localhost/ignis/health
 ```
 
 The first lists the seeded tables. The second returns `200`. Drop `-k` on the Docker-from-source path, where the certificate chains to the CA you trusted.
@@ -277,7 +277,7 @@ Seed only on first deployment. Running it against a populated database drops eve
 ### 5. Verify
 
 ```bash
-curl -s -o /dev/null -w '%{http_code}\n' https://your-domain/health
+curl -s -o /dev/null -w '%{http_code}\n' https://your-domain/ignis/health
 curl -s -o /dev/null -w '%{http_code}\n' https://your-domain/
 curl -s -o /dev/null -w '%{http_code}\n' -H "X-Api-Key: your-key" https://your-domain/
 ```
@@ -290,4 +290,4 @@ Expect `200`, `403`, then a response from the app. A `200` on the second call me
 
 Compose orders startup by health: `ignis-app` waits for a healthy `ignis-db`, and `ignis-reverse-proxy` waits for a healthy `ignis-app`.
 
-`/health` reports process liveness only and does not test the database connection, so a healthy container does not by itself mean the schema is seeded or reachable.
+`/ignis/health` reports process liveness only and does not test the database connection, so a healthy container does not by itself mean the schema is seeded or reachable.

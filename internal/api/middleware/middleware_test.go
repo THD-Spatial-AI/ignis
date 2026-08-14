@@ -29,7 +29,7 @@ func newTestEngine(handlers ...gin.HandlerFunc) *gin.Engine {
 		c.String(http.StatusOK, "%d", len(body))
 	})
 	r.GET("/ping", func(c *gin.Context) { c.String(http.StatusOK, "pong") })
-	r.GET("/health", func(c *gin.Context) {
+	r.GET("/ignis/health", func(c *gin.Context) {
 		status := http.StatusOK
 		if c.Query("fail") != "" {
 			status = http.StatusServiceUnavailable
@@ -85,12 +85,12 @@ func TestRequestLogger_suppressesHealthyHealthCheck(t *testing.T) {
 	defer log.SetOutput(os.Stderr)
 
 	r := newTestEngine(RequestLogger())
-	req := httptest.NewRequest(http.MethodGet, "/health", nil)
+	req := httptest.NewRequest(http.MethodGet, "/ignis/health", nil)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
 	if buf.Len() != 0 {
-		t.Errorf("expected no log output for healthy /health, got %q", buf.String())
+		t.Errorf("expected no log output for healthy /ignis/health, got %q", buf.String())
 	}
 }
 
@@ -100,12 +100,12 @@ func TestRequestLogger_logsFailingHealthCheck(t *testing.T) {
 	defer log.SetOutput(os.Stderr)
 
 	r := newTestEngine(RequestLogger())
-	req := httptest.NewRequest(http.MethodGet, "/health?fail=1", nil)
+	req := httptest.NewRequest(http.MethodGet, "/ignis/health?fail=1", nil)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	if !strings.Contains(buf.String(), "/health") {
-		t.Errorf("expected log output for failing /health, got %q", buf.String())
+	if !strings.Contains(buf.String(), "/ignis/health") {
+		t.Errorf("expected log output for failing /ignis/health, got %q", buf.String())
 	}
 }
 

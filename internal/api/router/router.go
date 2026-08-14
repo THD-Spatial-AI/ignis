@@ -13,7 +13,7 @@ import (
 func RegisterRoutes(r *gin.Engine, h *handler.Handler) {
 	utils.Info.Println("Setting up routes...")
 	r.GET("/favicon.ico", func(c *gin.Context) { c.Status(http.StatusNoContent) })
-	r.GET("/health", HealthCheck)
+	r.GET("/ignis/health", HealthCheck)
 
 	api := r.Group("/api")
 	{

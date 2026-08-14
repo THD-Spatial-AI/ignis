@@ -30,7 +30,7 @@ A fresh `ignis-db` volume is empty. Load the TABULA data once, after first start
 
 ## Startup order
 
-`depends_on: condition: service_healthy` chains startup: `ignis-db` must accept connections (checked with `pg_isready`) before `ignis-app` starts, and `ignis-app` must be healthy before `ignis-reverse-proxy` starts. The app's health check makes a real `GET /health` call (not `HEAD`, which the router does not register). Nothing starts serving before what it depends on is ready.
+`depends_on: condition: service_healthy` chains startup: `ignis-db` must accept connections (checked with `pg_isready`) before `ignis-app` starts, and `ignis-app` must be healthy before `ignis-reverse-proxy` starts. The app's health check makes a real `GET /ignis/health` call (not `HEAD`, which the router does not register). Nothing starts serving before what it depends on is ready.
 
 ## Certificate trust across recreation
 
