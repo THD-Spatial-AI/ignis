@@ -615,7 +615,7 @@
 
 
 <h1 id="api-reference">API reference<a class="headerlink" href="#api-reference" title="Permanent link">&para;</a></h1>
-<p>The interactive reference lives in its own standalone page — <a href="./"><code>api/index.html</code></a> — so it can be opened directly without running <code>mkdocs serve</code>. It renders <a href="openapi.yaml"><code>api/openapi.yaml</code></a>; download that file to generate a client or import it into Postman.</p>
+<p>The interactive reference lives in its own standalone page, <a href="../openapi/"><code>openapi/index.html</code></a>, so it can be opened directly without running <code>mkdocs serve</code>. It renders <a href="../openapi/openapi.yaml"><code>openapi/openapi.yaml</code></a>; download that file to generate a client or import it into Postman.</p>
 <h2 id="authentication">Authentication<a class="headerlink" href="#authentication" title="Permanent link">&para;</a></h2>
 <p>ignis has no authentication of its own. The reverse proxy in front of it is the only way in: callers send a valid <code>X-Api-Key</code> header, and the proxy rejects anything else with <code>403</code> before the request reaches ignis.</p>
 <div class="admonition warning">
@@ -724,9 +724,9 @@ Returns the same archetype's <code>q_h_nd</code> recalculated for a 150-heating-
 <p>List as many windows as the building has, each with its own area, U-value and orientation, rather than fitting them into two slots.</p>
 </details>
 <h2 id="testing-it-yourself">Testing it yourself<a class="headerlink" href="#testing-it-yourself" title="Permanent link">&para;</a></h2>
-<p><a href="./">Open the API reference</a> and it can call a locally running ignis directly — no <code>mkdocs serve</code> needed to view it.</p>
+<p><a href="../openapi/">Open the API reference</a>, which can call a locally running ignis directly, no <code>mkdocs serve</code> needed to view it.</p>
 <p><strong>Step 1:</strong> Start the stack, from <code>environment/</code>: <code>docker compose -f docker-compose.quickstart.yml up -d</code>. On a first run, load the TABULA data once: <code>docker compose -f docker-compose.quickstart.yml --profile seed run --rm ignis-build-db</code>.</p>
-<p><strong>Step 2:</strong> Serve <code>docs/api/</code> on <code>http://localhost:8000</code> (<code>python -m http.server 8000</code> from that directory works) — the reverse proxy's <code>ALLOWED_ORIGINS</code> allows that origin already. Opening the file directly (<code>file://</code>) works for reading the reference, but <strong>Try it out</strong> needs an allowed origin.</p>
+<p><strong>Step 2:</strong> Serve <code>docs/openapi/</code> on <code>http://localhost:8000</code> (<code>python -m http.server 8000</code> from that directory works), since the reverse proxy's <code>ALLOWED_ORIGINS</code> allows that origin already. Opening the file directly (<code>file://</code>) works for reading the reference, but <strong>Try it out</strong> needs an allowed origin.</p>
 <p><strong>Step 3:</strong> If your browser has never trusted the local proxy's certificate, open <code>https://localhost</code> directly once and accept it, or run <code>caddy trust</code>.</p>
 <p><strong>Step 4:</strong> Click <strong>Authorize</strong> and enter the API key checked by the reverse proxy (<code>X-Api-Key</code>; the prototype default is set in <code>environment/env/proxy.env</code>). It applies to every <strong>Try it out</strong> call from then on.</p>
 <p><strong>Step 5:</strong> Expand an endpoint, click <strong>Try it out</strong>, fill in the parameters, then <strong>Execute</strong>.</p>
