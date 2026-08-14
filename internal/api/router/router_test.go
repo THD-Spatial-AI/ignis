@@ -22,8 +22,8 @@ func TestHealthCheck(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Errorf("status = %d, want %d", w.Code, http.StatusOK)
 	}
-	if w.Body.String() != `{"status":"OK"}` {
-		t.Errorf("body = %q, want %q", w.Body.String(), `{"status":"OK"}`)
+	if w.Body.String() != `{"status":"ok"}` {
+		t.Errorf("body = %q, want %q", w.Body.String(), `{"status":"ok"}`)
 	}
 }
 
