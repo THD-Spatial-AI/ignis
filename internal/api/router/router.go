@@ -35,6 +35,6 @@ func RegisterRoutes(r *gin.Engine, h *handler.Handler) {
 // HealthCheck handles health check requests
 func HealthCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
-		"status": "OK",
+		"status": "ok",
 	})
 }
