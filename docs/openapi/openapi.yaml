@@ -17,7 +17,7 @@ info:
     checks that header and rejects anything else with `403` before the
     request ever reaches ignis.
 
-    ignis is meant to be called by a trusted, server-side caller — never
+    ignis is meant to be called by a trusted, server-side caller, never
     directly by a browser or an end user's client, since the key must not be
     visible outside that caller. If the system calling ignis has its own
     user-facing login (EnerPlanET, for example, uses Keycloak), that login
