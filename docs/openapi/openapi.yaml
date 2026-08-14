@@ -63,6 +63,7 @@ paths:
   /ignis/health:
     get:
       tags: [Health]
+      operationId: checkHealth
       summary: Liveness check
       description: Returns 200 while the server is running. Does not check the database.
       responses:
@@ -78,6 +79,7 @@ paths:
   /api/v1/variants/{country_iso2}:
     get:
       tags: [Variants]
+      operationId: listVariants
       summary: List all variant codes for a country
       parameters:
         - $ref: "#/components/parameters/CountryIso2"
@@ -96,6 +98,7 @@ paths:
   /api/v1/variants/{country_iso2}/match:
     get:
       tags: [Variants]
+      operationId: matchVariant
       summary: Match refurbishment variants for a building type and period
       description: >
         Returns the refurbishment levels for one building type and construction
@@ -132,6 +135,7 @@ paths:
   /api/v1/data/{code}:
     get:
       tags: [Data]
+      operationId: getData
       summary: Get raw TABULA parameters for a variant
       parameters:
         - $ref: "#/components/parameters/VariantCode"
@@ -152,6 +156,7 @@ paths:
   /api/v1/fields:
     get:
       tags: [Data]
+      operationId: listFields
       summary: List field metadata
       description: >
         Static description of every TABULA input field: where it sits in a
@@ -170,6 +175,7 @@ paths:
   /api/v1/calculate/{code}:
     post:
       tags: [Calculation]
+      operationId: calculate
       summary: Run the heating-demand pipeline for a variant
       parameters:
         - $ref: "#/components/parameters/VariantCode"
