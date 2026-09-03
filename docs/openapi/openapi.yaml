@@ -506,6 +506,9 @@ components:
             the pipeline runs — mathematically exact, since U-values are
             conductances and conductances in parallel add weighted by area.
             A category with no surfaces given keeps its TABULA default.
+            The caller owns the geometric accuracy of the areas, U-values
+            and orientations it sends; ignis does not cross-check them
+            against the archetype.
           items:
             $ref: "#/components/schemas/Surface"
 
@@ -544,8 +547,12 @@ components:
           type: number
           format: double
           description: >
-            Degrees. Windows only: within 5° of 0 buckets the window as
-            Horizontal (skylight) regardless of azimuth.
+            Degrees from horizontal, windows only: 0 is a flat skylight, 90 a
+            vertical window. Within 5° of 0 the window is bucketed as
+            Horizontal regardless of azimuth. This is the inverse of
+            city2tabula's surface tilt (0 = vertical wall, 90 = flat roof); a
+            caller passing city2tabula geometry must convert first with
+            ignis_tilt = 90 - c2t_tilt.
           example: 90
       required: [id, type, area, u_value]
 

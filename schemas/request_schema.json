@@ -86,7 +86,7 @@
     },
     "surfaces": {
       "type": "array",
-      "description": "Replaces TABULA's fixed 2-3 slots per element category with an arbitrary list of individual physical surfaces. Surfaces are grouped by type and collapsed into an area-weighted equivalent before the pipeline runs. Any category with no surfaces given keeps its TABULA default.",
+      "description": "Replaces TABULA's fixed 2-3 slots per element category with an arbitrary list of individual physical surfaces. Surfaces are grouped by type and collapsed into an area-weighted equivalent before the pipeline runs. Any category with no surfaces given keeps its TABULA default. The caller owns the geometric accuracy of the areas, U-values and orientations it sends; ignis does not cross-check them against the archetype.",
       "items": {
         "$ref": "#/$defs/surface"
       }
@@ -123,7 +123,7 @@
         },
         "tilt": {
           "type": "number",
-          "description": "Degrees; windows only. Near 0 buckets the window as horizontal (skylight)."
+          "description": "Degrees from horizontal, windows only: 0 is a flat skylight, 90 a vertical window. Within 5 degrees of 0 the window is bucketed as horizontal regardless of azimuth. This is the inverse of city2tabula's surface tilt (0 = vertical wall, 90 = flat roof); a caller passing city2tabula geometry must convert first with ignis_tilt = 90 - c2t_tilt."
         }
       }
     }

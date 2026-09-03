@@ -48,10 +48,12 @@ See `CalculateRequest` in the reference below for exact types and validation rul
 
 The body also accepts an optional `surfaces` list, one entry per physical element, in place of the archetype's generic wall and window slots.
 
-- Each entry takes an `id`, a `type` (`wall`, `window`, `roof`, `floor`), an `area` in m², a `u_value` in W/(m²·K), and an `azimuth`.
+- Each entry takes an `id`, a `type` (`wall`, `window`, `roof`, `floor`, `door`), an `area` in m², a `u_value` in W/(m²·K), and, for windows, an `azimuth` and a `tilt`.
 - ignis merges the entries in each category into the single area and area-weighted U-value the calculation needs.
 - A category you do not list keeps the archetype's default for that category.
+- You own the accuracy of the geometry you send. ignis uses the areas, U-values and orientations as given and does not check them against the archetype.
 - `azimuth` is degrees clockwise from North (0 North, 90 East, 180 South, 270 West). For windows it also selects which direction's solar irradiance the window counts toward, rounded to the nearest of North, East, South or West. A window with no `azimuth` is assumed to face South.
+- `tilt` is degrees from horizontal: 0 is a flat skylight, 90 a vertical window. A window within 5 degrees of horizontal counts toward horizontal irradiance rather than a compass direction. city2tabula measures tilt the other way round (0 for a vertical wall, 90 for a flat roof), so convert its values with `ignis_tilt = 90 - c2t_tilt` before sending them.
 
 ??? example "A building with five listed surfaces"
     ```json
