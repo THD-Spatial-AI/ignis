@@ -102,7 +102,11 @@ paths:
       summary: Match refurbishment variants for a building type and period
       description: >
         Returns the refurbishment levels for one building type and construction
-        period, ordered from existing state to most refurbished.
+        period, ordered from existing state to most refurbished. Give the period
+        either directly (period) or as a construction year (year), which ignis
+        resolves to the period whose band contains it for that country and type.
+        A year with no matching archetype for that type returns an empty data
+        list.
       parameters:
         - $ref: "#/components/parameters/CountryIso2"
         - name: type
@@ -115,11 +119,22 @@ paths:
           example: SFH
         - name: period
           in: query
-          required: true
-          description: TABULA construction-period code
+          required: false
+          description: >
+            TABULA construction-period code. Exactly one of period or year is
+            required.
           schema:
             type: string
           example: "01"
+        - name: year
+          in: query
+          required: false
+          description: >
+            Construction year, resolved to a period. Exactly one of period or
+            year is required.
+          schema:
+            type: integer
+          example: 1975
       responses:
         "200":
           description: Matched refurbishment levels
@@ -127,6 +142,29 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MatchResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/periods/{country_iso2}:
+    get:
+      tags: [Variants]
+      operationId: listPeriods
+      summary: List a country's construction-year bands
+      description: >
+        The construction periods for a country, oldest first. year_from 0 is
+        open-ended (oldest band); year_to 9999 is open-ended (newest band).
+        period is the value the match endpoint's period parameter takes.
+      parameters:
+        - $ref: "#/components/parameters/CountryIso2"
+      responses:
+        "200":
+          description: Construction-year bands for the country
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PeriodsResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "403":
@@ -238,11 +276,12 @@ components:
   responses:
     BadRequest:
       description: >
-        Invalid input (unknown country, malformed code, or an invalid
-        CalculateRequest override — A_ref, h_room, n_Storey, or c_m not greater
-        than 0, HeatingDays, I_Sol_*, n_air_infiltration, or n_air_use negative,
-        a thermal-bridging ΔU negative, or a surface with an unknown type /
-        non-positive area / non-positive u_value)
+        Invalid input (unknown country, malformed code, a match request missing
+        type or giving neither or both of period and year or a non-integer year,
+        or an invalid CalculateRequest override — A_ref, h_room, n_Storey, or c_m
+        not greater than 0, HeatingDays, I_Sol_*, n_air_infiltration, or
+        n_air_use negative, a thermal-bridging ΔU negative, or a surface with an
+        unknown type / non-positive area / non-positive u_value)
       content:
         application/json:
           schema:
@@ -320,6 +359,35 @@ components:
           type: string
           example: Existing state
       required: [code, label]
+
+    PeriodsResponse:
+      type: object
+      properties:
+        country:
+          type: string
+          example: germany
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConstructionPeriod"
+      required: [country, data]
+
+    ConstructionPeriod:
+      type: object
+      properties:
+        period:
+          type: string
+          description: Period code, as taken by the match endpoint's period parameter
+          example: "03"
+        year_from:
+          type: integer
+          description: First year of the band; 0 means open-ended
+          example: 1958
+        year_to:
+          type: integer
+          description: Last year of the band; 9999 means open-ended
+          example: 1968
+      required: [period, year_from, year_to]
 
     DataResponse:
       type: object

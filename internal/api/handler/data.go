@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -60,8 +61,10 @@ func refurbishmentLabel(index int) string {
 }
 
 // MatchVariants returns all refurbishment variants for a building type and construction period.
-// Query params: type (e.g. SFH), period (e.g. 01). Both are required.
-// The response is ordered from existing state to most-refurbished.
+// Query params: type (e.g. SFH) is required; exactly one of period (e.g. 01) or
+// year (e.g. 1975) must be given. With year, ignis resolves the period whose band
+// contains it for that country and type. The response is ordered from existing
+// state to most-refurbished.
 func (h *Handler) MatchVariants(c *gin.Context) {
 	isoCode := strings.ToUpper(strings.TrimSpace(c.Param("country_iso2")))
 	tableName, err := tableNameFromISO(isoCode)
@@ -72,17 +75,43 @@ func (h *Handler) MatchVariants(c *gin.Context) {
 
 	buildingType := strings.ToUpper(strings.TrimSpace(c.Query("type")))
 	period := strings.TrimSpace(c.Query("period"))
+	yearParam := strings.TrimSpace(c.Query("year"))
 
-	if buildingType == "" || period == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "query params 'type' and 'period' are required"})
+	if buildingType == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "query param 'type' is required"})
+		return
+	}
+	if (period == "") == (yearParam == "") {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "exactly one of 'period' or 'year' is required"})
 		return
 	}
 
-	// TABULA codes follow CC.N.TYPE.PERIOD.VariantSuffix — N is the national dataset identifier.
-	prefix := fmt.Sprintf("%s.N.%s.%s", isoCode, buildingType, period)
-
 	ctx, cancel := context.WithTimeout(c.Request.Context(), requestTimeout)
 	defer cancel()
+
+	// TABULA codes follow CC.N.TYPE.PERIOD.VariantSuffix — N is the national dataset identifier.
+	typePrefix := fmt.Sprintf("%s.N.%s", isoCode, buildingType)
+
+	if yearParam != "" {
+		year, convErr := strconv.Atoi(yearParam)
+		if convErr != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("query param 'year' must be an integer, got %q", yearParam)})
+			return
+		}
+		period, err = h.repo.ResolvePeriodByYear(ctx, tableName, typePrefix, year)
+		if err != nil {
+			utils.Error.Printf("failed to resolve period for %s year %d: %v", typePrefix, year, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to resolve construction period"})
+			return
+		}
+		if period == "" {
+			// No archetype of this type covers the year — an empty match list, not an error.
+			c.JSON(http.StatusOK, gin.H{"country": tableName, "prefix": typePrefix, "data": []any{}})
+			return
+		}
+	}
+
+	prefix := fmt.Sprintf("%s.%s", typePrefix, period)
 
 	codes, err := h.repo.MatchVariants(ctx, tableName, prefix)
 	if err != nil {
@@ -104,6 +133,32 @@ func (h *Handler) MatchVariants(c *gin.Context) {
 		"country": tableName,
 		"prefix":  prefix,
 		"data":    entries,
+	})
+}
+
+// ListPeriods returns the country's construction-year bands, oldest first.
+// year_from 0 means open-ended (oldest band); year_to 9999 means open-ended (newest band).
+func (h *Handler) ListPeriods(c *gin.Context) {
+	isoCode := strings.ToUpper(strings.TrimSpace(c.Param("country_iso2")))
+	tableName, err := tableNameFromISO(isoCode)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), requestTimeout)
+	defer cancel()
+
+	periods, err := h.repo.ListPeriods(ctx, tableName)
+	if err != nil {
+		utils.Error.Printf("failed to load construction periods for %s: %v", tableName, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query construction periods"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"country": tableName,
+		"data":    periods,
 	})
 }
 

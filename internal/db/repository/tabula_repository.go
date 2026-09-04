@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/thd-spatial-ai/ignis/internal/models"
 
@@ -82,6 +83,86 @@ func (r *TabulaRepository) MatchVariants(ctx context.Context, tableName, prefix 
 	}
 
 	return codes, nil
+}
+
+// ConstructionPeriod is one TABULA construction-year band for a country.
+type ConstructionPeriod struct {
+	Period   string `json:"period"`
+	YearFrom int    `json:"year_from"`
+	YearTo   int    `json:"year_to"`
+}
+
+// periodFromYearClass turns a Code_ConstructionYearClass ("AT.01") into the bare
+// period index ("01") used by Code_BuildingVariant and the match endpoint.
+func periodFromYearClass(yearClass string) string {
+	if i := strings.LastIndex(yearClass, "."); i >= 0 {
+		return yearClass[i+1:]
+	}
+	return yearClass
+}
+
+// ResolvePeriodByYear returns the period index whose construction-year band
+// contains year, scoped to one building type. typePrefix is "CC.N.TYPE".
+// Year1_Building 0 and Year2_Building 9999 are the open-ended sentinels; the
+// plain range comparison covers both without special-casing. Returns "" when no
+// band for that type contains the year.
+func (r *TabulaRepository) ResolvePeriodByYear(ctx context.Context, tableName, typePrefix string, year int) (string, error) {
+	query := fmt.Sprintf(
+		`SELECT "Code_ConstructionYearClass" FROM %s
+		 WHERE "Code_BuildingVariant" LIKE $1
+		   AND "Year1_Building" <= $2 AND "Year2_Building" >= $2
+		 LIMIT 1`,
+		r.qualifyTable(tableName),
+	)
+
+	var yearClass string
+	err := r.pool.QueryRow(ctx, query, typePrefix+".%", year).Scan(&yearClass)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", nil
+	}
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve period for %s year %d: %w", typePrefix, year, err)
+	}
+
+	return periodFromYearClass(yearClass), nil
+}
+
+// ListPeriods returns the country's distinct construction-year bands, oldest first.
+func (r *TabulaRepository) ListPeriods(ctx context.Context, tableName string) ([]ConstructionPeriod, error) {
+	query := fmt.Sprintf(
+		`SELECT DISTINCT "Code_ConstructionYearClass", "Year1_Building", "Year2_Building"
+		 FROM %s
+		 WHERE "Code_ConstructionYearClass" IS NOT NULL
+		   AND "Year1_Building" IS NOT NULL AND "Year2_Building" IS NOT NULL
+		 ORDER BY "Year1_Building"`,
+		r.qualifyTable(tableName),
+	)
+
+	rows, err := r.pool.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query construction periods: %w", err)
+	}
+	defer rows.Close()
+
+	var periods []ConstructionPeriod
+	for rows.Next() {
+		var yearClass string
+		var from, to int
+		if err := rows.Scan(&yearClass, &from, &to); err != nil {
+			return nil, fmt.Errorf("failed to scan construction period: %w", err)
+		}
+		periods = append(periods, ConstructionPeriod{
+			Period:   periodFromYearClass(yearClass),
+			YearFrom: from,
+			YearTo:   to,
+		})
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to iterate construction periods: %w", err)
+	}
+
+	return periods, nil
 }
 
 // GetVariant loads the full TABULA record and key metadata for a specific building variant.
