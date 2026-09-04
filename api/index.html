@@ -654,6 +654,7 @@
 </tbody>
 </table>
 <p>Step 2 is optional. Call it when you need to inspect or report the inputs; <code>calculate</code> uses them either way.</p>
+<p>If you have a construction year rather than a period code, send <code>year=</code> in place of <code>period=</code> at step 1 and ignis resolves it. Exactly one of the two is required. <code>GET /api/v1/periods/{country}</code> lists a country's bands as <code>{ period, year_from, year_to }</code>, oldest first, with <code>year_from</code> 0 and <code>year_to</code> 9999 marking the open-ended bands.</p>
 <h2 id="overriding-archetype-inputs">Overriding archetype inputs<a class="headerlink" href="#overriding-archetype-inputs" title="Permanent link">&para;</a></h2>
 <p><code>calculate</code> accepts an optional JSON body. Every field is independent and optional: send only what you want to change, and every other input still comes from the archetype's TABULA defaults.</p>
 <table>
