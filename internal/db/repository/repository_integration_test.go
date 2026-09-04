@@ -106,6 +106,21 @@ func seedFixtures(ctx context.Context, pool *pgxpool.Pool) error {
 			('DE.N.SFH.01.Gen', 75.5, 185, 123.45),
 			('DE.N.SFH.01.ReEx', 75.5, 185, 98.70),
 			('DE.N.MFH.01.Gen', 200.0, 185, 88.10)`,
+		// austria carries the construction-year bands for the period-resolution tests.
+		// MFH deliberately has no 01 band, so year resolution is scoped to type.
+		`CREATE TABLE tabula.austria (
+			id SERIAL PRIMARY KEY,
+			"Code_BuildingVariant" VARCHAR,
+			"Code_ConstructionYearClass" VARCHAR,
+			"Year1_Building" INTEGER,
+			"Year2_Building" INTEGER
+		)`,
+		`INSERT INTO tabula.austria ("Code_BuildingVariant", "Code_ConstructionYearClass", "Year1_Building", "Year2_Building") VALUES
+			('AT.N.SFH.01.Gen',  'AT.01', 0,    1918),
+			('AT.N.SFH.01.ReEx', 'AT.01', 0,    1918),
+			('AT.N.SFH.02.Gen',  'AT.02', 1919, 1944),
+			('AT.N.SFH.12.Gen',  'AT.12', 2009, 9999),
+			('AT.N.MFH.02.Gen',  'AT.02', 1919, 1944)`,
 	}
 	for _, stmt := range statements {
 		if _, err := pool.Exec(ctx, stmt); err != nil {
@@ -161,6 +176,55 @@ func TestTabulaRepository_MatchVariants_noMatches(t *testing.T) {
 	}
 	if len(codes) != 0 {
 		t.Errorf("codes = %v, want none", codes)
+	}
+}
+
+func TestTabulaRepository_ResolvePeriodByYear(t *testing.T) {
+	r := repository.NewTabulaRepository(testPool, "tabula")
+	cases := []struct {
+		name       string
+		typePrefix string
+		year       int
+		want       string
+	}{
+		{"mid oldest band", "AT.N.SFH", 1900, "01"},
+		{"upper boundary of oldest band", "AT.N.SFH", 1918, "01"},
+		{"lower boundary of next band", "AT.N.SFH", 1919, "02"},
+		{"open-ended newest band", "AT.N.SFH", 2050, "12"},
+		{"type without that band", "AT.N.MFH", 1900, ""},
+		{"year in no band for type", "AT.N.MFH", 3000, ""},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := r.ResolvePeriodByYear(context.Background(), "austria", tc.typePrefix, tc.year)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("ResolvePeriodByYear(%q, %d) = %q, want %q", tc.typePrefix, tc.year, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestTabulaRepository_ListPeriods(t *testing.T) {
+	r := repository.NewTabulaRepository(testPool, "tabula")
+	periods, err := r.ListPeriods(context.Background(), "austria")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	want := []repository.ConstructionPeriod{
+		{Period: "01", YearFrom: 0, YearTo: 1918},
+		{Period: "02", YearFrom: 1919, YearTo: 1944},
+		{Period: "12", YearFrom: 2009, YearTo: 9999},
+	}
+	if len(periods) != len(want) {
+		t.Fatalf("periods = %+v, want %+v", periods, want)
+	}
+	for i := range want {
+		if periods[i] != want[i] {
+			t.Errorf("periods[%d] = %+v, want %+v", i, periods[i], want[i])
+		}
 	}
 }
 

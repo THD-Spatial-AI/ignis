@@ -38,10 +38,11 @@ func TestRegisterRoutes_registersExpectedRoutes(t *testing.T) {
 
 	want := map[string]bool{
 		"GET /favicon.ico":                         false,
-		"GET /ignis/health":                              false,
+		"GET /ignis/health":                        false,
 		"GET /api/v1/data/:code":                   false,
 		"GET /api/v1/variants/:country_iso2":       false,
 		"GET /api/v1/variants/:country_iso2/match": false,
+		"GET /api/v1/periods/:country_iso2":        false,
 		"GET /api/v1/fields":                       false,
 		"POST /api/v1/calculate/:code":             false,
 	}

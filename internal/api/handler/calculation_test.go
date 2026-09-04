@@ -17,9 +17,11 @@ import (
 
 // mockRepo implements repository.TabulaReader for use in handler tests.
 type mockRepo struct {
-	listVariants  func(ctx context.Context, tableName string) ([]string, error)
-	matchVariants func(ctx context.Context, tableName, prefix string) ([]string, error)
-	getVariant    func(ctx context.Context, tableName, code string) (*models.TabulaBuildingParameters, string, float64, error)
+	listVariants        func(ctx context.Context, tableName string) ([]string, error)
+	matchVariants       func(ctx context.Context, tableName, prefix string) ([]string, error)
+	resolvePeriodByYear func(ctx context.Context, tableName, typePrefix string, year int) (string, error)
+	listPeriods         func(ctx context.Context, tableName string) ([]repository.ConstructionPeriod, error)
+	getVariant          func(ctx context.Context, tableName, code string) (*models.TabulaBuildingParameters, string, float64, error)
 }
 
 func (m *mockRepo) ListVariants(ctx context.Context, tableName string) ([]string, error) {
@@ -29,6 +31,20 @@ func (m *mockRepo) ListVariants(ctx context.Context, tableName string) ([]string
 func (m *mockRepo) MatchVariants(ctx context.Context, tableName, prefix string) ([]string, error) {
 	if m.matchVariants != nil {
 		return m.matchVariants(ctx, tableName, prefix)
+	}
+	return nil, nil
+}
+
+func (m *mockRepo) ResolvePeriodByYear(ctx context.Context, tableName, typePrefix string, year int) (string, error) {
+	if m.resolvePeriodByYear != nil {
+		return m.resolvePeriodByYear(ctx, tableName, typePrefix, year)
+	}
+	return "", nil
+}
+
+func (m *mockRepo) ListPeriods(ctx context.Context, tableName string) ([]repository.ConstructionPeriod, error) {
+	if m.listPeriods != nil {
+		return m.listPeriods(ctx, tableName)
 	}
 	return nil, nil
 }

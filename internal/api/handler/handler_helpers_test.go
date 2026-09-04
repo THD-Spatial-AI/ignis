@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/thd-spatial-ai/ignis/internal/db/repository"
 )
 
 // --- isoFromVariantCode ---
@@ -216,5 +218,150 @@ func TestNew_constructsHandlerWithRepo(t *testing.T) {
 	h := New(nil, "tabula")
 	if h == nil || h.repo == nil {
 		t.Fatal("expected New to return a Handler with a non-nil repo")
+	}
+}
+
+// --- MatchVariants: year resolution ---
+
+func TestMatchVariants_byYear_resolvesPeriodAndReturnsVariants(t *testing.T) {
+	var gotPrefix string
+	var gotYear int
+	mock := &mockRepo{
+		resolvePeriodByYear: func(_ context.Context, _, typePrefix string, year int) (string, error) {
+			gotPrefix, gotYear = typePrefix, year
+			return "03", nil
+		},
+		matchVariants: func(_ context.Context, _, prefix string) ([]string, error) {
+			if prefix != "DE.N.SFH.03" {
+				t.Errorf("MatchVariants prefix = %q, want DE.N.SFH.03", prefix)
+			}
+			return []string{"DE.N.SFH.03.Gen", "DE.N.SFH.03.ReEx"}, nil
+		},
+	}
+	h := newTestHandler(mock)
+	w := serve(http.MethodGet, "/variants/DE/match?type=SFH&year=1975", "/variants/:country_iso2/match", h.MatchVariants, nil)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d — body: %s", w.Code, w.Body.String())
+	}
+	if gotPrefix != "DE.N.SFH" || gotYear != 1975 {
+		t.Errorf("ResolvePeriodByYear called with (%q, %d), want (\"DE.N.SFH\", 1975)", gotPrefix, gotYear)
+	}
+	var resp struct {
+		Data []struct {
+			Code string `json:"code"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("invalid JSON: %v", err)
+	}
+	if len(resp.Data) != 2 {
+		t.Fatalf("expected 2 entries, got %d", len(resp.Data))
+	}
+}
+
+func TestMatchVariants_bothYearAndPeriod_returns400(t *testing.T) {
+	h := newTestHandler(&mockRepo{})
+	w := serve(http.MethodGet, "/variants/DE/match?type=SFH&period=03&year=1975", "/variants/:country_iso2/match", h.MatchVariants, nil)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 when both period and year given, got %d", w.Code)
+	}
+}
+
+func TestMatchVariants_nonIntegerYear_returns400(t *testing.T) {
+	h := newTestHandler(&mockRepo{})
+	w := serve(http.MethodGet, "/variants/DE/match?type=SFH&year=nineteen", "/variants/:country_iso2/match", h.MatchVariants, nil)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for non-integer year, got %d", w.Code)
+	}
+}
+
+func TestMatchVariants_yearWithNoMatchingArchetype_returns200EmptyList(t *testing.T) {
+	mock := &mockRepo{
+		resolvePeriodByYear: func(_ context.Context, _, _ string, _ int) (string, error) {
+			return "", nil // no band for this type contains the year
+		},
+		matchVariants: func(_ context.Context, _, _ string) ([]string, error) {
+			t.Error("MatchVariants must not be called when no period resolves")
+			return nil, nil
+		},
+	}
+	h := newTestHandler(mock)
+	w := serve(http.MethodGet, "/variants/DE/match?type=SFH&year=1750", "/variants/:country_iso2/match", h.MatchVariants, nil)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d — body: %s", w.Code, w.Body.String())
+	}
+	var resp struct {
+		Data []any `json:"data"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("invalid JSON: %v", err)
+	}
+	if len(resp.Data) != 0 {
+		t.Errorf("expected empty data list, got %d entries", len(resp.Data))
+	}
+}
+
+func TestMatchVariants_resolvePeriodError_returns500(t *testing.T) {
+	mock := &mockRepo{
+		resolvePeriodByYear: func(_ context.Context, _, _ string, _ int) (string, error) {
+			return "", errors.New("connection refused")
+		},
+	}
+	h := newTestHandler(mock)
+	w := serve(http.MethodGet, "/variants/DE/match?type=SFH&year=1975", "/variants/:country_iso2/match", h.MatchVariants, nil)
+	if w.Code != http.StatusInternalServerError {
+		t.Errorf("expected 500, got %d", w.Code)
+	}
+}
+
+// --- ListPeriods handler ---
+
+func TestListPeriods_returnsBands(t *testing.T) {
+	mock := &mockRepo{
+		listPeriods: func(_ context.Context, _ string) ([]repository.ConstructionPeriod, error) {
+			return []repository.ConstructionPeriod{
+				{Period: "01", YearFrom: 0, YearTo: 1859},
+				{Period: "02", YearFrom: 1860, YearTo: 1918},
+				{Period: "12", YearFrom: 2016, YearTo: 9999},
+			}, nil
+		},
+	}
+	h := newTestHandler(mock)
+	w := serve(http.MethodGet, "/periods/DE", "/periods/:country_iso2", h.ListPeriods, nil)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d — body: %s", w.Code, w.Body.String())
+	}
+	var resp struct {
+		Data []repository.ConstructionPeriod `json:"data"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("invalid JSON: %v", err)
+	}
+	if len(resp.Data) != 3 {
+		t.Fatalf("expected 3 bands, got %d", len(resp.Data))
+	}
+	if resp.Data[0].YearFrom != 0 || resp.Data[2].YearTo != 9999 {
+		t.Errorf("open-ended sentinels not preserved: %+v", resp.Data)
+	}
+}
+
+func TestListPeriods_unknownCountry_returns400(t *testing.T) {
+	h := newTestHandler(&mockRepo{})
+	w := serve(http.MethodGet, "/periods/ZZ", "/periods/:country_iso2", h.ListPeriods, nil)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for unknown country, got %d", w.Code)
+	}
+}
+
+func TestListPeriods_repoError_returns500(t *testing.T) {
+	mock := &mockRepo{
+		listPeriods: func(_ context.Context, _ string) ([]repository.ConstructionPeriod, error) {
+			return nil, errors.New("connection refused")
+		},
+	}
+	h := newTestHandler(mock)
+	w := serve(http.MethodGet, "/periods/DE", "/periods/:country_iso2", h.ListPeriods, nil)
+	if w.Code != http.StatusInternalServerError {
+		t.Errorf("expected 500, got %d", w.Code)
 	}
 }
