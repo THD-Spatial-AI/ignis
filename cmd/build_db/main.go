@@ -6,6 +6,7 @@ import (
 	"github.com/thd-spatial-ai/ignis/internal/config"
 	importer "github.com/thd-spatial-ai/ignis/internal/db"
 	"github.com/thd-spatial-ai/ignis/internal/utils"
+	"github.com/thd-spatial-ai/ignis/internal/version"
 	"log"
 	"time"
 
@@ -16,6 +17,7 @@ func main() {
 	startTime := time.Now()
 	fmt.Println("============================================================")
 	fmt.Println("=== ignis Database Rebuild Tool ===")
+	fmt.Printf("=== %s\n", version.String())
 	fmt.Println("============================================================")
 	fmt.Println("")
 

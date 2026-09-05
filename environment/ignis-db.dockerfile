@@ -17,7 +17,17 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 go build -buildvcs=false -o /out/build_db ./cmd/build_db
+# Passed by the publish workflow on a tag build; default to the same values
+# internal/version hard-codes, so a plain `docker build` is unchanged.
+ARG VERSION=dev
+ARG COMMIT=none
+ARG DATE=unknown
+RUN CGO_ENABLED=0 go build -buildvcs=false \
+    -ldflags="-s -w \
+      -X github.com/thd-spatial-ai/ignis/internal/version.Version=${VERSION} \
+      -X github.com/thd-spatial-ai/ignis/internal/version.Commit=${COMMIT} \
+      -X github.com/thd-spatial-ai/ignis/internal/version.Date=${DATE}" \
+    -o /out/build_db ./cmd/build_db
 
 # ---------------------------------------------------------------------------
 # Stage 2: final — compiled binary + the trimmed TABULA workbook baked in.
