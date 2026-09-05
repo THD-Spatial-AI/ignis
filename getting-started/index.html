@@ -1183,6 +1183,36 @@
 <hr />
 <h2 id="deployment">Deployment<a class="headerlink" href="#deployment" title="Permanent link">&para;</a></h2>
 <p>Use <code>docker-compose.prod.yml</code>, which pulls published images and needs no source tree on the target machine. Copy across: the compose file, <code>.env</code>, the <code>env/</code> directory, and the <code>caddy/</code> directory.</p>
+<div class="admonition info">
+<p class="admonition-title">Service and image names</p>
+<table>
+<thead>
+<tr>
+<th>Compose service</th>
+<th>Published image</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ignis-app</code></td>
+<td><code>ghcr.io/thd-spatial-ai/ignis</code></td>
+<td>HTTP API server</td>
+</tr>
+<tr>
+<td><code>ignis-build-db</code></td>
+<td><code>ghcr.io/thd-spatial-ai/ignis-build-db</code></td>
+<td>one-off TABULA seeder, <code>seed</code> profile only</td>
+</tr>
+<tr>
+<td><code>ignis-db</code></td>
+<td><code>postgres:17-alpine</code> (not built here)</td>
+<td>PostgreSQL database</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>ignis-app</code> service publishes without the <code>-app</code> suffix. <code>IGNIS_IMAGE_TAG</code> pins both <code>ghcr.io</code> images to one release.</p>
+</div>
 <h3 id="1-prepare-the-env-files">1. Prepare the <code>env/</code> files<a class="headerlink" href="#1-prepare-the-env-files" title="Permanent link">&para;</a></h3>
 <div class="admonition danger">
 <p class="admonition-title">Do not deploy the committed env/ files</p>
