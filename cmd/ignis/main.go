@@ -11,10 +11,6 @@ import (
 	"github.com/thd-spatial-ai/ignis/internal/version"
 )
 
-func versionString() string {
-	return fmt.Sprintf("%s (commit %s, built %s)", version.Version, version.Commit, version.Date)
-}
-
 // parseVersionFlag reports whether args request the version string, so the
 // flag-handling decision can be tested without starting a server or exiting.
 func parseVersionFlag(args []string) bool {
@@ -28,7 +24,7 @@ func parseVersionFlag(args []string) bool {
 // Setup app server and routes
 func main() {
 	if parseVersionFlag(os.Args[1:]) {
-		fmt.Println(versionString())
+		fmt.Println(version.String())
 		os.Exit(0)
 	}
 

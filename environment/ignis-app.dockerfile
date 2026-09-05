@@ -13,10 +13,21 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
+# Passed by the publish workflow on a tag build; default to the same values
+# internal/version hard-codes, so a plain `docker build` is unchanged.
+ARG VERSION=dev
+ARG COMMIT=none
+ARG DATE=unknown
 # -buildvcs=false: the build context may contain .git, and the toolchain's
 # VCS stamping shells out to git, which fails on an ownership mismatch in CI.
 # The image is identified by its release tag, so the stamp buys nothing.
-RUN CGO_ENABLED=0 go build -buildvcs=false -o /out/ignis ./cmd/ignis
+# -X: same three variables release.yml stamps into the standalone binaries.
+RUN CGO_ENABLED=0 go build -buildvcs=false \
+    -ldflags="-s -w \
+      -X github.com/thd-spatial-ai/ignis/internal/version.Version=${VERSION} \
+      -X github.com/thd-spatial-ai/ignis/internal/version.Commit=${COMMIT} \
+      -X github.com/thd-spatial-ai/ignis/internal/version.Date=${DATE}" \
+    -o /out/ignis ./cmd/ignis
 
 # ---------------------------------------------------------------------------
 # Stage 2: final — only the compiled server binary, no compiler/source/git
