@@ -5,6 +5,10 @@
 # own startup banner). Never wire this into a container's default startup;
 # it must only run when explicitly invoked (see docker-compose.yml's
 # `ignis-build-db` service, gated behind the `seed` profile).
+#
+# Despite the filename, this builds the `ignis-build-db` seeder image, not
+# the database. The database is the `ignis-db` service, plain postgres with
+# no image built here.
 
 # ---------------------------------------------------------------------------
 # Stage 1: builder

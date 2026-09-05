@@ -242,6 +242,15 @@ This path only: there is no containerised `validate`. See the [validation report
 
 Use `docker-compose.prod.yml`, which pulls published images and needs no source tree on the target machine. Copy across: the compose file, `.env`, the `env/` directory, and the `caddy/` directory.
 
+!!! info "Service and image names"
+    | Compose service | Published image | Role |
+    |---|---|---|
+    | `ignis-app` | `ghcr.io/thd-spatial-ai/ignis` | HTTP API server |
+    | `ignis-build-db` | `ghcr.io/thd-spatial-ai/ignis-build-db` | one-off TABULA seeder, `seed` profile only |
+    | `ignis-db` | `postgres:17-alpine` (not built here) | PostgreSQL database |
+
+    The `ignis-app` service publishes without the `-app` suffix. `IGNIS_IMAGE_TAG` pins both `ghcr.io` images to one release.
+
 ### 1. Prepare the `env/` files
 
 !!! danger "Do not deploy the committed env/ files"
