@@ -416,6 +416,10 @@ components:
       description: >
         Full TABULA parameter set (~200 fields), nested under two groups. Use
         /api/v1/fields to resolve each field's path, unit, and label.
+        BasicParameters.BuildingAppearance.Year1_Building and
+        Year2_Building are the earliest/latest construction year of this
+        variant's period band (0 and 9999 are the same open-ended sentinels
+        used by /api/v1/periods).
       properties:
         BasicParameters:
           type: object

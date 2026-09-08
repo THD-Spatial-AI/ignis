@@ -58,6 +58,8 @@ type BuildingThematic struct {
 	H_room                  float64 `json:"h_room"`                  // Room height in meters (used for calculating conditioned volume if not provided in dataset)
 	Code_AtticCond          string  `json:"Code_AtticCond"`          // Attic condition code
 	Code_CellarCond         string  `json:"Code_CellarCond"`         // Cellar condition code
+	Year1_Building          int     `json:"Year1_Building"`          // Earliest construction year of this variant's period band (0 = open-ended)
+	Year2_Building          int     `json:"Year2_Building"`          // Latest construction year of this variant's period band (9999 = open-ended)
 }
 
 // Envelope holds building envelope parameters like areas and volumes of different building elements.
