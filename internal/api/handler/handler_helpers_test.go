@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/thd-spatial-ai/ignis/internal/db/repository"
 )
@@ -272,6 +274,35 @@ func TestMatchVariants_nonIntegerYear_returns400(t *testing.T) {
 	w := serve(http.MethodGet, "/variants/DE/match?type=SFH&year=nineteen", "/variants/:country_iso2/match", h.MatchVariants, nil)
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("expected 400 for non-integer year, got %d", w.Code)
+	}
+}
+
+func TestMatchVariants_negativeYear_returns400(t *testing.T) {
+	mock := &mockRepo{
+		resolvePeriodByYear: func(_ context.Context, _, _ string, _ int) (string, error) {
+			t.Error("ResolvePeriodByYear must not be called for a negative year")
+			return "", nil
+		},
+	}
+	h := newTestHandler(mock)
+	w := serve(http.MethodGet, "/variants/DE/match?type=SFH&year=-5", "/variants/:country_iso2/match", h.MatchVariants, nil)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for negative year, got %d", w.Code)
+	}
+}
+
+func TestMatchVariants_futureYear_returns400(t *testing.T) {
+	mock := &mockRepo{
+		resolvePeriodByYear: func(_ context.Context, _, _ string, _ int) (string, error) {
+			t.Error("ResolvePeriodByYear must not be called for a future year")
+			return "", nil
+		},
+	}
+	h := newTestHandler(mock)
+	futureYear := time.Now().Year() + 1
+	w := serve(http.MethodGet, fmt.Sprintf("/variants/DE/match?type=SFH&year=%d", futureYear), "/variants/:country_iso2/match", h.MatchVariants, nil)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 for a year in the future, got %d", w.Code)
 	}
 }
 
