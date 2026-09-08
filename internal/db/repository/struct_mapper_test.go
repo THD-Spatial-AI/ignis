@@ -28,6 +28,8 @@ func TestPopulateStructFromMap_setsFieldsByJSONTag(t *testing.T) {
 		"HeatingDays":          int64(180),
 		"Theta_e":              -12,
 		"n_air_infiltration":   float64(0.5),
+		"Year1_Building":       int32(0),
+		"Year2_Building":       int32(1918),
 	}
 
 	populateStructFromMap(data, dataMap)
@@ -49,6 +51,12 @@ func TestPopulateStructFromMap_setsFieldsByJSONTag(t *testing.T) {
 	}
 	if data.AdvancedParameters.AirInfiltration.N_air_infiltration != 0.5 {
 		t.Errorf("N_air_infiltration = %v, want 0.5", data.AdvancedParameters.AirInfiltration.N_air_infiltration)
+	}
+	if data.BasicParameters.BuildingAppearance.Year1_Building != 0 {
+		t.Errorf("Year1_Building = %d, want 0", data.BasicParameters.BuildingAppearance.Year1_Building)
+	}
+	if data.BasicParameters.BuildingAppearance.Year2_Building != 1918 {
+		t.Errorf("Year2_Building = %d, want 1918", data.BasicParameters.BuildingAppearance.Year2_Building)
 	}
 }
 

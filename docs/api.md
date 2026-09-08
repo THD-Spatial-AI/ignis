@@ -22,7 +22,7 @@ ignis has no authentication of its own. The reverse proxy in front of it is the 
 
 Step 2 is optional. Call it when you need to inspect or report the inputs; `calculate` uses them either way.
 
-If you have a construction year rather than a period code, send `year=` in place of `period=` at step 1 and ignis resolves it. Exactly one of the two is required. `GET /api/v1/periods/{country}` lists a country's bands as `{ period, year_from, year_to }`, oldest first, with `year_from` 0 and `year_to` 9999 marking the open-ended bands.
+If you have a construction year rather than a period code, send `year=` in place of `period=` at step 1 and ignis resolves it. Exactly one of the two is required. `GET /api/v1/periods/{country}` lists a country's bands as `{ period, year_from, year_to }`, oldest first, with `year_from` 0 and `year_to` 9999 marking the open-ended bands. Step 2's response also carries the resolved variant's own band, at `tabula_data.BasicParameters.BuildingAppearance.Year1_Building` / `Year2_Building`.
 
 ## Overriding archetype inputs
 
