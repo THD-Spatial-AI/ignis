@@ -125,6 +125,16 @@ func seedFixtures(ctx context.Context, pool *pgxpool.Pool) error {
 			('AT.N.MFH.02.Gen',  'AT.02', 1919, 1944),
 			('AT.N.TH.01.Gen',   'AT.01', 0,    1918),
 			('AT.N.TH.05.Gen',   'AT.05', 2000, 9999)`,
+		// netherlands carries the dwelling count. REAL matches the type the
+		// workbook loader gives the column in every country table.
+		`CREATE TABLE tabula.netherlands (
+			id SERIAL PRIMARY KEY,
+			"Code_BuildingVariant" VARCHAR,
+			"n_Apartment" REAL
+		)`,
+		`INSERT INTO tabula.netherlands ("Code_BuildingVariant", "n_Apartment") VALUES
+			('NL.N.AB.03.Gen.ReEx.001.001',  15),
+			('NL.N.SFH.01.Gen.ReEx.001.001', 1)`,
 	}
 	for _, stmt := range statements {
 		if _, err := pool.Exec(ctx, stmt); err != nil {
@@ -254,6 +264,25 @@ func TestTabulaRepository_GetVariant_success(t *testing.T) {
 	}
 	if params.AdvancedParameters.ClimateConditions.HeatingDays != 185 {
 		t.Errorf("HeatingDays = %d, want 185", params.AdvancedParameters.ClimateConditions.HeatingDays)
+	}
+}
+
+func TestTabulaRepository_GetVariant_nApartment(t *testing.T) {
+	r := repository.NewTabulaRepository(testPool, "tabula")
+	for _, tc := range []struct {
+		code string
+		want int
+	}{
+		{"NL.N.AB.03.Gen.ReEx.001.001", 15},
+		{"NL.N.SFH.01.Gen.ReEx.001.001", 1},
+	} {
+		params, _, _, err := r.GetVariant(context.Background(), "netherlands", tc.code)
+		if err != nil {
+			t.Fatalf("%s: unexpected error: %v", tc.code, err)
+		}
+		if got := params.BasicParameters.BuildingAppearance.N_Apartment; got != tc.want {
+			t.Errorf("%s: N_Apartment = %d, want %d", tc.code, got, tc.want)
+		}
 	}
 }
 
