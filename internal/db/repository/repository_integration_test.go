@@ -107,7 +107,9 @@ func seedFixtures(ctx context.Context, pool *pgxpool.Pool) error {
 			('DE.N.SFH.01.ReEx', 75.5, 185, 98.70),
 			('DE.N.MFH.01.Gen', 200.0, 185, 88.10)`,
 		// austria carries the construction-year bands for the period-resolution tests.
-		// MFH deliberately has no 01 band, so year resolution is scoped to type.
+		// MFH deliberately has no 01 band and no open-ended sentinel at either
+		// end, so it can stand in for a type whose bands don't cover 0..9999.
+		// TH deliberately has a gap (1919-1999) between its two bands.
 		`CREATE TABLE tabula.austria (
 			id SERIAL PRIMARY KEY,
 			"Code_BuildingVariant" VARCHAR,
@@ -120,7 +122,9 @@ func seedFixtures(ctx context.Context, pool *pgxpool.Pool) error {
 			('AT.N.SFH.01.ReEx', 'AT.01', 0,    1918),
 			('AT.N.SFH.02.Gen',  'AT.02', 1919, 1944),
 			('AT.N.SFH.12.Gen',  'AT.12', 2009, 9999),
-			('AT.N.MFH.02.Gen',  'AT.02', 1919, 1944)`,
+			('AT.N.MFH.02.Gen',  'AT.02', 1919, 1944),
+			('AT.N.TH.01.Gen',   'AT.01', 0,    1918),
+			('AT.N.TH.05.Gen',   'AT.05', 2000, 9999)`,
 	}
 	for _, stmt := range statements {
 		if _, err := pool.Exec(ctx, stmt); err != nil {
@@ -191,8 +195,12 @@ func TestTabulaRepository_ResolvePeriodByYear(t *testing.T) {
 		{"upper boundary of oldest band", "AT.N.SFH", 1918, "01"},
 		{"lower boundary of next band", "AT.N.SFH", 1919, "02"},
 		{"open-ended newest band", "AT.N.SFH", 2050, "12"},
-		{"type without that band", "AT.N.MFH", 1900, ""},
-		{"year in no band for type", "AT.N.MFH", 3000, ""},
+		{"year before the type's only band clamps to it", "AT.N.MFH", 1900, "02"},
+		{"year after the type's only band clamps to it", "AT.N.MFH", 3000, "02"},
+		{"year before every band for the type clamps to oldest", "AT.N.TH", 1800, "01"},
+		{"year after every band for the type clamps to newest", "AT.N.TH", 2050, "05"},
+		{"year in a gap between two defined bands is not clamped", "AT.N.TH", 1950, ""},
+		{"type with no bands at all", "AT.N.AB", 1950, ""},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -216,6 +224,7 @@ func TestTabulaRepository_ListPeriods(t *testing.T) {
 	want := []repository.ConstructionPeriod{
 		{Period: "01", YearFrom: 0, YearTo: 1918},
 		{Period: "02", YearFrom: 1919, YearTo: 1944},
+		{Period: "05", YearFrom: 2000, YearTo: 9999},
 		{Period: "12", YearFrom: 2009, YearTo: 9999},
 	}
 	if len(periods) != len(want) {

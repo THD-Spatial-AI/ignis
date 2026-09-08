@@ -62,9 +62,12 @@ func refurbishmentLabel(index int) string {
 
 // MatchVariants returns all refurbishment variants for a building type and construction period.
 // Query params: type (e.g. SFH) is required; exactly one of period (e.g. 01) or
-// year (e.g. 1975) must be given. With year, ignis resolves the period whose band
-// contains it for that country and type. The response is ordered from existing
-// state to most-refurbished.
+// year (e.g. 1975) must be given. year must be a non-negative integer no later
+// than the current calendar year. With year, ignis resolves the period whose
+// band contains it for that country and type; a year outside every defined
+// band for that type clamps to the oldest or newest period rather than
+// failing to match. The response is ordered from existing state to
+// most-refurbished.
 func (h *Handler) MatchVariants(c *gin.Context) {
 	isoCode := strings.ToUpper(strings.TrimSpace(c.Param("country_iso2")))
 	tableName, err := tableNameFromISO(isoCode)
@@ -96,6 +99,14 @@ func (h *Handler) MatchVariants(c *gin.Context) {
 		year, convErr := strconv.Atoi(yearParam)
 		if convErr != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("query param 'year' must be an integer, got %q", yearParam)})
+			return
+		}
+		if year < 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("query param 'year' must not be negative, got %d", year)})
+			return
+		}
+		if currentYear := time.Now().Year(); year > currentYear {
+			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("query param 'year' must not be in the future, got %d", year)})
 			return
 		}
 		period, err = h.repo.ResolvePeriodByYear(ctx, tableName, typePrefix, year)

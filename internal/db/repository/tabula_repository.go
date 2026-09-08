@@ -103,9 +103,12 @@ func periodFromYearClass(yearClass string) string {
 
 // ResolvePeriodByYear returns the period index whose construction-year band
 // contains year, scoped to one building type. typePrefix is "CC.N.TYPE".
-// Year1_Building 0 and Year2_Building 9999 are the open-ended sentinels; the
-// plain range comparison covers both without special-casing. Returns "" when no
-// band for that type contains the year.
+// Year1_Building 0 and Year2_Building 9999 are the open-ended sentinels some
+// countries use; others simply stop at their oldest or newest recorded
+// period, so a year before/after every band for that type clamps to the
+// nearest edge (see clampToNearestPeriod) rather than returning no match.
+// Returns "" only when the type has no bands at all, or the year falls in a
+// gap between two defined bands.
 func (r *TabulaRepository) ResolvePeriodByYear(ctx context.Context, tableName, typePrefix string, year int) (string, error) {
 	query := fmt.Sprintf(
 		`SELECT "Code_ConstructionYearClass" FROM %s
@@ -117,14 +120,67 @@ func (r *TabulaRepository) ResolvePeriodByYear(ctx context.Context, tableName, t
 
 	var yearClass string
 	err := r.pool.QueryRow(ctx, query, typePrefix+".%", year).Scan(&yearClass)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return "", nil
+	if err == nil {
+		return periodFromYearClass(yearClass), nil
 	}
-	if err != nil {
+	if !errors.Is(err, pgx.ErrNoRows) {
 		return "", fmt.Errorf("failed to resolve period for %s year %d: %w", typePrefix, year, err)
 	}
 
+	yearClass, err = r.clampToNearestPeriod(ctx, tableName, typePrefix, year)
+	if err != nil {
+		return "", err
+	}
+	if yearClass == "" {
+		return "", nil
+	}
 	return periodFromYearClass(yearClass), nil
+}
+
+// clampToNearestPeriod handles a year that matched no band for typePrefix. If
+// year precedes every defined band it returns the oldest one; if it follows
+// every band it returns the newest. A year that falls inside the type's
+// overall range but between two defined bands (a gap) is left as "" — which
+// neighbour to prefer there is undefined, so it stays a genuine no-match.
+func (r *TabulaRepository) clampToNearestPeriod(ctx context.Context, tableName, typePrefix string, year int) (string, error) {
+	boundsQuery := fmt.Sprintf(
+		`SELECT MIN("Year1_Building"), MAX("Year2_Building") FROM %s WHERE "Code_BuildingVariant" LIKE $1`,
+		r.qualifyTable(tableName),
+	)
+
+	var minYear1, maxYear2 *int
+	if err := r.pool.QueryRow(ctx, boundsQuery, typePrefix+".%").Scan(&minYear1, &maxYear2); err != nil {
+		return "", fmt.Errorf("failed to load year bounds for %s: %w", typePrefix, err)
+	}
+	if minYear1 == nil || maxYear2 == nil {
+		return "", nil // no bands at all for this type
+	}
+
+	var edgeQuery string
+	switch {
+	case year < *minYear1:
+		edgeQuery = fmt.Sprintf(
+			`SELECT "Code_ConstructionYearClass" FROM %s
+			 WHERE "Code_BuildingVariant" LIKE $1
+			 ORDER BY "Year1_Building" ASC LIMIT 1`,
+			r.qualifyTable(tableName),
+		)
+	case year > *maxYear2:
+		edgeQuery = fmt.Sprintf(
+			`SELECT "Code_ConstructionYearClass" FROM %s
+			 WHERE "Code_BuildingVariant" LIKE $1
+			 ORDER BY "Year2_Building" DESC LIMIT 1`,
+			r.qualifyTable(tableName),
+		)
+	default:
+		return "", nil // inside the overall range but in a gap between bands
+	}
+
+	var yearClass string
+	if err := r.pool.QueryRow(ctx, edgeQuery, typePrefix+".%").Scan(&yearClass); err != nil {
+		return "", fmt.Errorf("failed to clamp period for %s year %d: %w", typePrefix, year, err)
+	}
+	return yearClass, nil
 }
 
 // ListPeriods returns the country's distinct construction-year bands, oldest first.

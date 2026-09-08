@@ -105,8 +105,10 @@ paths:
         period, ordered from existing state to most refurbished. Give the period
         either directly (period) or as a construction year (year), which ignis
         resolves to the period whose band contains it for that country and type.
-        A year with no matching archetype for that type returns an empty data
-        list.
+        A year before the earliest or after the latest band defined for that
+        type resolves to the oldest or newest period rather than failing to
+        match. A year that falls in a gap between two defined bands, or a type
+        with no bands at all, returns an empty data list.
       parameters:
         - $ref: "#/components/parameters/CountryIso2"
         - name: type
@@ -131,9 +133,11 @@ paths:
           required: false
           description: >
             Construction year, resolved to a period. Exactly one of period or
-            year is required.
+            year is required. Must be a non-negative integer no later than the
+            current calendar year.
           schema:
             type: integer
+            minimum: 0
           example: 1975
       responses:
         "200":
