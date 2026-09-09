@@ -55,6 +55,7 @@ type BuildingThematic struct {
 	Code_ComplexFootprint   string  `json:"Code_ComplexFootprint"`   // Complexity of building footprint (e.g. "Simple", "Standard", "Complex")
 	Code_ComplexRoof        string  `json:"Code_ComplexRoof"`        // Complexity of roof shape (e.g. "Simple", "Standard", "Complex")
 	N_Storey                int     `json:"n_Storey"`                // Number of storeys (used for calculating conditioned volume if not provided in dataset)
+	N_Apartment             int     `json:"n_Apartment"`             // Number of dwellings in the archetype building (1 for SFH and TH, 0 where TABULA gives no count)
 	H_room                  float64 `json:"h_room"`                  // Room height in meters (used for calculating conditioned volume if not provided in dataset)
 	Code_AtticCond          string  `json:"Code_AtticCond"`          // Attic condition code
 	Code_CellarCond         string  `json:"Code_CellarCond"`         // Cellar condition code
