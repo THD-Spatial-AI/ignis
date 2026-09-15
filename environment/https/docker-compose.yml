@@ -1,12 +1,17 @@
-# Development compose file: builds ignis-app and ignis-build-db from source
-# in this checkout, so it is the only one of the three that picks up local
-# code changes. Use docker-compose.quickstart.yml to try the API without a
-# source tree, or docker-compose.prod.yml to deploy a published release.
+# HTTPS environment, building ignis-app and ignis-build-db from source in this
+# checkout, so it is the only one of the three here that picks up local code
+# changes. Use docker-compose.quickstart.yml to try the API without a source
+# tree, or docker-compose.prod.yml to deploy a published release.
 #
 # ---
 # Usage:  docker compose up -d
 #         docker compose --profile seed run --rm ignis-build-db
 # ---
+#
+# Caddy terminates TLS in front of the app and does nothing else: ignis handles
+# its own CORS and preflight, and no request carries an API key. Use
+# environment/http/ where TLS is terminated upstream, or not needed; that path
+# needs no `caddy` install and no trust step.
 #
 # Host prerequisites beyond Docker: the `caddy` CLI, with `caddy trust` run
 # once, so the local CA in CADDY_DATA_DIR is in your OS and browser trust
@@ -24,8 +29,8 @@
 # Compose project name = the concern this stack belongs to. The energy-modelling
 # application is split into concerns, each its own namespace; ignis and buem are
 # both building-simulation concerns, so their containers share this namespace.
-# All three compose files declare the same name, so they address the same
-# containers, network and volumes.
+# Every compose file under environment/ declares the same name, so they address
+# the same containers, network and volumes. Run one at a time.
 name: building-simulation
 
 # Container naming convention: <service>-<role>, where role is one of
@@ -51,7 +56,11 @@ services:
   ignis-app:
     container_name: ignis-app
     build:
-      context: ./..
+      # Context is the repository root, two levels up. The dockerfiles stay at
+      # environment/ rather than being copied into http/ and https/: the image
+      # is identical for both, and .github/workflows/docker-publish.yml builds
+      # from that one path.
+      context: ./../..
       dockerfile: environment/ignis-app.dockerfile   # multi-stage: builder (Go toolchain) -> final (binary only)
     env_file: [env/common.env, env/app.env]        # CORS config + DB connection
     environment:
@@ -79,7 +88,7 @@ services:
   ignis-build-db:
     profiles: ["seed"]
     build:
-      context: ./..
+      context: ./../..
       dockerfile: environment/ignis-db.dockerfile
     # No volume mount for the workbook — tabula-calculator-lite.xlsx is baked
     # into the image itself (see ignis-db.dockerfile), since it's static
@@ -92,7 +101,7 @@ services:
   ignis-reverse-proxy:
     image: caddy:2.11-alpine
     container_name: ignis-reverse-proxy
-    env_file: [env/common.env, env/proxy.env]        # ALLOWED_ORIGINS + IGNIS_API_KEY / IGNIS_SITE_ADDRESS
+    env_file: [env/proxy.env]       # IGNIS_SITE_ADDRESS
     environment:
       - APP_PORT=${APP_PORT:-8080}    # so the Caddyfile's upstream ignis-app:{$APP_PORT} resolves
     depends_on:
@@ -107,14 +116,8 @@ services:
       # container keeps serving stale content and no Caddy restart fixes it.
       - ./caddy:/etc/caddy:ro
       - ${CADDY_DATA_DIR:?CADDY_DATA_DIR is not set}:/data/caddy # reuse the host's already-trusted local CA
-    # The Caddyfile matches Origin against a regex, but ALLOWED_ORIGINS is a
-    # plain comma list (the shape ignis's own Go CORS middleware needs — see
-    # env/common.env). entrypoint.sh derives ALLOWED_ORIGINS_PATTERN from that
-    # one list at startup instead of hardcoding origins in both places. Same
-    # list, two shapes it's actually consumed in — not two things a human has
-    # to remember to keep in sync.
-    entrypoint: ["/etc/caddy/entrypoint.sh"]
-    command: ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
+    # No entrypoint or command override: the caddy image already runs
+    # `caddy run --config /etc/caddy/Caddyfile --adapter caddyfile`.
 
 volumes:
   ignis-db-data:

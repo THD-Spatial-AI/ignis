@@ -1,9 +1,10 @@
-# Try-it-out compose file: pulls the pre-built, CI-published ignis-app and
+# Try-it-out HTTPS environment: pulls the pre-built, CI-published ignis-app and
 # ignis-build-db images from GHCR, so nothing is compiled locally and no Go
 # toolchain, source tree, `caddy` install or `caddy trust` is needed on the
-# host. Needs only Docker, plus this file, the env/ directory and Caddyfile
-# in the working directory. No `.env` is required: every ${...} in this
-# file has a default (APP_PORT 8080, HOST_HTTPS_PORT 443, IGNIS_IMAGE_TAG latest).
+# host. Needs only Docker, plus this file, the env/ directory and caddy/
+# directory in the working directory. No `.env` is required: every ${...} in
+# this file has a default (APP_PORT 8080, HOST_HTTPS_PORT 443,
+# IGNIS_IMAGE_TAG latest).
 #
 # ---
 # Usage:  docker compose -f docker-compose.quickstart.yml up -d
@@ -25,12 +26,11 @@
 # it in the browser, or pass -k/--no-check-certificate/"disable SSL
 # verification" from curl, wget, or Postman. Not meant for a real
 # deployment: see docker-compose.prod.yml for that (real trust chain or a
-# public domain).
+# public domain). environment/http/ avoids the certificate question entirely.
 #
-# All requests are gated behind the X-Api-Key header, matched against
-# IGNIS_API_KEY in env/proxy.env (see Caddyfile). /ignis/health is the one exemption,
-# so container and uptime checks need no key. The committed IGNIS_API_KEY is
-# a local-dev placeholder.
+# Caddy terminates TLS and does nothing else. There is no API key on any
+# endpoint: ignis handles its own CORS, and what keeps the app off the host
+# network is that it publishes no port of its own.
 #
 # Deliberately standalone rather than a partial override merged with
 # docker-compose.yml — see that file's header for the reasoning. The volume
@@ -74,7 +74,7 @@ services:
   ignis-reverse-proxy:
     image: caddy:2.11-alpine
     container_name: ignis-reverse-proxy
-    env_file: [env/common.env, env/proxy.env]
+    env_file: [env/proxy.env]
     environment:
       - APP_PORT=${APP_PORT:-8080}
     depends_on:
@@ -87,8 +87,6 @@ services:
       # single-file bind mount silently serves stale content after an edit.
       - ./caddy:/etc/caddy:ro
       - caddy-data:/data/caddy
-    entrypoint: ["/etc/caddy/entrypoint.sh"]
-    command: ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
 
   ignis-build-db:
     image: ghcr.io/thd-spatial-ai/ignis-build-db:${IGNIS_IMAGE_TAG:-latest}

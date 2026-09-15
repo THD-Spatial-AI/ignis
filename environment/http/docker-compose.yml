@@ -1,0 +1,100 @@
+# Plain-HTTP environment, building ignis-app and ignis-build-db from source in
+# this checkout, so it is the one that picks up local code changes. Use
+# docker-compose.prod.yml here to run a published release instead.
+#
+# ---
+# Usage:  docker compose up -d
+#         docker compose --profile seed run --rm ignis-build-db
+# ---
+#
+# No reverse proxy, no TLS, no API key, and nothing to install on the host but
+# Docker. TLS is a property of a deployment rather than of ignis: in production
+# it is normally terminated upstream, by the platform ingress or the
+# orchestrator's own proxy. Use environment/https/ when ignis has to terminate
+# it itself.
+#
+# What limits who can reach the service is the port mapping below, not
+# ALLOWED_ORIGINS. CORS is enforced by a browser on behalf of a page it has
+# loaded; a server-to-server caller such as the EnerPlanET backend sends no
+# Origin header and ignores the response headers entirely. HOST_BIND therefore
+# defaults to 127.0.0.1, so this stack is reachable from the host it runs on
+# and nowhere else until that is deliberately changed.
+#
+# .env is optional: every ${...} below has a default (HOST_BIND 127.0.0.1,
+# HOST_PORT 8080, APP_PORT 8080).
+#
+# Compose project name = the concern this stack belongs to. The energy-modelling
+# application is split into concerns, each its own namespace; ignis and buem are
+# both building-simulation concerns, so their containers share this namespace.
+# Every compose file under environment/ declares the same name, so they address
+# the same containers, network and volumes. Run one at a time.
+name: building-simulation
+
+# Container naming convention: <service>-<role>, where role is one of
+# app | db (this environment has no reverse-proxy). Service name and
+# container_name are kept identical, so a container name always says both which
+# service it belongs to and what role it plays.
+services:
+  ignis-db:
+    image: postgres:17-alpine
+    container_name: ignis-db
+    env_file: [env/db.env]        # POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB
+    volumes:
+      - ignis-db-data:/var/lib/postgresql/data   # persists across container recreation
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    # No `ports:` mapping — reachable only from other containers on this
+    # network, by service name (`ignis-db`).
+
+  ignis-app:
+    container_name: ignis-app
+    build:
+      # Context is the repository root, two levels up. The dockerfiles stay at
+      # environment/ rather than being copied into http/ and https/: the image
+      # is identical for both, and .github/workflows/docker-publish.yml builds
+      # from that one path.
+      context: ./../..
+      dockerfile: environment/ignis-app.dockerfile   # multi-stage: builder (Go toolchain) -> final (binary only)
+    env_file: [env/common.env, env/app.env]        # CORS config + DB connection
+    environment:
+      - APP_PORT=${APP_PORT:-8080}    # internal listen port; one value for the app and its health check
+    depends_on:
+      ignis-db:
+        condition: service_healthy
+    # Bound to the loopback interface by default: nothing outside this host can
+    # connect. Set HOST_BIND=0.0.0.0 in .env to publish on every interface, and
+    # only where something else (a firewall, an upstream proxy) controls who
+    # reaches the port.
+    ports:
+      - "${HOST_BIND:-127.0.0.1}:${HOST_PORT:-8080}:${APP_PORT:-8080}"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:$$APP_PORT/ignis/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  # One-off DB seed/rebuild job, NOT part of the normal `up` path (see
+  # `profiles` below). build_db DROPS and recreates all country tables from
+  # the Excel workbook — invoke deliberately, never automatically on startup:
+  #   docker compose --profile seed run --rm ignis-build-db
+  # No `container_name`: this is only ever started via `run`, which assigns
+  # its own name, and a fixed one would collide rather than help.
+  ignis-build-db:
+    profiles: ["seed"]
+    build:
+      context: ./../..
+      dockerfile: environment/ignis-db.dockerfile
+    # No volume mount for the workbook — tabula-calculator-lite.xlsx is baked
+    # into the image itself (see ignis-db.dockerfile), since it's static
+    # reference data, not something that changes independently of a release.
+    env_file: [env/app.env]
+    depends_on:
+      ignis-db:
+        condition: service_healthy
+
+volumes:
+  ignis-db-data:

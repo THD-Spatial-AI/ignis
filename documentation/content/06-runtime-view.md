@@ -1,21 +1,21 @@
 # Runtime View
 
-A browser client calling ignis through the proxy produces two requests: a CORS preflight, then the real request. This section traces both, plus a rejected request.
+A browser client calling ignis produces two requests: a CORS preflight, then the real request. ignis answers both itself, whether or not a proxy sits in front of it.
 
 ## Step 1: preflight (OPTIONS)
 
-Building Configurator calls `GET /api/v1/fields` from a page on `http://localhost:5173`. The target is a different origin (`https://localhost`) and the request carries a custom header (`X-Api-Key`), so the browser first sends an automatic `OPTIONS` preflight to ask permission. A preflight never carries the custom header itself.
+Building Configurator calls `GET /api/v1/fields` from a page on `http://localhost:5173`. The target is a different origin, so the browser first sends an automatic `OPTIONS` preflight to ask permission.
 
-Caddy matches the preflight on method alone, before the API-key check, and answers it: it echoes the allowed origin, lists the allowed methods and headers, and returns `204 No Content`. The preflight never reaches ignis.
+ignis's CORS middleware matches the `Origin` against `ALLOWED_ORIGINS`, echoes it back alongside the methods and headers it accepts, and returns `204 No Content`. In the HTTPS environment Caddy forwards the `OPTIONS` through unchanged; it holds no CORS configuration of its own.
 
 ## Step 2: the real request
 
-The browser now sends `GET /api/v1/fields` with `X-Api-Key` attached. Caddy checks the key. On a match, it forwards the request to `ignis-app:8080` over the internal Docker network as plain HTTP (encryption already ended at Caddy). ignis handles it as if no proxy existed: it checks the `Origin` against `ALLOWED_ORIGINS` and adds `Access-Control-Allow-Origin` to the response. Caddy passes the response back unchanged.
+The browser sends `GET /api/v1/fields`. ignis checks the `Origin` again, adds `Access-Control-Allow-Origin` to the response, and returns the payload. Where Caddy is in front, it decrypts the request, forwards it to `ignis-app:8080` as plain HTTP over the internal Docker network, and passes the response back unchanged.
 
-## Step 3: rejected request
+## Step 3: a request from an origin that is not allowed
 
-A request with a missing or wrong `X-Api-Key` hits Caddy's fallback rule and gets `403 Forbidden`. It never reaches ignis. ignis publishes no host port, so the proxy is the only way in.
+The response is still produced, but without `Access-Control-Allow-Origin`, so the browser discards it before the calling page can read it. This is a browser-side rule enforced on behalf of that page. A server-to-server caller sends no `Origin` header and is unaffected by the list, which is why reachability is decided by the port mapping rather than by `ALLOWED_ORIGINS`.
 
 ## Why this matters
 
-ignis behaves identically with or without the proxy in front of it. Caddy adds the TLS, the key check, and the preflight response; ignis's code knows nothing about any of it.
+ignis's request handling is the same in both environments. Caddy adds TLS termination and nothing else, so moving between them changes the scheme and the port, never the behaviour of an endpoint.
