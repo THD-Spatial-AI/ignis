@@ -1,0 +1,95 @@
+# Plain-HTTP environment running published images: pulls the CI-built
+# ignis-app and ignis-build-db from GHCR instead of compiling, for a target
+# machine with no Go toolchain and no source tree — only this file, the env/
+# directory and optionally .env.
+#
+# ---
+# Usage:  docker compose -f docker-compose.prod.yml pull
+#         docker compose -f docker-compose.prod.yml up -d
+# ---
+#
+# This is also the try-it-out path: nothing is needed on the host but Docker,
+# no certificate to trust and no key to send.
+#
+# No reverse proxy and no TLS. Use it where TLS is terminated upstream — a
+# platform ingress, an orchestrator's own proxy, a firewall fronting an
+# internal network — and environment/https/ where ignis has to terminate it
+# itself.
+#
+# What limits who can reach the service is the port mapping below, not
+# ALLOWED_ORIGINS. CORS is enforced by a browser on behalf of a page it has
+# loaded; a server-to-server caller such as the EnerPlanET backend sends no
+# Origin header and ignores the response headers entirely. HOST_BIND defaults
+# to 127.0.0.1; a deployment that must accept traffic from another host sets
+# it to 0.0.0.0 and relies on the network in front of it to say who may
+# connect.
+#
+# No endpoint carries an API key. Callers are already authenticated by the
+# platform in front of them, and the deployment sits on an internal network
+# reachable only over VPN; the network is the trust boundary.
+#
+# `pull` first, deliberately: IGNIS_IMAGE_TAG defaults to `latest`, and a host
+# that already has `latest` cached will keep running the old build after a
+# release without anything on that host revealing it. Pin a version in .env
+# where the deployment should not move.
+#
+# .env is optional; it can set HOST_BIND, HOST_PORT, APP_PORT and
+# IGNIS_IMAGE_TAG. The files under env/ on a deploy target must NOT be the
+# committed development copies: set a real POSTGRES_PASSWORD/DB_PASSWORD
+# (env/db.env, env/app.env), DB_SSL_MODE=require (env/app.env), and the real
+# browser origins in ALLOWED_ORIGINS (env/common.env). Both images are pinned
+# by IGNIS_IMAGE_TAG together, since the app and the seed job must come from
+# the same release.
+#
+# Seeding is a one-off admin operation, gated behind the `seed` profile so it
+# never runs on `up`. It DROPS and recreates all country tables from the
+# TABULA workbook baked into the ignis-build-db image, so it needs no source
+# checkout, but run it deliberately and never against a populated database you
+# care about:
+#   docker compose -f docker-compose.prod.yml --profile seed run --rm ignis-build-db
+name: building-simulation
+
+services:
+  ignis-db:
+    image: postgres:17-alpine
+    container_name: ignis-db
+    env_file: [env/db.env]
+    volumes:
+      - ignis-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  ignis-app:
+    container_name: ignis-app
+    # Pre-built by .github/workflows/docker-publish.yml on each vX.Y.Z tag.
+    # Set IGNIS_IMAGE_TAG in .env to pin a version; defaults to `latest`.
+    image: ghcr.io/thd-spatial-ai/ignis:${IGNIS_IMAGE_TAG:-latest}
+    env_file: [env/common.env, env/app.env]
+    environment:
+      - APP_PORT=${APP_PORT:-8080}
+    depends_on:
+      ignis-db:
+        condition: service_healthy
+    # See the header: loopback by default, HOST_BIND=0.0.0.0 to publish wider.
+    ports:
+      - "${HOST_BIND:-127.0.0.1}:${HOST_PORT:-8080}:${APP_PORT:-8080}"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:$$APP_PORT/ignis/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  ignis-build-db:
+    image: ghcr.io/thd-spatial-ai/ignis-build-db:${IGNIS_IMAGE_TAG:-latest}
+    profiles: [seed]
+    env_file: [env/app.env]
+    depends_on:
+      ignis-db:
+        condition: service_healthy
+
+volumes:
+  ignis-db-data:

@@ -1,0 +1,24 @@
+# TLS termination for ignis. Caddy holds the certificate, decrypts the request
+# and forwards it as plain HTTP to ignis-app over the internal Docker network.
+# That is its only job here: ignis handles CORS itself, preflight included
+# (internal/api/middleware/middleware.go), and there is no API-key gate.
+#
+# Use environment/http/ instead where TLS is terminated upstream, or not needed.
+#
+# Site address is `localhost` for local development. A real deployment sets
+# IGNIS_SITE_ADDRESS in env/proxy.env to its own domain, or Caddy will
+# neither serve it nor be able to provision a certificate for it.
+
+# Caddy advertises HTTP/3 (Alt-Svc: h3) by default. The compose files publish
+# the HTTPS port as TCP only, so a browser that caches that header and switches
+# to QUIC on a later request reaches nothing. h2 over the published TCP port is
+# all that is actually listening.
+{
+	servers {
+		protocols h1 h2
+	}
+}
+
+{$IGNIS_SITE_ADDRESS:localhost} {
+	reverse_proxy ignis-app:{$APP_PORT:8080}
+}

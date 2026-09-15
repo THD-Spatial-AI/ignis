@@ -11,24 +11,18 @@ info:
 
     ## Authentication
 
-    ignis has no authentication of its own. It runs behind a reverse proxy,
-    and the proxy is the only way to reach it. Any backend service that wants
-    to use ignis sends a valid `X-Api-Key` header on every request; the proxy
-    checks that header and rejects anything else with `403` before the
-    request ever reaches ignis.
+    ignis carries no credential of its own and asks for none. Every endpoint
+    below is reachable by anything that can open a connection to it, so a
+    deployment decides who that is at the network layer: ignis is published
+    on an internal network reachable over VPN, behind a platform that has
+    already authenticated the end user.
 
-    ignis is meant to be called by a trusted, server-side caller, never
-    directly by a browser or an end user's client, since the key must not be
-    visible outside that caller. If the system calling ignis has its own
-    user-facing login (EnerPlanET, for example, uses Keycloak), that login
-    authenticates the user *to that system*; ignis never sees it. That
-    system's own backend then calls ignis on the user's behalf, using the API
-    key described below.
+    If the system calling ignis has its own user-facing login (EnerPlanET,
+    for example, uses Keycloak), that login authenticates the user *to that
+    system*; ignis never sees it. That system's backend then calls ignis on
+    the user's behalf.
 
-    The API key is a prototype-stage credential, suitable for local
-    development and evaluation. A production deployment should replace it
-    with a short-lived token or mutual TLS between the caller and ignis; the
-    request/response contract of the endpoints does not change if it does.
+    Do not publish ignis on a public interface.
   license:
     name: MIT
     url: https://github.com/thd-spatial-ai/ignis/blob/main/LICENSE
@@ -37,14 +31,16 @@ info:
     url: https://github.com/thd-spatial-ai/
 
 servers:
+  - url: http://localhost:8080
+    description: Local development, environment/http (no proxy, no TLS)
   - url: https://localhost
-    description: Local development, via the reverse proxy (ignis-reverse-proxy)
+    description: Local development, environment/https (Caddy terminates TLS)
   - url: https://{host}
-    description: Deployed behind the platform's reverse proxy
+    description: Deployed behind the platform's ingress
     variables:
       host:
         default: ignis.example.org
-        description: The public host the reverse proxy is published on
+        description: The host ignis is published on
 
 tags:
   - name: Health
@@ -56,8 +52,6 @@ tags:
   - name: Calculation
     description: Run the heating-demand pipeline
 
-security:
-  - ApiKeyAuth: []
 
 paths:
   /ignis/health:
@@ -73,8 +67,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthResponse"
-        "403":
-          $ref: "#/components/responses/Forbidden"
 
   /api/v1/variants/{country_iso2}:
     get:
@@ -92,8 +84,6 @@ paths:
                 $ref: "#/components/schemas/VariantsResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
-        "403":
-          $ref: "#/components/responses/Forbidden"
 
   /api/v1/variants/{country_iso2}/match:
     get:
@@ -148,8 +138,6 @@ paths:
                 $ref: "#/components/schemas/MatchResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
-        "403":
-          $ref: "#/components/responses/Forbidden"
 
   /api/v1/periods/{country_iso2}:
     get:
@@ -171,8 +159,6 @@ paths:
                 $ref: "#/components/schemas/PeriodsResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
-        "403":
-          $ref: "#/components/responses/Forbidden"
 
   /api/v1/data/{code}:
     get:
@@ -190,8 +176,6 @@ paths:
                 $ref: "#/components/schemas/DataResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
-        "403":
-          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -211,8 +195,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FieldsResponse"
-        "403":
-          $ref: "#/components/responses/Forbidden"
 
   /api/v1/calculate/{code}:
     post:
@@ -237,24 +219,12 @@ paths:
                 $ref: "#/components/schemas/CalculateResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
-        "403":
-          $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
         "500":
           $ref: "#/components/responses/ServerError"
 
 components:
-  securitySchemes:
-    ApiKeyAuth:
-      type: apiKey
-      in: header
-      name: X-Api-Key
-      description: >
-        Static key checked by the reverse proxy. Sent by the trusted platform
-        backend, not by an end user's browser. A request without a valid key is
-        rejected with 403 before it reaches ignis.
-
   parameters:
     CountryIso2:
       name: country_iso2
@@ -292,13 +262,6 @@ components:
             $ref: "#/components/schemas/ErrorResponse"
           example:
             error: no TABULA dataset configured for XX
-    Forbidden:
-      description: Missing or invalid API key (enforced by the reverse proxy)
-      content:
-        text/plain:
-          schema:
-            type: string
-          example: "Forbidden: missing or invalid API key"
     NotFound:
       description: Variant code not found
       content:

@@ -1,32 +1,45 @@
 # Deployment View
 
-## The three containers
+## Two environments, one image
 
-ignis runs as three containers, defined in `environment/docker-compose.yml`. They form the `building-simulation` namespace (the Docker Compose project name), shared with other building-modelling services such as buem. The stack needs nothing on the host except Docker.
+`environment/` holds two self-contained Compose environments. They run the same published image and differ only in whether ignis terminates TLS itself.
 
-1. **ignis-reverse-proxy**: Caddy, from the `caddy:2.11-alpine` image. The only container that publishes a host port. Every request passes through it first.
+| Directory | Containers | Entry point |
+|---|---|---|
+| `environment/http` | `ignis-app`, `ignis-db` | `ignis-app`, published on `HOST_BIND:HOST_PORT` |
+| `environment/https` | `ignis-app`, `ignis-db`, `ignis-reverse-proxy` | the proxy, published on `HOST_HTTPS_PORT` |
 
-2. **ignis-app**: the `bin/ignis` binary, built from `environment/ignis-app.dockerfile`. Listens on the internal port (default 8080), publishes no host port, and reaches the database at `ignis-db`.
+Both form the `building-simulation` namespace (the Docker Compose project name), shared with other building-modelling services such as buem, and use the same container names, so only one runs at a time. Neither needs anything on the host except Docker, and `environment/https` from source additionally needs the `caddy` CLI for its one-off trust step.
 
-3. **ignis-db**: PostgreSQL, from `postgres:17-alpine`. Publishes no host port. Its data lives in a named volume (`ignis-db-data`) that survives `docker compose down`/`up`, but not `down -v`.
+The two dockerfiles stay at `environment/` rather than being copied into each directory: the image is identical for both, and the publishing workflow builds from that one path.
+
+## The containers
+
+1. **ignis-app**: the `bin/ignis` binary, built from `environment/ignis-app.dockerfile`. Listens on the internal port (default 8080) and reaches the database at `ignis-db`.
+
+2. **ignis-db**: PostgreSQL, from `postgres:17-alpine`. Publishes no host port in either environment. Its data lives in a named volume (`ignis-db-data`) that survives `docker compose down`/`up`, but not `down -v`.
+
+3. **ignis-reverse-proxy** (`environment/https` only): Caddy, from the `caddy:2.11-alpine` image. Terminates TLS and forwards plain HTTP to `ignis-app`. It holds no CORS configuration and checks no credential.
 
 Every component is a container, so the whole stack can be built into images, pushed to a registry, and run elsewhere with the same compose file. There is no host-installed database to set up separately.
 
 ## Ports
 
-Two ports, with different rules.
+- **Internal port** (`APP_PORT`, default 8080): the port `ignis-app` listens on inside its container. Container isolation means it never clashes with other services, so it stays the same everywhere. It is set once in `.env` and passed to the app, its health check, and, in the HTTPS environment, the proxy's upstream, rather than hardcoded in each.
 
-- **Internal port** (`APP_PORT`, default 8080): the port `ignis-app` listens on inside its container. Container isolation means it never clashes with other services, so it stays the same everywhere. It is set once in `.env` and passed to the app, its health check, and the proxy's upstream, rather than hardcoded in each.
+- **Host port** (`HOST_PORT`, default 8080, or `HOST_HTTPS_PORT`, default 443): the published port. This is the only one that can clash, since two services cannot own the same host port. An orchestration layer assigns a free port here per service.
 
-- **Host port** (`HOST_HTTPS_PORT`, default 443): the port `ignis-reverse-proxy` publishes. This is the only port that can clash: two services cannot both take host 443. An orchestration layer assigns a free port here per service.
+- **Host interface** (`HOST_BIND`, `environment/http` only, default `127.0.0.1`): which interface that port is published on.
 
 ## First-run data load
 
-A fresh `ignis-db` volume is empty. Load the TABULA data once, after first start: `docker compose exec ignis-app ./bin/build_db`. The data persists afterward. `build_db` drops and recreates all tables, so it is a manual step, not part of startup.
+A fresh `ignis-db` volume is empty. Load the TABULA data once, after first start, with the `seed` profile: `docker compose --profile seed run --rm ignis-build-db`. The data persists afterward. `build_db` drops and recreates all tables, so it is a manual step, not part of startup.
 
-## No host port on app or database
+## Reachability is a port mapping
 
-`ignis-app` and `ignis-db` declare no `ports:`, so nothing outside the Docker network can connect to them. `ignis-app` is reachable only from `ignis-reverse-proxy`, and `ignis-db` only from `ignis-app`, each by its service name. The proxy is not an add-on in front of an open service: it is the only way in.
+`ignis-db` declares no `ports:` in either environment, so it is reachable only from `ignis-app`, by service name. `ignis-app` declares none in `environment/https`, where the proxy is the only way in.
+
+In `environment/http` the app publishes a port bound to `127.0.0.1`, so the stack answers only on the host it runs on. Widening that to `0.0.0.0` is what exposes ignis to a network, and belongs only where something in front of the host decides who may connect. `ALLOWED_ORIGINS` does not restrict this: CORS is enforced by a browser on behalf of a page, and a server-to-server caller sends no `Origin` header at all.
 
 ## Startup order
 
@@ -34,10 +47,10 @@ A fresh `ignis-db` volume is empty. Load the TABULA data once, after first start
 
 ## Certificate trust across recreation
 
-A fresh Caddy container would generate a new, untrusted certificate authority, breaking any trust the browser already had. `ignis-reverse-proxy` avoids this by mounting the host's Caddy data directory (`~/.local/share/caddy`, set via `CADDY_DATA_DIR`) into the container, so it reuses the same CA. A browser that ran `caddy trust` once keeps trusting it.
+A fresh Caddy container would generate a new, untrusted certificate authority, breaking any trust the browser already had. In `environment/https`, `docker-compose.yml` and `docker-compose.prod.yml` avoid this by mounting the host's Caddy data directory (`~/.local/share/caddy`, set via `CADDY_DATA_DIR`) into the container, so it reuses the same CA. A browser that ran `caddy trust` once keeps trusting it. `docker-compose.quickstart.yml` uses a Docker-managed volume instead, trading the trust step for a certificate warning.
 
-This is a local-development convenience, tied to one machine. A real deployment replaces it with either public HTTPS (Caddy's built-in Let's Encrypt) or a shared internal CA every client trusts.
+This is a local-development convenience, tied to one machine. A real deployment replaces it with either public HTTPS (Caddy's built-in Let's Encrypt), a shared internal CA every client trusts, or `environment/http` behind an ingress that already holds the certificate.
 
 ## Network
 
-All three containers share one Docker Compose network (`building-simulation_default`). Docker's DNS resolves each service name to its container: the proxy reaches the app at `ignis-app`, the app reaches the database at `ignis-db`. This only works within the same network, which is why keeping everything on it (and nothing on a host port except the proxy) keeps the stack self-contained and closed.
+All containers in an environment share one Docker Compose network (`building-simulation_default`). Docker's DNS resolves each service name to its container: the proxy reaches the app at `ignis-app`, the app reaches the database at `ignis-db`. This only works within the same network, which is why keeping the database off any host port keeps the stack self-contained.

@@ -4,13 +4,13 @@ The interactive reference lives in its own standalone page, [`openapi/index.html
 
 ## Authentication
 
-ignis has no authentication of its own. The reverse proxy in front of it is the only way in: callers send a valid `X-Api-Key` header, and the proxy rejects anything else with `403` before the request reaches ignis.
+ignis carries no credential and asks for none. Every endpoint is reachable by anything that can open a connection to it, so who that is gets decided at the network layer: ignis is published on an internal network reachable over VPN, behind a platform that has already authenticated the end user.
 
-!!! warning "Call it server-side only"
-    The API key must not be visible outside the calling service. Call ignis from a trusted server-side caller, never directly from a browser or an end user's client. A user-facing login in front of your own system (EnerPlanET uses Keycloak) authenticates the user to *that system*, not to ignis. That system's backend then calls ignis on the user's behalf using the API key.
+!!! warning "Do not publish ignis on a public interface"
+    There is nothing in ignis to stop an unauthenticated caller. Keep it on an internal network, or behind something that authenticates for it. A user-facing login in front of your own system (EnerPlanET uses Keycloak) authenticates the user to *that system*, not to ignis; that system's backend then calls ignis on the user's behalf.
 
 !!! note "Base URL"
-    All paths are served through the reverse proxy. In local development that is `https://localhost`; in a deployment it is whatever host the proxy is published on.
+    Depends on which environment you started. `environment/http` publishes the app directly, so the base URL is `http://localhost:8080`. `environment/https` puts Caddy in front of it for TLS, giving `https://localhost`. In a deployment it is whatever host ignis is published on. Every path below is the same either way.
 
 ## Call sequence
 
@@ -42,7 +42,7 @@ See `CalculateRequest` in the reference below for exact types and validation rul
 
 !!! example "Overriding a single field"
     ```bash
-    curl -sk https://localhost/api/v1/calculate/DE.N.SFH.01.Gen.ReEx.001.001 -H "X-Api-Key: ..." -H "Content-Type: application/json" -d '{"HeatingDays": 150}'
+    curl -s http://localhost:8080/api/v1/calculate/DE.N.SFH.01.Gen.ReEx.001.001 -H "Content-Type: application/json" -d '{"HeatingDays": 150}'
     ```
     Returns the same archetype's `q_h_nd` recalculated for a 150-heating-day winter, every other input unchanged.
 
@@ -76,12 +76,11 @@ The body also accepts an optional `surfaces` list, one entry per physical elemen
 
 [Open the API reference](openapi/index.html), which can call a locally running ignis directly, no `mkdocs serve` needed to view it.
 
-**Step 1:** Start the stack, from `environment/`: `docker compose -f docker-compose.quickstart.yml up -d`. On a first run, load the TABULA data once: `docker compose -f docker-compose.quickstart.yml --profile seed run --rm ignis-build-db`.
+**Step 1:** Start the stack, from `environment/http/`: `docker compose -f docker-compose.prod.yml up -d`. On a first run, load the TABULA data once: `docker compose -f docker-compose.prod.yml --profile seed run --rm ignis-build-db`.
 
-**Step 2:** Serve `docs/openapi/` on `http://localhost:8000` (`python -m http.server 8000` from that directory works), since the reverse proxy's `ALLOWED_ORIGINS` allows that origin already. Opening the file directly (`file://`) works for reading the reference, but **Try it out** needs an allowed origin.
+**Step 2:** Serve `docs/openapi/` on `http://localhost:8000` (`python -m http.server 8000` from that directory works), since `ALLOWED_ORIGINS` allows that origin already. Opening the file directly (`file://`) works for reading the reference, but **Try it out** needs an allowed origin.
 
-**Step 3:** If your browser has never trusted the local proxy's certificate, open `https://localhost` directly once and accept it, or run `caddy trust`.
+**Step 3:** Pick `http://localhost:8080` from the **Servers** dropdown, then expand an endpoint, click **Try it out**, fill in the parameters, and **Execute**.
 
-**Step 4:** Click **Authorize** and enter the API key checked by the reverse proxy (`X-Api-Key`; the prototype default is set in `environment/env/proxy.env`). It applies to every **Try it out** call from then on.
-
-**Step 5:** Expand an endpoint, click **Try it out**, fill in the parameters, then **Execute**.
+!!! info "Using the HTTPS environment instead"
+    `environment/https` serves the same API on `https://localhost`. Select that server in the dropdown, and on the quickstart file open `https://localhost` in a tab once and accept the certificate warning first: browser JavaScript cannot click through it the way a manual page load can.
