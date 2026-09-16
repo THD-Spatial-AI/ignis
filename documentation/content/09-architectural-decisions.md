@@ -74,6 +74,8 @@ Only the HTTP environment attaches to the shared network. Callers inside that ne
 
 A service name is registered as a DNS alias on every network the service joins, and an explicit `aliases:` entry adds to it rather than replacing it. Two services sharing a name on one shared network therefore round-robin between different repositories' stacks, with nothing reporting a fault. That is why the service on the shared network carries the repository name and the others, which never join it, stay short.
 
+`db` was considered and deliberately left as is. Both environments define a database service, so whichever name it is given, the two projects register the same alias and a `db` attached to the shared network from both would resolve non-deterministically between two databases. Renaming it to `ignis-db` would not foreclose that, because the collision is between this repository's own two stacks rather than between repositories; only a transport-qualified name would, and that duplicates the project prefix already in the container name. The protection is therefore the condition above, that neither database attaches. Should one ever need to, it takes an explicit transport-qualified alias at that point, the way the app does.
+
 **Rejected:** One namespace per concern (`building-simulation`), shared by every building-modelling service. Grouping related containers is worth wanting, but a Compose project is the wrong place to put it. Splitting by transport alone (`building-simulation-http`) leaves the cross-repository case, which is the one that destroys containers.
 
 Pinning the database volume to one name across both environments, which this decision reverses. It was correct while only one environment could run, and is corruption once both can.
