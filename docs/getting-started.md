@@ -36,6 +36,9 @@ A third path, [manual setup](#manual-setup), runs the binaries without container
 
     Do not use `docker compose -p building-simulation down`. That targets the project rather than this repository, so on a machine where another service still declares the old project name, it removes that service's containers as well, naming neither. The database volume is pinned to its previous name, so it carries over and needs no reseed.
 
+!!! note "Compose warns about the database volume"
+    `up` prints that `building-simulation_ignis-db-data` was created for a different project and suggests `external: true`. The warning is expected: the volume is pinned to one name deliberately, so `environment/http` and `environment/https` mount the same database rather than one each. Do not switch it to `external: true`, which requires the volume to exist before `up` and so breaks a first run on a clean machine.
+
 ## Configuration files
 
 Each environment reads an optional `.env`, interpolated on the host, plus the files under its own `env/` directory, which are passed into the containers. They are split so each service receives only the variables it reads.
