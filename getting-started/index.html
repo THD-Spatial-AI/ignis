@@ -457,6 +457,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#choosing-an-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choosing an environment
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#configuration-files" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -468,10 +479,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#authentication" class="md-nav__link">
+  <a href="#access-control" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Authentication
+        Access control
       
     </span>
   </a>
@@ -479,33 +490,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#certificates" class="md-nav__link">
+  <a href="#http" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Certificates
+        http
       
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#quick-start" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Quick start
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Quick start">
+    <nav class="md-nav" aria-label="http">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-get-the-files" class="md-nav__link">
+  <a href="#1-start-the-stack" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Get the files
+        1. Start the stack
       
     </span>
   </a>
@@ -513,32 +513,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-start-the-stack" class="md-nav__link">
+  <a href="#2-seed-and-verify" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Start the stack
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-seed-and-verify" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        3. Seed and verify
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pinning-a-version" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Pinning a version
+        2. Seed and verify
       
     </span>
   </a>
@@ -551,22 +529,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#docker-from-source" class="md-nav__link">
+  <a href="#https" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Docker from source
+        https
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Docker from source">
+    <nav class="md-nav" aria-label="https">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-trust-the-local-ca" class="md-nav__link">
+  <a href="#certificates" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Trust the local CA
+        Certificates
       
     </span>
   </a>
@@ -574,10 +552,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-configure" class="md-nav__link">
+  <a href="#quickstart-pulled-images-no-host-setup" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Configure
+        Quickstart: pulled images, no host setup
       
     </span>
   </a>
@@ -585,10 +563,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-start-seed-and-verify" class="md-nav__link">
+  <a href="#from-source-with-a-trusted-certificate" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Start, seed and verify
+        From source, with a trusted certificate
       
     </span>
   </a>
@@ -627,6 +605,17 @@
     <span class="md-ellipsis">
       
         Tearing down
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pinning-a-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pinning a version
       
     </span>
   </a>
@@ -729,10 +718,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-set-the-site-address" class="md-nav__link">
+  <a href="#3-set-the-site-address-https-only" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Set the site address
+        3. Set the site address (https only)
       
     </span>
   </a>
@@ -881,59 +870,73 @@
 
 
 <h1 id="getting-started">Getting started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h1>
-<p>ignis is an HTTP API that computes TABULA heating demand for building archetypes. It ships as three containers: a Caddy reverse proxy, the Go application, and its own PostgreSQL instance.</p>
-<p>Three setup paths are available. Pick one:</p>
+<p>ignis is an HTTP API that computes TABULA heating demand for building archetypes. It ships as a Docker Compose stack: the Go application and its own PostgreSQL instance, optionally behind a Caddy reverse proxy that terminates TLS.</p>
+<h2 id="choosing-an-environment">Choosing an environment<a class="headerlink" href="#choosing-an-environment" title="Permanent link">&para;</a></h2>
+<p><code>environment/</code> holds two self-contained directories. Pick one, <code>cd</code> into it, and everything you need is there.</p>
 <table>
 <thead>
 <tr>
-<th>Path</th>
+<th>Directory</th>
+<th>Containers</th>
 <th>Use when</th>
-<th>Needs</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a href="#quick-start">Quick start</a></td>
-<td>Trying the API out</td>
-<td>Docker only</td>
+<td><a href="#http"><code>environment/http</code></a></td>
+<td>app, database</td>
+<td>Developing against the API, or deploying where TLS is already terminated upstream</td>
 </tr>
 <tr>
-<td><a href="#docker-from-source">Docker from source</a></td>
-<td>Developing ignis itself</td>
-<td>Docker, <code>caddy</code> CLI, source checkout</td>
-</tr>
-<tr>
-<td><a href="#manual-setup">Manual setup</a></td>
-<td>Running without containers</td>
-<td>Go, PostgreSQL, source checkout</td>
+<td><a href="#https"><code>environment/https</code></a></td>
+<td>app, database, Caddy</td>
+<td>ignis has to terminate TLS itself</td>
 </tr>
 </tbody>
 </table>
-<p>Both Docker paths share the same seed, verify and teardown steps; only the compose file differs.</p>
+<p>TLS is a property of a deployment, not of ignis. Where a platform ingress, an orchestrator's own reverse proxy, or a firewall already handles it, <code>environment/http</code> is the whole stack.</p>
+<p>Each directory holds one compose file per source of images:</p>
 <table>
 <thead>
 <tr>
-<th>Path</th>
-<th>Compose prefix</th>
+<th>File</th>
+<th>Images</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Quick start</td>
-<td><code>docker compose -f docker-compose.quickstart.yml</code></td>
+<td><code>docker-compose.yml</code></td>
+<td>built from this checkout, so it picks up local code changes</td>
 </tr>
 <tr>
-<td>Docker from source</td>
-<td><code>docker compose</code></td>
+<td><code>docker-compose.prod.yml</code></td>
+<td>pulled from GHCR, no Go toolchain or source tree needed</td>
 </tr>
 <tr>
-<td><a href="#deployment">Deployment</a></td>
-<td><code>docker compose -f docker-compose.prod.yml</code></td>
+<td><code>docker-compose.quickstart.yml</code> (<code>https</code> only)</td>
+<td>pulled from GHCR, with Caddy's CA in a Docker volume instead of your trust store</td>
 </tr>
 </tbody>
 </table>
+<p>A third path, <a href="#manual-setup">manual setup</a>, runs the binaries without containers.</p>
+<div class="admonition warning">
+<p class="admonition-title">One stack at a time</p>
+<p><code>environment/http</code> and <code>environment/https</code> use the same container names (<code>ignis-app</code>, <code>ignis-db</code>), and container names are unique across the host, so the two cannot run side by side. <code>docker compose down</code> in one before <code>up</code> in the other.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Upgrading from a checkout made before the project rename</p>
+<p>The Compose project names are now <code>ignis-http</code> and <code>ignis-https</code>, previously <code>building-simulation</code> for both. An existing stack has to come down before the renamed one starts: with it running, <code>up</code> fails on the container name rather than replacing it. Remove the old containers by name, which reaches nothing but ignis:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>docker<span class="w"> </span>stop<span class="w"> </span>ignis-app<span class="w"> </span>ignis-db<span class="w"> </span>ignis-reverse-proxy
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>docker<span class="w"> </span>rm<span class="w"> </span>ignis-app<span class="w"> </span>ignis-db<span class="w"> </span>ignis-reverse-proxy
+</span></code></pre></div>
+<p>Do not use <code>docker compose -p building-simulation down</code>. That targets the project rather than this repository, so on a machine where another service still declares the old project name, it removes that service's containers as well, naming neither. The database volume is pinned to its previous name, so it carries over and needs no reseed.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Compose warns about the database volume</p>
+<p><code>up</code> prints that <code>building-simulation_ignis-db-data</code> was created for a different project and suggests <code>external: true</code>. The warning is expected: the volume is pinned to one name deliberately, so <code>environment/http</code> and <code>environment/https</code> mount the same database rather than one each. Do not switch it to <code>external: true</code>, which requires the volume to exist before <code>up</code> and so breaks a first run on a clean machine.</p>
+</div>
 <h2 id="configuration-files">Configuration files<a class="headerlink" href="#configuration-files" title="Permanent link">&para;</a></h2>
-<p>All paths read <code>.env</code>, interpolated on the host, plus four files under <code>environment/env/</code> passed into the containers. They are split so each service receives only the variables it reads: the internet-facing proxy never gets a database password.</p>
+<p>Each environment reads an optional <code>.env</code>, interpolated on the host, plus the files under its own <code>env/</code> directory, which are passed into the containers. They are split so each service receives only the variables it reads.</p>
 <table>
 <thead>
 <tr>
@@ -946,11 +949,11 @@
 <tr>
 <td><code>.env</code></td>
 <td>Docker Compose, on the host</td>
-<td><code>APP_PORT</code>, <code>HOST_HTTPS_PORT</code>, <code>CADDY_DATA_DIR</code>, <code>IGNIS_IMAGE_TAG</code></td>
+<td><code>APP_PORT</code>, <code>IGNIS_IMAGE_TAG</code>, plus <code>HOST_BIND</code>/<code>HOST_PORT</code> (http) or <code>HOST_HTTPS_PORT</code>/<code>CADDY_DATA_DIR</code> (https)</td>
 </tr>
 <tr>
 <td><code>env/common.env</code></td>
-<td>app, proxy</td>
+<td>app</td>
 <td><code>ALLOWED_ORIGINS</code></td>
 </tr>
 <tr>
@@ -964,40 +967,80 @@
 <td><code>DB_HOST</code>, <code>DB_PORT</code>, <code>DB_USER</code>, <code>DB_PASSWORD</code>, <code>DB_NAME</code>, <code>DB_SSL_MODE</code></td>
 </tr>
 <tr>
-<td><code>env/proxy.env</code></td>
+<td><code>env/proxy.env</code> (https only)</td>
 <td>proxy</td>
-<td><code>IGNIS_API_KEY</code>, <code>IGNIS_SITE_ADDRESS</code></td>
+<td><code>IGNIS_SITE_ADDRESS</code></td>
 </tr>
 </tbody>
 </table>
-<p>The <code>env/</code> files are committed with local development defaults, including a placeholder API key and database password. Replace all of them before any deployment: see <a href="#deployment">Deployment</a>.</p>
-<h2 id="authentication">Authentication<a class="headerlink" href="#authentication" title="Permanent link">&para;</a></h2>
-<p>The reverse proxy gates every request behind an <code>X-Api-Key</code> header, matched against <code>IGNIS_API_KEY</code> from <code>env/proxy.env</code>. Requests without a valid key receive <code>403 Forbidden</code> and never reach the app.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>curl<span class="w"> </span>-k<span class="w"> </span>-H<span class="w"> </span><span class="s2">"X-Api-Key: supersecret123"</span><span class="w"> </span>https://localhost/some-endpoint
-</span></code></pre></div>
-<p><code>/ignis/health</code> is the single exemption, so container health checks and uptime monitors need no credential.</p>
+<p>The <code>env/</code> files are committed with local development defaults, including a placeholder database password. Replace them before any deployment: see <a href="#deployment">Deployment</a>.</p>
+<p>Both dockerfiles stay at <code>environment/</code>, shared by the two environments. The published image is the same either way, and CI builds from that one path.</p>
+<h2 id="access-control">Access control<a class="headerlink" href="#access-control" title="Permanent link">&para;</a></h2>
+<p>ignis carries no credential and asks for none. There is no API key on any endpoint.</p>
+<p>What limits who can reach it is the port mapping, not <code>ALLOWED_ORIGINS</code>. CORS is enforced by a browser on behalf of a page it has loaded; a server-to-server caller sends no <code>Origin</code> header and ignores the response headers entirely.</p>
 <div class="admonition danger">
-<p class="admonition-title">Never expose ignis directly</p>
-<p>Authentication lives entirely in the proxy, so ignis itself must never be reachable except through it. None of the compose files publish a port for the app, and that should not change.</p>
+<p class="admonition-title">Decide reachability at the network layer</p>
+<p>In <code>environment/http</code> the app is bound to <code>127.0.0.1</code> by default, so nothing off the host can connect. In <code>environment/https</code> the app publishes no port at all and only the proxy is exposed. Set <code>HOST_BIND=0.0.0.0</code> only where something in front of the host decides who may connect: the intended deployment is an internal network reachable over VPN, behind a platform that has already authenticated the user.</p>
 </div>
-<h2 id="certificates">Certificates<a class="headerlink" href="#certificates" title="Permanent link">&para;</a></h2>
+<hr />
+<h2 id="http">http<a class="headerlink" href="#http" title="Permanent link">&para;</a></h2>
+<p>Nothing on the host but Docker. No certificate to trust, no key to send.</p>
+<h3 id="1-start-the-stack">1. Start the stack<a class="headerlink" href="#1-start-the-stack" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">cd</span><span class="w"> </span>environment/http
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.prod.yml<span class="w"> </span>pull
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.prod.yml<span class="w"> </span>up<span class="w"> </span>-d
+</span></code></pre></div>
+<p>To build from this checkout instead, so local code changes are picked up, drop the <code>-f</code> and use <code>docker compose up -d</code>.</p>
+<p><code>.env</code> is optional: every variable has a default.</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HOST_BIND</code></td>
+<td>Host interface the app is published on</td>
+<td><code>127.0.0.1</code></td>
+</tr>
+<tr>
+<td><code>HOST_PORT</code></td>
+<td>Host port the app is published on</td>
+<td><code>8088</code></td>
+</tr>
+<tr>
+<td><code>APP_PORT</code></td>
+<td>The app's internal listen port</td>
+<td><code>8080</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="2-seed-and-verify">2. Seed and verify<a class="headerlink" href="#2-seed-and-verify" title="Permanent link">&para;</a></h3>
+<p>Follow <a href="#seeding-the-database">Seeding the database</a>, then <a href="#verifying">Verifying</a>. The base URL is <code>http://localhost:8088</code>.</p>
+<hr />
+<h2 id="https">https<a class="headerlink" href="#https" title="Permanent link">&para;</a></h2>
+<p>Adds Caddy in front of the app to terminate TLS. Caddy does nothing else: ignis answers CORS preflight itself, and no request carries a credential.</p>
+<h3 id="certificates">Certificates<a class="headerlink" href="#certificates" title="Permanent link">&para;</a></h3>
 <p>How <code>https://localhost</code> behaves depends on where Caddy's local CA is stored.</p>
 <table>
 <thead>
 <tr>
-<th>Path</th>
+<th>Compose file</th>
 <th>CA location</th>
 <th>Result</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Quick start</td>
+<td><code>docker-compose.quickstart.yml</code></td>
 <td>Docker-managed volume</td>
 <td>Never enters your trust store. Expect an untrusted-certificate warning.</td>
 </tr>
 <tr>
-<td>Docker from source</td>
+<td><code>docker-compose.yml</code>, <code>docker-compose.prod.yml</code></td>
 <td>Host directory (<code>CADDY_DATA_DIR</code>), created by <code>caddy trust</code></td>
 <td>Trusted, no warning, no <code>-k</code> needed.</td>
 </tr>
@@ -1008,44 +1051,25 @@
 <p class="admonition-title">Using Swagger UI</p>
 <p>Calling the API from Swagger UI's "Try it out" on the <a href="../api/">API reference</a> needs one extra step on the quickstart path. Browser JavaScript cannot click through a certificate warning the way a manual page load can, so a <code>fetch()</code> to an untrusted origin fails outright. Open <code>https://localhost</code> directly in a new tab first and click through the warning. Most browsers then trust that origin for the rest of the session.</p>
 </div>
-<hr />
-<h2 id="quick-start">Quick start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h2>
-<p>For trying out the API with nothing on the host but Docker. Pulls pre-built images from GHCR, so no Go toolchain, no <code>caddy</code> install, and no <code>.env</code> file are needed.</p>
-<h3 id="1-get-the-files">1. Get the files<a class="headerlink" href="#1-get-the-files" title="Permanent link">&para;</a></h3>
-<p>You need <code>docker-compose.quickstart.yml</code>, the <code>caddy/</code> directory, and the <code>env/</code> directory, all in one working directory. Cloning the repository is the simplest way to get them:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/thd-spatial-ai/ignis.git
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nb">cd</span><span class="w"> </span>ignis/environment
+<h3 id="quickstart-pulled-images-no-host-setup">Quickstart: pulled images, no host setup<a class="headerlink" href="#quickstart-pulled-images-no-host-setup" title="Permanent link">&para;</a></h3>
+<p>Needs only Docker. No Go toolchain, no <code>caddy</code> install, no <code>.env</code>.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/thd-spatial-ai/ignis.git
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">cd</span><span class="w"> </span>ignis/environment/https
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.quickstart.yml<span class="w"> </span>up<span class="w"> </span>-d
 </span></code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Docker Desktop: work from a directory under your home folder</p>
 <p>Docker Desktop only shares paths under your home directory, or another folder added under File Sharing, into its VM. A working directory under <code>/tmp</code> fails with a bind-mount error like "not shared from the host", which does not obviously point at the File Sharing setting. Clone or copy these files under your home directory instead.</p>
 </div>
-<h3 id="2-start-the-stack">2. Start the stack<a class="headerlink" href="#2-start-the-stack" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.quickstart.yml<span class="w"> </span>up<span class="w"> </span>-d
-</span></code></pre></div>
 <p>This starts <code>ignis-db</code>, then <code>ignis-app</code> once the database reports healthy, then <code>ignis-reverse-proxy</code> once the app reports healthy. Only the proxy publishes a host port (<code>HOST_HTTPS_PORT</code>, default <code>443</code>).</p>
-<h3 id="3-seed-and-verify">3. Seed and verify<a class="headerlink" href="#3-seed-and-verify" title="Permanent link">&para;</a></h3>
-<p>Follow <a href="#seeding-the-database">Seeding the database</a>, then <a href="#verifying">Verifying</a>.</p>
-<h3 id="pinning-a-version">Pinning a version<a class="headerlink" href="#pinning-a-version" title="Permanent link">&para;</a></h3>
-<p>Both images default to the <code>latest</code> published release. To pin a specific one, set <code>IGNIS_IMAGE_TAG</code> before starting:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">IGNIS_IMAGE_TAG</span><span class="o">=</span><span class="m">0</span>.2.4-alpha
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.quickstart.yml<span class="w"> </span>--profile<span class="w"> </span>seed<span class="w"> </span>pull
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.quickstart.yml<span class="w"> </span>up<span class="w"> </span>-d
-</span></code></pre></div>
-<div class="admonition info">
-<p class="admonition-title">Tag format</p>
-<p>Published image tags carry no <code>v</code> prefix, even though the Git tags do. Release <code>v0.2.4-alpha</code> publishes as <code>0.2.4-alpha</code>. Export the variable rather than prefixing a single command, so the app and seed images come from the same release.</p>
-</div>
-<hr />
-<h2 id="docker-from-source">Docker from source<a class="headerlink" href="#docker-from-source" title="Permanent link">&para;</a></h2>
-<p>Builds <code>ignis-app</code> and <code>ignis-build-db</code> from this checkout, so it is the only path that picks up local code changes.</p>
-<h3 id="1-trust-the-local-ca">1. Trust the local CA<a class="headerlink" href="#1-trust-the-local-ca" title="Permanent link">&para;</a></h3>
-<p>This path needs the <code>caddy</code> CLI on the host, with <code>caddy trust</code> run once. That installs a local CA into your OS and browser trust store, which the proxy then reuses.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>caddy<span class="w"> </span>trust
-</span></code></pre></div>
-<h3 id="2-configure">2. Configure<a class="headerlink" href="#2-configure" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">cd</span><span class="w"> </span>environment
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>cp<span class="w"> </span>.env.example<span class="w"> </span>.env
+<p>Then <a href="#seeding-the-database">Seeding the database</a> and <a href="#verifying">Verifying</a>.</p>
+<h3 id="from-source-with-a-trusted-certificate">From source, with a trusted certificate<a class="headerlink" href="#from-source-with-a-trusted-certificate" title="Permanent link">&para;</a></h3>
+<p>Builds <code>ignis-app</code> and <code>ignis-build-db</code> from this checkout, so it picks up local code changes, and reuses a CA your browser already trusts.</p>
+<p>Install the <code>caddy</code> CLI on the host and run <code>caddy trust</code> once. That installs a local CA into your OS and browser trust store, which the proxy then reuses.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>caddy<span class="w"> </span>trust
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">cd</span><span class="w"> </span>environment/https
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>cp<span class="w"> </span>.env.example<span class="w"> </span>.env
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
 </span></code></pre></div>
 <p><code>.env</code> must define:</p>
 <table>
@@ -1078,9 +1102,6 @@
 <p class="admonition-title">CADDY_DATA_DIR</p>
 <p>A wrong value silently produces an untrusted certificate. A missing one fails validation instead, reported by name: <code>required variable CADDY_DATA_DIR is missing a value</code>.</p>
 </div>
-<h3 id="3-start-seed-and-verify">3. Start, seed and verify<a class="headerlink" href="#3-start-seed-and-verify" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
-</span></code></pre></div>
 <p>Then <a href="#seeding-the-database">Seeding the database</a> and <a href="#verifying">Verifying</a>.</p>
 <hr />
 <h2 id="seeding-the-database">Seeding the database<a class="headerlink" href="#seeding-the-database" title="Permanent link">&para;</a></h2>
@@ -1088,18 +1109,32 @@
 <p class="admonition-title">Required before first use, and destructive</p>
 <p>A fresh <code>ignis-db</code> volume is empty. Seeding drops and recreates all country tables, so it is gated behind the <code>seed</code> profile and never runs automatically. Until it has run once, every endpoint that reads the schema will fail.</p>
 </div>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>&lt;compose<span class="w"> </span>prefix&gt;<span class="w"> </span>--profile<span class="w"> </span>seed<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>ignis-build-db
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>&lt;compose<span class="w"> </span>prefix&gt;<span class="w"> </span>--profile<span class="w"> </span>seed<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>ignis-build-db
 </span></code></pre></div>
+<p><code>&lt;compose prefix&gt;</code> is <code>docker compose</code> for <code>docker-compose.yml</code>, or <code>docker compose -f &lt;file&gt;</code> for the others. On a path that pulls images, <code>--profile seed</code> is also needed on the <code>pull</code>, since profile-gated services are otherwise skipped.</p>
 <p>The TABULA workbook is baked into the <code>ignis-build-db</code> image, so there is nothing to download.</p>
 <h2 id="verifying">Verifying<a class="headerlink" href="#verifying" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>&lt;compose<span class="w"> </span>prefix&gt;<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ignis-db<span class="w"> </span>psql<span class="w"> </span>-U<span class="w"> </span>postgres<span class="w"> </span>-d<span class="w"> </span>ignis<span class="w"> </span>-c<span class="w"> </span><span class="s2">"\dt tabula.*"</span>
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>curl<span class="w"> </span>-k<span class="w"> </span>-s<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code}\n'</span><span class="w"> </span>https://localhost/ignis/health
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>&lt;compose<span class="w"> </span>prefix&gt;<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ignis-db<span class="w"> </span>psql<span class="w"> </span>-U<span class="w"> </span>postgres<span class="w"> </span>-d<span class="w"> </span>ignis<span class="w"> </span>-c<span class="w"> </span><span class="s2">"\dt tabula.*"</span>
 </span></code></pre></div>
-<p>The first lists the seeded tables. The second returns <code>200</code>. Drop <code>-k</code> on the Docker-from-source path, where the certificate chains to the CA you trusted.</p>
+<p>That lists the seeded tables. Then check the API answers, using the base URL for your environment:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code}\n'</span><span class="w"> </span>http://localhost:8088/ignis/health<span class="w">   </span><span class="c1"># environment/http</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code}\n'</span><span class="w"> </span>https://localhost/ignis/health<span class="w">       </span><span class="c1"># environment/https</span>
+</span></code></pre></div>
+<p>Both return <code>200</code>. Add <code>-k</code> on the https quickstart path, where the certificate does not chain to a CA you trust.</p>
 <h2 id="tearing-down">Tearing down<a class="headerlink" href="#tearing-down" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>&lt;compose<span class="w"> </span>prefix&gt;<span class="w"> </span>down<span class="w"> </span>-v
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>&lt;compose<span class="w"> </span>prefix&gt;<span class="w"> </span>down<span class="w"> </span>-v
 </span></code></pre></div>
 <p>The <code>-v</code> removes the database volume, so the next start needs seeding again. Omit it to keep the seeded data.</p>
+<h2 id="pinning-a-version">Pinning a version<a class="headerlink" href="#pinning-a-version" title="Permanent link">&para;</a></h2>
+<p>The paths that pull images default to the <code>latest</code> published release. To pin a specific one, set <code>IGNIS_IMAGE_TAG</code> before starting:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">IGNIS_IMAGE_TAG</span><span class="o">=</span><span class="m">0</span>.2.4-alpha
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>&lt;compose<span class="w"> </span>prefix&gt;<span class="w"> </span>--profile<span class="w"> </span>seed<span class="w"> </span>pull
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>&lt;compose<span class="w"> </span>prefix&gt;<span class="w"> </span>up<span class="w"> </span>-d
+</span></code></pre></div>
+<div class="admonition info">
+<p class="admonition-title">Tag format</p>
+<p>Published image tags carry no <code>v</code> prefix, even though the Git tags do. Release <code>v0.2.4-alpha</code> publishes as <code>0.2.4-alpha</code>. Export the variable rather than prefixing a single command, so the app and seed images come from the same release.</p>
+</div>
 <hr />
 <h2 id="manual-setup">Manual setup<a class="headerlink" href="#manual-setup" title="Permanent link">&para;</a></h2>
 <p>For local development without containers.</p>
@@ -1129,14 +1164,14 @@
 <div class="admonition warning">
 <p class="admonition-title">Install Git LFS before cloning</p>
 <p><code>data/tabula-calculator-lite.xlsx</code> is stored via Git LFS. Without <code>git lfs install</code>, the checkout contains a small text pointer instead of the workbook, and <code>build_db</code> fails naming the cause directly: "is a Git LFS pointer, not the workbook itself, run <code>git lfs install &amp;&amp; git lfs pull</code>".</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>git<span class="w"> </span>lfs<span class="w"> </span>install
-</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/thd-spatial-ai/ignis.git
-</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="nb">cd</span><span class="w"> </span>ignis
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>git<span class="w"> </span>lfs<span class="w"> </span>install
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/thd-spatial-ai/ignis.git
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="nb">cd</span><span class="w"> </span>ignis
 </span></code></pre></div>
 <p>If you have already cloned without it, run <code>git lfs install &amp;&amp; git lfs pull</code>. Verify with <code>ls -l data/tabula-calculator-lite.xlsx</code>, which should be roughly 11 MB rather than a few hundred bytes.</p>
 </div>
 <h3 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h3>
-<p>This path reads <code>environment/env/app.env</code> for database settings and <code>environment/env/common.env</code> for CORS. The committed values work as they are, apart from these:</p>
+<p>This path reads <code>environment/http/env/app.env</code> for database settings and <code>environment/http/env/common.env</code> for CORS. The committed values work as they are, apart from these:</p>
 <table>
 <thead>
 <tr>
@@ -1164,25 +1199,26 @@
 </tbody>
 </table>
 <div class="admonition warning">
-<p class="admonition-title">No API key on this path</p>
-<p>Running the binary directly bypasses the reverse proxy, so there is no <code>X-Api-Key</code> gate and no CORS preflight handling. Bind it to localhost only.</p>
+<p class="admonition-title">Bind it to localhost</p>
+<p>The binary listens on every interface. Nothing in ignis limits who may call it, so keep it off any interface you do not control.</p>
 </div>
 <h3 id="build-and-run">Build and run<a class="headerlink" href="#build-and-run" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>go<span class="w"> </span>build<span class="w"> </span>-buildvcs<span class="o">=</span><span class="nb">false</span><span class="w"> </span>-o<span class="w"> </span>bin/<span class="w"> </span>./cmd/...
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>go<span class="w"> </span>build<span class="w"> </span>-buildvcs<span class="o">=</span><span class="nb">false</span><span class="w"> </span>-o<span class="w"> </span>bin/<span class="w"> </span>./cmd/...
 </span></code></pre></div>
 <p>This produces <code>bin/ignis</code>, <code>bin/build_db</code>, and <code>bin/validate</code>.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>./bin/build_db
-</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>./bin/ignis
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>./bin/build_db
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>./bin/ignis
 </span></code></pre></div>
 <p><code>build_db</code> is destructive: it drops and recreates the <code>tabula</code> schema. <code>ignis</code> starts on <code>APP_PORT</code>, default <code>8080</code>.</p>
 <h3 id="validate">Validate<a class="headerlink" href="#validate" title="Permanent link">&para;</a></h3>
 <p>Runs the full 17-level TABULA calculation pipeline against every row in the database and checks that each result stays within 2% of the reference value from the workbook.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>./bin/validate
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>./bin/validate
 </span></code></pre></div>
 <p>This path only: there is no containerised <code>validate</code>. See the <a href="../validation/">validation report</a> for current results.</p>
 <hr />
 <h2 id="deployment">Deployment<a class="headerlink" href="#deployment" title="Permanent link">&para;</a></h2>
-<p>Use <code>docker-compose.prod.yml</code>, which pulls published images and needs no source tree on the target machine. Copy across: the compose file, <code>.env</code>, the <code>env/</code> directory, and the <code>caddy/</code> directory.</p>
+<p>Use <code>docker-compose.prod.yml</code> from whichever environment matches how TLS is handled. It pulls published images and needs no source tree on the target machine.</p>
+<p>Copy across the whole directory: the compose file, <code>.env</code>, the <code>env/</code> directory, and, for <code>environment/https</code>, the <code>caddy/</code> directory.</p>
 <div class="admonition info">
 <p class="admonition-title">Service and image names</p>
 <table>
@@ -1220,21 +1256,22 @@
 <ul>
 <li><code>POSTGRES_PASSWORD</code> (<code>env/db.env</code>) and <code>DB_PASSWORD</code> (<code>env/app.env</code>) to a real credential</li>
 <li><code>DB_SSL_MODE</code> (<code>env/app.env</code>) to <code>require</code></li>
-<li><code>IGNIS_API_KEY</code> (<code>env/proxy.env</code>) to a rotated value</li>
 <li><code>ALLOWED_ORIGINS</code> (<code>env/common.env</code>) to the real browser origins, or unset for server-to-server only</li>
 </ul>
 </div>
 <h3 id="2-prepare-env">2. Prepare <code>.env</code><a class="headerlink" href="#2-prepare-env" title="Permanent link">&para;</a></h3>
-<p><code>CADDY_DATA_DIR</code> is required; <code>APP_PORT</code> and <code>HOST_HTTPS_PORT</code> default to <code>8080</code> and <code>443</code>. Set <code>IGNIS_IMAGE_TAG</code> to pin a release, which is strongly advised for anything you do not want moving underneath you. See <a href="#pinning-a-version">Pinning a version</a>.</p>
-<h3 id="3-set-the-site-address">3. Set the site address<a class="headerlink" href="#3-set-the-site-address" title="Permanent link">&para;</a></h3>
+<p>For <code>environment/http</code>: <code>HOST_BIND</code> and <code>HOST_PORT</code> default to <code>127.0.0.1</code> and <code>8088</code>. Set <code>HOST_BIND=0.0.0.0</code> only where something in front of the host decides who may connect.</p>
+<p>For <code>environment/https</code>: <code>CADDY_DATA_DIR</code> is required; <code>APP_PORT</code> and <code>HOST_HTTPS_PORT</code> default to <code>8080</code> and <code>443</code>.</p>
+<p>Set <code>IGNIS_IMAGE_TAG</code> to pin a release, which is strongly advised for anything you do not want moving underneath you. See <a href="#pinning-a-version">Pinning a version</a>.</p>
+<h3 id="3-set-the-site-address-https-only">3. Set the site address (https only)<a class="headerlink" href="#3-set-the-site-address-https-only" title="Permanent link">&para;</a></h3>
 <div class="admonition warning">
 <p class="admonition-title">Set IGNIS_SITE_ADDRESS before deploying</p>
 <p>It defaults to <code>localhost</code>. Set it in <code>env/proxy.env</code> to the deployment's real domain, or Caddy will neither serve it nor provision a certificate for it. TLS-ALPN-01 (Caddy's default ACME challenge) works entirely over port 443, which is all the compose file publishes, so no port change is needed.</p>
 </div>
 <h3 id="4-pull-start-seed">4. Pull, start, seed<a class="headerlink" href="#4-pull-start-seed" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.prod.yml<span class="w"> </span>--profile<span class="w"> </span>seed<span class="w"> </span>pull
-</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.prod.yml<span class="w"> </span>up<span class="w"> </span>-d
-</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.prod.yml<span class="w"> </span>--profile<span class="w"> </span>seed<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>ignis-build-db
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.prod.yml<span class="w"> </span>--profile<span class="w"> </span>seed<span class="w"> </span>pull
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.prod.yml<span class="w"> </span>up<span class="w"> </span>-d
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.prod.yml<span class="w"> </span>--profile<span class="w"> </span>seed<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>ignis-build-db
 </span></code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Pull first, and include the seed profile</p>
@@ -1242,14 +1279,13 @@
 </div>
 <p>Seed only on first deployment. Running it against a populated database drops every country table.</p>
 <h3 id="5-verify">5. Verify<a class="headerlink" href="#5-verify" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code}\n'</span><span class="w"> </span>https://your-domain/ignis/health
-</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code}\n'</span><span class="w"> </span>https://your-domain/
-</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>curl<span class="w"> </span>-s<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code}\n'</span><span class="w"> </span>-H<span class="w"> </span><span class="s2">"X-Api-Key: your-key"</span><span class="w"> </span>https://your-domain/
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code}\n'</span><span class="w"> </span>https://your-domain/ignis/health
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>https://your-domain/api/v1/variants/DE<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-c<span class="w"> </span><span class="m">200</span>
 </span></code></pre></div>
-<p>Expect <code>200</code>, <code>403</code>, then a response from the app. A <code>200</code> on the second call means the API key gate is not working, and the deployment should be stopped.</p>
+<p>Expect <code>200</code>, then a list of variant codes. If the second call fails while health returns <code>200</code>, the database is reachable but not seeded.</p>
 <hr />
 <h2 id="health-checks">Health checks<a class="headerlink" href="#health-checks" title="Permanent link">&para;</a></h2>
-<p>Compose orders startup by health: <code>ignis-app</code> waits for a healthy <code>ignis-db</code>, and <code>ignis-reverse-proxy</code> waits for a healthy <code>ignis-app</code>.</p>
+<p>Compose orders startup by health: <code>ignis-app</code> waits for a healthy <code>ignis-db</code>, and in <code>environment/https</code> the proxy waits for a healthy <code>ignis-app</code>.</p>
 <p><code>/ignis/health</code> reports process liveness only and does not test the database connection, so a healthy container does not by itself mean the schema is seeded or reachable.</p>
 
 

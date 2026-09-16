@@ -617,14 +617,14 @@
 <h1 id="api-reference">API reference<a class="headerlink" href="#api-reference" title="Permanent link">&para;</a></h1>
 <p>The interactive reference lives in its own standalone page, <a href="../openapi/"><code>openapi/index.html</code></a>, so it can be opened directly without running <code>mkdocs serve</code>. It renders <a href="../openapi/openapi.yaml"><code>openapi/openapi.yaml</code></a>; download that file to generate a client or import it into Postman.</p>
 <h2 id="authentication">Authentication<a class="headerlink" href="#authentication" title="Permanent link">&para;</a></h2>
-<p>ignis has no authentication of its own. The reverse proxy in front of it is the only way in: callers send a valid <code>X-Api-Key</code> header, and the proxy rejects anything else with <code>403</code> before the request reaches ignis.</p>
+<p>ignis carries no credential and asks for none. Every endpoint is reachable by anything that can open a connection to it, so who that is gets decided at the network layer: ignis is published on an internal network reachable over VPN, behind a platform that has already authenticated the end user.</p>
 <div class="admonition warning">
-<p class="admonition-title">Call it server-side only</p>
-<p>The API key must not be visible outside the calling service. Call ignis from a trusted server-side caller, never directly from a browser or an end user's client. A user-facing login in front of your own system (EnerPlanET uses Keycloak) authenticates the user to <em>that system</em>, not to ignis. That system's backend then calls ignis on the user's behalf using the API key.</p>
+<p class="admonition-title">Do not publish ignis on a public interface</p>
+<p>There is nothing in ignis to stop an unauthenticated caller. Keep it on an internal network, or behind something that authenticates for it. A user-facing login in front of your own system (EnerPlanET uses Keycloak) authenticates the user to <em>that system</em>, not to ignis; that system's backend then calls ignis on the user's behalf.</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Base URL</p>
-<p>All paths are served through the reverse proxy. In local development that is <code>https://localhost</code>; in a deployment it is whatever host the proxy is published on.</p>
+<p>Depends on which environment you started. <code>environment/http</code> publishes the app directly, so the base URL is <code>http://localhost:8088</code>. <code>environment/https</code> puts Caddy in front of it for TLS, giving <code>https://localhost</code>. In a deployment it is whatever host ignis is published on. Every path below is the same either way.</p>
 </div>
 <h2 id="call-sequence">Call sequence<a class="headerlink" href="#call-sequence" title="Permanent link">&para;</a></h2>
 <table>
@@ -698,7 +698,7 @@
 <p>See <code>CalculateRequest</code> in the reference below for exact types and validation rules; <code>HeatingDays</code> and the solar-irradiance fields must not be negative.</p>
 <div class="admonition example">
 <p class="admonition-title">Overriding a single field</p>
-<p><div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>curl<span class="w"> </span>-sk<span class="w"> </span>https://localhost/api/v1/calculate/DE.N.SFH.01.Gen.ReEx.001.001<span class="w"> </span>-H<span class="w"> </span><span class="s2">"X-Api-Key: ..."</span><span class="w"> </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"HeatingDays": 150}'</span>
+<p><div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:8088/api/v1/calculate/DE.N.SFH.01.Gen.ReEx.001.001<span class="w"> </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"HeatingDays": 150}'</span>
 </span></code></pre></div>
 Returns the same archetype's <code>q_h_nd</code> recalculated for a 150-heating-day winter, every other input unchanged.</p>
 </div>
@@ -728,11 +728,13 @@ Returns the same archetype's <code>q_h_nd</code> recalculated for a 150-heating-
 </details>
 <h2 id="testing-it-yourself">Testing it yourself<a class="headerlink" href="#testing-it-yourself" title="Permanent link">&para;</a></h2>
 <p><a href="../openapi/">Open the API reference</a>, which can call a locally running ignis directly, no <code>mkdocs serve</code> needed to view it.</p>
-<p><strong>Step 1:</strong> Start the stack, from <code>environment/</code>: <code>docker compose -f docker-compose.quickstart.yml up -d</code>. On a first run, load the TABULA data once: <code>docker compose -f docker-compose.quickstart.yml --profile seed run --rm ignis-build-db</code>.</p>
-<p><strong>Step 2:</strong> Serve <code>docs/openapi/</code> on <code>http://localhost:8000</code> (<code>python -m http.server 8000</code> from that directory works), since the reverse proxy's <code>ALLOWED_ORIGINS</code> allows that origin already. Opening the file directly (<code>file://</code>) works for reading the reference, but <strong>Try it out</strong> needs an allowed origin.</p>
-<p><strong>Step 3:</strong> If your browser has never trusted the local proxy's certificate, open <code>https://localhost</code> directly once and accept it, or run <code>caddy trust</code>.</p>
-<p><strong>Step 4:</strong> Click <strong>Authorize</strong> and enter the API key checked by the reverse proxy (<code>X-Api-Key</code>; the prototype default is set in <code>environment/env/proxy.env</code>). It applies to every <strong>Try it out</strong> call from then on.</p>
-<p><strong>Step 5:</strong> Expand an endpoint, click <strong>Try it out</strong>, fill in the parameters, then <strong>Execute</strong>.</p>
+<p><strong>Step 1:</strong> Start the stack, from <code>environment/http/</code>: <code>docker compose -f docker-compose.prod.yml up -d</code>. On a first run, load the TABULA data once: <code>docker compose -f docker-compose.prod.yml --profile seed run --rm ignis-build-db</code>.</p>
+<p><strong>Step 2:</strong> Serve <code>docs/openapi/</code> on <code>http://localhost:8000</code> (<code>python -m http.server 8000</code> from that directory works), since <code>ALLOWED_ORIGINS</code> allows that origin already. Opening the file directly (<code>file://</code>) works for reading the reference, but <strong>Try it out</strong> needs an allowed origin.</p>
+<p><strong>Step 3:</strong> Pick <code>http://localhost:8088</code> from the <strong>Servers</strong> dropdown, then expand an endpoint, click <strong>Try it out</strong>, fill in the parameters, and <strong>Execute</strong>.</p>
+<div class="admonition info">
+<p class="admonition-title">Using the HTTPS environment instead</p>
+<p><code>environment/https</code> serves the same API on <code>https://localhost</code>. Select that server in the dropdown, and on the quickstart file open <code>https://localhost</code> in a tab once and accept the certificate warning first: browser JavaScript cannot click through it the way a manual page load can.</p>
+</div>
 
 
 
