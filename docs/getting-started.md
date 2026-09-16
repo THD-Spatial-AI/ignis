@@ -40,6 +40,8 @@ A third path, [manual setup](#manual-setup), runs the binaries without container
 
     If `tentacron-net` already exists from `make tentacron-stack`, `up` fails with a label mismatch, because a network made by `docker network create` carries no Compose labels. Remove it with `docker network rm tentacron-net` while nothing is attached, and the first stack up recreates it correctly.
 
+    The same error appears, with a different expected value, if a compose file declares the network under a key other than `tentacron-net`. Compose compares the key rather than the `name:`, so the two files can name the same network and still refuse to start. The message reports a label, not a name, which is why it does not read as a naming problem.
+
 !!! note "Compose warns about the shared network"
     Whichever stack did not create `tentacron-net` prints that it "exists but was not created for project ..." and suggests `external: true`. The warning is expected and permanent: one network is deliberately shared by several repositories, so every project but the creator reports it. Do not switch it to `external: true`, which requires the network to exist before `up` and so breaks a first run on a clean machine.
 

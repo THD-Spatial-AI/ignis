@@ -113,12 +113,17 @@ volumes:
 # creates it and a clean checkout needs no prior setup.
 #
 # The key is spelled the same as the name deliberately. Compose stamps the
-# network with the key, not the name, and refuses to start against a mismatch,
-# so the key is a contract with every other repository that joins rather than a
-# local label. Writing it twice is what makes that visible at the point someone
-# would otherwise rename it. Adding a driver, subnet or ipam block makes a
-# joining project try to delete and recreate the network, so this block stays
-# exactly as it is.
+# network with the key, not the name, so the key is a contract with every other
+# repository that joins rather than a local label, and writing it twice makes
+# that visible where someone would otherwise rename it. A repository writing a
+# different key gets:
+#
+#   network tentacron-net was found but has incorrect label
+#   com.docker.compose.network set to "tentacron-net" (expected: "<their key>")
+#
+# which names labels rather than naming, so it is worth recognising. Adding a
+# driver, subnet or ipam block makes a joining project try to delete and
+# recreate the network, so this block stays exactly as it is.
 #
 # Only the http environment attaches. Callers inside the network carry no TLS
 # trust configuration, so an https alias fails at handshake and cannot be fixed
