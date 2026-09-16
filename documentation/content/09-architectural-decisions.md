@@ -78,7 +78,7 @@ A service name is registered as a DNS alias on every network the service joins, 
 
 Pinning the database volume to one name across both environments, which this decision reverses. It was correct while only one environment could run, and is corruption once both can.
 
-`external: true` for the shared network, which fails to start when the network is absent and so breaks a clean checkout. The minimal `name:` declaration creates it on first use instead. It must be written with the same key in every repository: Compose labels the network with the key and refuses to start against a mismatch, while the `name:` values agree and both files look correct.
+`external: true` for the shared network, which fails to start when the network is absent and so breaks a clean checkout. The minimal `name:` declaration creates it on first use instead. It must be written with the same key in every repository: Compose labels the network with the key and refuses to start against a mismatch, while the `name:` values agree and both files look correct. The key is therefore spelled identically to the network name, so that a field which is really a cross-repository contract does not read as a local label.
 
 A shared network declared with a driver, subnet or ipam block. A joining project whose options differ attempts to delete and recreate the network, which is a cross-repository destructive action of the kind this decision exists to remove.
 

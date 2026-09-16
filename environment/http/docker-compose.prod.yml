@@ -67,7 +67,7 @@ services:
     image: ghcr.io/thd-spatial-ai/ignis:${IGNIS_IMAGE_TAG:-latest}
     networks:
       default:
-      shared:
+      tentacron-net:
         aliases: [ignis-http]   # the cross-repo name; never a container or project name
     env_file: [env/common.env, env/app.env]
     environment:
@@ -104,15 +104,19 @@ volumes:
 
 # tentacron-net carries the heat services that callers in other repositories
 # resolve. Declared with `name:` and no `external:` so the first stack up
-# creates it and a clean checkout needs no prior setup. The key `shared` and the
-# name must be written identically in every repository that joins: Compose
-# labels the network with the key and refuses to start against a mismatch.
-# Adding a driver, subnet or ipam block here makes a joining project try to
-# delete and recreate the network, so this block stays exactly as it is.
+# creates it and a clean checkout needs no prior setup.
+#
+# The key is spelled the same as the name deliberately. Compose stamps the
+# network with the key, not the name, and refuses to start against a mismatch,
+# so the key is a contract with every other repository that joins rather than a
+# local label. Writing it twice is what makes that visible at the point someone
+# would otherwise rename it. Adding a driver, subnet or ipam block makes a
+# joining project try to delete and recreate the network, so this block stays
+# exactly as it is.
 #
 # Only the http environment attaches. Callers inside the network carry no TLS
 # trust configuration, so an https alias fails at handshake and cannot be fixed
 # in their config.
 networks:
-  shared:
+  tentacron-net:
     name: tentacron-net
