@@ -24,7 +24,20 @@ Each directory holds one compose file per source of images:
 A third path, [manual setup](#manual-setup), runs the binaries without containers.
 
 !!! warning "One stack at a time"
-    Every compose file declares the same project name (`building-simulation`) and the same container names, so `environment/http` and `environment/https` cannot run side by side. `docker compose down` in one before `up` in the other.
+    `environment/http` and `environment/https` use the same container names (`ignis-app`, `ignis-db`), and container names are unique across the host, so the two cannot run side by side. `docker compose down` in one before `up` in the other.
+
+!!! warning "Upgrading from a checkout made before the project rename"
+    The Compose project names are now `ignis-http` and `ignis-https`, previously `building-simulation` for both. An existing stack has to come down before the renamed one starts: with it running, `up` fails on the container name rather than replacing it. Remove the old containers by name, which reaches nothing but ignis:
+
+    ```bash
+    docker stop ignis-app ignis-db ignis-reverse-proxy
+    docker rm ignis-app ignis-db ignis-reverse-proxy
+    ```
+
+    Do not use `docker compose -p building-simulation down`. That targets the project rather than this repository, so on a machine where another service still declares the old project name, it removes that service's containers as well, naming neither. The database volume is pinned to its previous name, so it carries over and needs no reseed.
+
+!!! note "Compose warns about the database volume"
+    `up` prints that `building-simulation_ignis-db-data` was created for a different project and suggests `external: true`. The warning is expected: the volume is pinned to one name deliberately, so `environment/http` and `environment/https` mount the same database rather than one each. Do not switch it to `external: true`, which requires the volume to exist before `up` and so breaks a first run on a clean machine.
 
 ## Configuration files
 
@@ -72,12 +85,12 @@ To build from this checkout instead, so local code changes are picked up, drop t
 | Variable | Description | Default |
 |---|---|---|
 | `HOST_BIND` | Host interface the app is published on | `127.0.0.1` |
-| `HOST_PORT` | Host port the app is published on | `8080` |
+| `HOST_PORT` | Host port the app is published on | `8088` |
 | `APP_PORT` | The app's internal listen port | `8080` |
 
 ### 2. Seed and verify
 
-Follow [Seeding the database](#seeding-the-database), then [Verifying](#verifying). The base URL is `http://localhost:8080`.
+Follow [Seeding the database](#seeding-the-database), then [Verifying](#verifying). The base URL is `http://localhost:8088`.
 
 ---
 
@@ -166,7 +179,7 @@ The TABULA workbook is baked into the `ignis-build-db` image, so there is nothin
 That lists the seeded tables. Then check the API answers, using the base URL for your environment:
 
 ```bash
-curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8080/ignis/health   # environment/http
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8088/ignis/health   # environment/http
 curl -s -o /dev/null -w '%{http_code}\n' https://localhost/ignis/health       # environment/https
 ```
 
@@ -285,7 +298,7 @@ Copy across the whole directory: the compose file, `.env`, the `env/` directory,
 
 ### 2. Prepare `.env`
 
-For `environment/http`: `HOST_BIND` and `HOST_PORT` default to `127.0.0.1` and `8080`. Set `HOST_BIND=0.0.0.0` only where something in front of the host decides who may connect.
+For `environment/http`: `HOST_BIND` and `HOST_PORT` default to `127.0.0.1` and `8088`. Set `HOST_BIND=0.0.0.0` only where something in front of the host decides who may connect.
 
 For `environment/https`: `CADDY_DATA_DIR` is required; `APP_PORT` and `HOST_HTTPS_PORT` default to `8080` and `443`.
 

@@ -38,7 +38,7 @@
 # bind mount), and Compose merges `volumes:` lists by appending rather than
 # replacing, so an override would leave both mounted at /data/caddy.
 
-name: building-simulation
+name: ignis-https
 
 services:
   ignis-db:
@@ -97,5 +97,13 @@ services:
         condition: service_healthy
 
 volumes:
+  # Pinned so both environments mount one database; unpinned, Compose would
+  # prefix it per project and switching transport would silently lose the data.
+  # Compose then warns the volume belongs to another project and suggests
+  # `external: true`. Not that: external needs the volume to exist already, so
+  # a first run on a clean machine would fail instead of creating it.
   ignis-db-data:
+    name: building-simulation_ignis-db-data
+  # Not pinned: this CA is never added to a trust store (see the header), so
+  # regenerating it under the new project name costs one click-through.
   caddy-data:

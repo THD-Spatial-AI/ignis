@@ -10,7 +10,7 @@ ignis carries no credential and asks for none. Every endpoint is reachable by an
     There is nothing in ignis to stop an unauthenticated caller. Keep it on an internal network, or behind something that authenticates for it. A user-facing login in front of your own system (EnerPlanET uses Keycloak) authenticates the user to *that system*, not to ignis; that system's backend then calls ignis on the user's behalf.
 
 !!! note "Base URL"
-    Depends on which environment you started. `environment/http` publishes the app directly, so the base URL is `http://localhost:8080`. `environment/https` puts Caddy in front of it for TLS, giving `https://localhost`. In a deployment it is whatever host ignis is published on. Every path below is the same either way.
+    Depends on which environment you started. `environment/http` publishes the app directly, so the base URL is `http://localhost:8088`. `environment/https` puts Caddy in front of it for TLS, giving `https://localhost`. In a deployment it is whatever host ignis is published on. Every path below is the same either way.
 
 ## Call sequence
 
@@ -42,7 +42,7 @@ See `CalculateRequest` in the reference below for exact types and validation rul
 
 !!! example "Overriding a single field"
     ```bash
-    curl -s http://localhost:8080/api/v1/calculate/DE.N.SFH.01.Gen.ReEx.001.001 -H "Content-Type: application/json" -d '{"HeatingDays": 150}'
+    curl -s http://localhost:8088/api/v1/calculate/DE.N.SFH.01.Gen.ReEx.001.001 -H "Content-Type: application/json" -d '{"HeatingDays": 150}'
     ```
     Returns the same archetype's `q_h_nd` recalculated for a 150-heating-day winter, every other input unchanged.
 
@@ -80,7 +80,7 @@ The body also accepts an optional `surfaces` list, one entry per physical elemen
 
 **Step 2:** Serve `docs/openapi/` on `http://localhost:8000` (`python -m http.server 8000` from that directory works), since `ALLOWED_ORIGINS` allows that origin already. Opening the file directly (`file://`) works for reading the reference, but **Try it out** needs an allowed origin.
 
-**Step 3:** Pick `http://localhost:8080` from the **Servers** dropdown, then expand an endpoint, click **Try it out**, fill in the parameters, and **Execute**.
+**Step 3:** Pick `http://localhost:8088` from the **Servers** dropdown, then expand an endpoint, click **Try it out**, fill in the parameters, and **Execute**.
 
 !!! info "Using the HTTPS environment instead"
     `environment/https` serves the same API on `https://localhost`. Select that server in the dropdown, and on the quickstart file open `https://localhost` in a tab once and accept the certificate warning first: browser JavaScript cannot click through it the way a manual page load can.

@@ -9,7 +9,7 @@
 | `environment/http` | `ignis-app`, `ignis-db` | `ignis-app`, published on `HOST_BIND:HOST_PORT` |
 | `environment/https` | `ignis-app`, `ignis-db`, `ignis-reverse-proxy` | the proxy, published on `HOST_HTTPS_PORT` |
 
-Both form the `building-simulation` namespace (the Docker Compose project name), shared with other building-modelling services such as buem, and use the same container names, so only one runs at a time. Neither needs anything on the host except Docker, and `environment/https` from source additionally needs the `caddy` CLI for its one-off trust step.
+Each declares its own Docker Compose project, `ignis-http` and `ignis-https`. Both use the same container names, which are unique across the host, so only one runs at a time. Neither needs anything on the host except Docker, and `environment/https` from source additionally needs the `caddy` CLI for its one-off trust step.
 
 The two dockerfiles stay at `environment/` rather than being copied into each directory: the image is identical for both, and the publishing workflow builds from that one path.
 
@@ -27,7 +27,7 @@ Every component is a container, so the whole stack can be built into images, pus
 
 - **Internal port** (`APP_PORT`, default 8080): the port `ignis-app` listens on inside its container. Container isolation means it never clashes with other services, so it stays the same everywhere. It is set once in `.env` and passed to the app, its health check, and, in the HTTPS environment, the proxy's upstream, rather than hardcoded in each.
 
-- **Host port** (`HOST_PORT`, default 8080, or `HOST_HTTPS_PORT`, default 443): the published port. This is the only one that can clash, since two services cannot own the same host port. An orchestration layer assigns a free port here per service.
+- **Host port** (`HOST_PORT`, default 8088, or `HOST_HTTPS_PORT`, default 443): the published port. This is the only one that can clash, since two services cannot own the same host port. 8088 avoids 8080, which the EnerPlanET platform's Keycloak binds on every interface. An orchestration layer assigns a free port here per service.
 
 - **Host interface** (`HOST_BIND`, `environment/http` only, default `127.0.0.1`): which interface that port is published on.
 
@@ -53,4 +53,4 @@ This is a local-development convenience, tied to one machine. A real deployment 
 
 ## Network
 
-All containers in an environment share one Docker Compose network (`building-simulation_default`). Docker's DNS resolves each service name to its container: the proxy reaches the app at `ignis-app`, the app reaches the database at `ignis-db`. This only works within the same network, which is why keeping the database off any host port keeps the stack self-contained.
+All containers in an environment share one Docker Compose network (`ignis-https_default` in the HTTPS environment). The name is derived from the Compose project, so it changes whenever the project does, and services in other repositories have attached to it to resolve `ignis-app` by name. Renaming the project breaks those callers with a DNS failure at their first outbound call, not at start-up. See ADR-005. Docker's DNS resolves each service name to its container: the proxy reaches the app at `ignis-app`, the app reaches the database at `ignis-db`. This only works within the same network, which is why keeping the database off any host port keeps the stack self-contained.
