@@ -1,5 +1,5 @@
 # TLS termination for ignis. Caddy holds the certificate, decrypts the request
-# and forwards it as plain HTTP to ignis-app over the internal Docker network.
+# and forwards it as plain HTTP to ignis over the internal Docker network.
 # That is its only job here: ignis handles CORS itself, preflight included
 # (internal/api/middleware/middleware.go), and there is no API-key gate.
 #
@@ -20,5 +20,5 @@
 }
 
 {$IGNIS_SITE_ADDRESS:localhost} {
-	reverse_proxy ignis-app:{$APP_PORT:8080}
+	reverse_proxy ignis:{$APP_PORT:8080}
 }

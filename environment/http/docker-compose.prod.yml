@@ -1,5 +1,5 @@
 # Plain-HTTP environment running published images: pulls the CI-built
-# ignis-app and ignis-build-db from GHCR instead of compiling, for a target
+# ignis and build-db from GHCR instead of compiling, for a target
 # machine with no Go toolchain and no source tree — only this file, the env/
 # directory and optionally .env.
 #
@@ -46,32 +46,34 @@
 # TABULA workbook baked into the ignis-build-db image, so it needs no source
 # checkout, but run it deliberately and never against a populated database you
 # care about:
-#   docker compose -f docker-compose.prod.yml --profile seed run --rm ignis-build-db
+#   docker compose -f docker-compose.prod.yml --profile seed run --rm build-db
 name: ignis-http
 
 services:
-  ignis-db:
+  db:
     image: postgres:17-alpine
-    container_name: ignis-db
     env_file: [env/db.env]
     volumes:
-      - ignis-db-data:/var/lib/postgresql/data
+      - db-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 3s
       retries: 5
 
-  ignis-app:
-    container_name: ignis-app
+  ignis:
     # Pre-built by .github/workflows/docker-publish.yml on each vX.Y.Z tag.
     # Set IGNIS_IMAGE_TAG in .env to pin a version; defaults to `latest`.
     image: ghcr.io/thd-spatial-ai/ignis:${IGNIS_IMAGE_TAG:-latest}
+    networks:
+      default:
+      shared:
+        aliases: [ignis-http]   # the cross-repo name; never a container or project name
     env_file: [env/common.env, env/app.env]
     environment:
       - APP_PORT=${APP_PORT:-8080}
     depends_on:
-      ignis-db:
+      db:
         condition: service_healthy
     # See the header: loopback by default, HOST_BIND=0.0.0.0 to publish wider.
     # 8088 rather than 8080, which the EnerPlanET platform's Keycloak holds on
@@ -85,19 +87,32 @@ services:
       retries: 3
       start_period: 10s
 
-  ignis-build-db:
+  build-db:
     image: ghcr.io/thd-spatial-ai/ignis-build-db:${IGNIS_IMAGE_TAG:-latest}
     profiles: [seed]
     env_file: [env/app.env]
     depends_on:
-      ignis-db:
+      db:
         condition: service_healthy
 
 volumes:
-  # Pinned so both environments mount one database; unpinned, Compose would
-  # prefix it per project and switching transport would silently lose the data.
-  # Compose then warns the volume belongs to another project and suggests
-  # `external: true`. Not that: external needs the volume to exist already, so
-  # a first run on a clean machine would fail instead of creating it.
-  ignis-db-data:
-    name: building-simulation_ignis-db-data
+  # Project-scoped, so http and https hold separate databases. They can run at
+  # the same time, and two Postgres containers must never share one data
+  # directory. Seed each environment once; the data is rebuilt from the
+  # workbook, so a second copy costs disk rather than provenance.
+  db-data:
+
+# tentacron-net carries the heat services that callers in other repositories
+# resolve. Declared with `name:` and no `external:` so the first stack up
+# creates it and a clean checkout needs no prior setup. The key `shared` and the
+# name must be written identically in every repository that joins: Compose
+# labels the network with the key and refuses to start against a mismatch.
+# Adding a driver, subnet or ipam block here makes a joining project try to
+# delete and recreate the network, so this block stays exactly as it is.
+#
+# Only the http environment attaches. Callers inside the network carry no TLS
+# trust configuration, so an https alias fails at handshake and cannot be fixed
+# in their config.
+networks:
+  shared:
+    name: tentacron-net

@@ -1,5 +1,5 @@
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\textwidth]{figures/07-deployment-view.drawio.pdf}
-\caption{Deployment View: the HTTPS environment, with all three containers on one Docker Compose network in the \texttt{ignis-https} project. Only \texttt{ignis-reverse-proxy} publishes a host port; \texttt{ignis-app} and \texttt{ignis-db} are reachable only by service name from within the network. The HTTP environment drops the proxy and publishes \texttt{ignis-app} on the host loopback instead. Either stack needs nothing on the host except Docker.}
+\caption{Deployment View: the HTTPS environment, with all three containers on one Docker Compose network in the \texttt{ignis-https} project. Only \texttt{proxy} publishes a host port; \texttt{ignis} and \texttt{db} are reachable only by service name from within the network. The HTTP environment drops the proxy and publishes \texttt{ignis} on the host loopback instead. Either stack needs nothing on the host except Docker.}
 \end{figure}

@@ -23,21 +23,25 @@ Each directory holds one compose file per source of images:
 
 A third path, [manual setup](#manual-setup), runs the binaries without containers.
 
-!!! warning "One stack at a time"
-    `environment/http` and `environment/https` use the same container names (`ignis-app`, `ignis-db`), and container names are unique across the host, so the two cannot run side by side. `docker compose down` in one before `up` in the other.
+!!! info "Both environments can run at once"
+    They use separate Compose projects (`ignis-http`, `ignis-https`), separate generated container names and separate database volumes, so both can be up together and you connect to whichever you need. Each has its own database and so needs its own seeding.
 
 !!! warning "Upgrading from a checkout made before the project rename"
-    The Compose project names are now `ignis-http` and `ignis-https`, previously `building-simulation` for both. An existing stack has to come down before the renamed one starts: with it running, `up` fails on the container name rather than replacing it. Remove the old containers by name, which reaches nothing but ignis:
+    The Compose project names are now `ignis-http` and `ignis-https`, previously `building-simulation` for both, and the fixed container names are gone. An existing stack has to come down first, because the old containers still hold those names. Remove them by name, which reaches nothing but ignis:
 
     ```bash
     docker stop ignis-app ignis-db ignis-reverse-proxy
     docker rm ignis-app ignis-db ignis-reverse-proxy
     ```
 
-    Do not use `docker compose -p building-simulation down`. That targets the project rather than this repository, so on a machine where another service still declares the old project name, it removes that service's containers as well, naming neither. The database volume is pinned to its previous name, so it carries over and needs no reseed.
+    Do not use `docker compose -p building-simulation down`. That targets the project rather than this repository, so on a machine where another service still declares the old project name, it removes that service's containers as well, naming neither.
 
-!!! note "Compose warns about the database volume"
-    `up` prints that `building-simulation_ignis-db-data` was created for a different project and suggests `external: true`. The warning is expected: the volume is pinned to one name deliberately, so `environment/http` and `environment/https` mount the same database rather than one each. Do not switch it to `external: true`, which requires the volume to exist before `up` and so breaks a first run on a clean machine.
+    Each environment now has its own database volume, so seed each one once after starting it. The previous shared volume, `building-simulation_ignis-db-data`, is left in place and no longer mounted; remove it with `docker volume rm building-simulation_ignis-db-data` once you are satisfied the new ones are populated.
+
+    If `tentacron-net` already exists from `make tentacron-stack`, `up` fails with a label mismatch, because a network made by `docker network create` carries no Compose labels. Remove it with `docker network rm tentacron-net` while nothing is attached, and the first stack up recreates it correctly.
+
+!!! note "Compose warns about the shared network"
+    Whichever stack did not create `tentacron-net` prints that it "exists but was not created for project ..." and suggests `external: true`. The warning is expected and permanent: one network is deliberately shared by several repositories, so every project but the creator reports it. Do not switch it to `external: true`, which requires the network to exist before `up` and so breaks a first run on a clean machine.
 
 ## Configuration files
 
@@ -125,13 +129,13 @@ docker compose -f docker-compose.quickstart.yml up -d
 !!! warning "Docker Desktop: work from a directory under your home folder"
     Docker Desktop only shares paths under your home directory, or another folder added under File Sharing, into its VM. A working directory under `/tmp` fails with a bind-mount error like "not shared from the host", which does not obviously point at the File Sharing setting. Clone or copy these files under your home directory instead.
 
-This starts `ignis-db`, then `ignis-app` once the database reports healthy, then `ignis-reverse-proxy` once the app reports healthy. Only the proxy publishes a host port (`HOST_HTTPS_PORT`, default `443`).
+This starts `db`, then `ignis` once the database reports healthy, then `proxy` once the app reports healthy. Only the proxy publishes a host port (`HOST_HTTPS_PORT`, default `443`).
 
 Then [Seeding the database](#seeding-the-database) and [Verifying](#verifying).
 
 ### From source, with a trusted certificate
 
-Builds `ignis-app` and `ignis-build-db` from this checkout, so it picks up local code changes, and reuses a CA your browser already trusts.
+Builds `ignis` and `build-db` from this checkout, so it picks up local code changes, and reuses a CA your browser already trusts.
 
 Install the `caddy` CLI on the host and run `caddy trust` once. That installs a local CA into your OS and browser trust store, which the proxy then reuses.
 
@@ -160,20 +164,20 @@ Then [Seeding the database](#seeding-the-database) and [Verifying](#verifying).
 ## Seeding the database
 
 !!! warning "Required before first use, and destructive"
-    A fresh `ignis-db` volume is empty. Seeding drops and recreates all country tables, so it is gated behind the `seed` profile and never runs automatically. Until it has run once, every endpoint that reads the schema will fail.
+    A fresh `db` volume is empty. Seeding drops and recreates all country tables, so it is gated behind the `seed` profile and never runs automatically. Until it has run once, every endpoint that reads the schema will fail.
 
 ```bash
-<compose prefix> --profile seed run --rm ignis-build-db
+<compose prefix> --profile seed run --rm build-db
 ```
 
 `<compose prefix>` is `docker compose` for `docker-compose.yml`, or `docker compose -f <file>` for the others. On a path that pulls images, `--profile seed` is also needed on the `pull`, since profile-gated services are otherwise skipped.
 
-The TABULA workbook is baked into the `ignis-build-db` image, so there is nothing to download.
+The TABULA workbook is baked into the `build-db` image, so there is nothing to download.
 
 ## Verifying
 
 ```bash
-<compose prefix> exec ignis-db psql -U postgres -d ignis -c "\dt tabula.*"
+<compose prefix> exec db psql -U postgres -d ignis -c "\dt tabula.*"
 ```
 
 That lists the seeded tables. Then check the API answers, using the base URL for your environment:
@@ -281,11 +285,11 @@ Copy across the whole directory: the compose file, `.env`, the `env/` directory,
 !!! info "Service and image names"
     | Compose service | Published image | Role |
     |---|---|---|
-    | `ignis-app` | `ghcr.io/thd-spatial-ai/ignis` | HTTP API server |
-    | `ignis-build-db` | `ghcr.io/thd-spatial-ai/ignis-build-db` | one-off TABULA seeder, `seed` profile only |
-    | `ignis-db` | `postgres:17-alpine` (not built here) | PostgreSQL database |
+    | `ignis` | `ghcr.io/thd-spatial-ai/ignis` | HTTP API server |
+    | `build-db` | `ghcr.io/thd-spatial-ai/ignis-build-db` | one-off TABULA seeder, `seed` profile only |
+    | `db` | `postgres:17-alpine` (not built here) | PostgreSQL database |
 
-    The `ignis-app` service publishes without the `-app` suffix. `IGNIS_IMAGE_TAG` pins both `ghcr.io` images to one release.
+    Service names and image names are independent: the seeder's image keeps the `ignis-` prefix it publishes under. `IGNIS_IMAGE_TAG` pins both `ghcr.io` images to one release. The service is named `ignis` because a service name is registered as a DNS alias on every network it joins, `tentacron-net` included, so it has to be unique across the workspace; `db` and `build-db` never join it and so stay short.
 
 ### 1. Prepare the `env/` files
 
@@ -314,11 +318,11 @@ Set `IGNIS_IMAGE_TAG` to pin a release, which is strongly advised for anything y
 ```bash
 docker compose -f docker-compose.prod.yml --profile seed pull
 docker compose -f docker-compose.prod.yml up -d
-docker compose -f docker-compose.prod.yml --profile seed run --rm ignis-build-db
+docker compose -f docker-compose.prod.yml --profile seed run --rm build-db
 ```
 
 !!! warning "Pull first, and include the seed profile"
-    With `IGNIS_IMAGE_TAG` unset, a host that already has `latest` cached keeps running the old build after a release, with nothing on that host revealing it. The `--profile seed` on the pull is what fetches `ignis-build-db`, since profile-gated services are otherwise skipped.
+    With `IGNIS_IMAGE_TAG` unset, a host that already has `latest` cached keeps running the old build after a release, with nothing on that host revealing it. The `--profile seed` on the pull is what fetches `build-db`, since profile-gated services are otherwise skipped.
 
 Seed only on first deployment. Running it against a populated database drops every country table.
 
@@ -335,6 +339,6 @@ Expect `200`, then a list of variant codes. If the second call fails while healt
 
 ## Health checks
 
-Compose orders startup by health: `ignis-app` waits for a healthy `ignis-db`, and in `environment/https` the proxy waits for a healthy `ignis-app`.
+Compose orders startup by health: `ignis` waits for a healthy `db`, and in `environment/https` the proxy waits for a healthy `ignis`.
 
 `/ignis/health` reports process liveness only and does not test the database connection, so a healthy container does not by itself mean the schema is seeded or reachable.

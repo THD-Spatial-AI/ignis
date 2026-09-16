@@ -1,10 +1,10 @@
-# Plain-HTTP environment, building ignis-app and ignis-build-db from source in
+# Plain-HTTP environment, building ignis and build-db from source in
 # this checkout, so it is the one that picks up local code changes. Use
 # docker-compose.prod.yml here to run a published release instead.
 #
 # ---
 # Usage:  docker compose up -d
-#         docker compose --profile seed run --rm ignis-build-db
+#         docker compose --profile seed run --rm build-db
 # ---
 #
 # No reverse proxy, no TLS, no API key, and nothing to install on the host but
@@ -37,22 +37,20 @@ name: ignis-http
 # across the host whatever the project is called, which is what stops the http
 # and https environments running at once.
 services:
-  ignis-db:
+  db:
     image: postgres:17-alpine
-    container_name: ignis-db
     env_file: [env/db.env]        # POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB
     volumes:
-      - ignis-db-data:/var/lib/postgresql/data   # persists across container recreation
+      - db-data:/var/lib/postgresql/data   # persists across container recreation
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 3s
       retries: 5
     # No `ports:` mapping — reachable only from other containers on this
-    # network, by service name (`ignis-db`).
+    # network, by service name (`db`).
 
-  ignis-app:
-    container_name: ignis-app
+  ignis:
     build:
       # Context is the repository root, two levels up. The dockerfiles stay at
       # environment/ rather than being copied into http/ and https/: the image
@@ -60,11 +58,15 @@ services:
       # from that one path.
       context: ./../..
       dockerfile: environment/ignis-app.dockerfile   # multi-stage: builder (Go toolchain) -> final (binary only)
+    networks:
+      default:
+      shared:
+        aliases: [ignis-http]   # the cross-repo name; never a container or project name
     env_file: [env/common.env, env/app.env]        # CORS config + DB connection
     environment:
       - APP_PORT=${APP_PORT:-8080}    # internal listen port; one value for the app and its health check
     depends_on:
-      ignis-db:
+      db:
         condition: service_healthy
     # Bound to the loopback interface by default: nothing outside this host can
     # connect. Set HOST_BIND=0.0.0.0 in .env to publish on every interface, and
@@ -83,10 +85,10 @@ services:
   # One-off DB seed/rebuild job, NOT part of the normal `up` path (see
   # `profiles` below). build_db DROPS and recreates all country tables from
   # the Excel workbook — invoke deliberately, never automatically on startup:
-  #   docker compose --profile seed run --rm ignis-build-db
+  #   docker compose --profile seed run --rm build-db
   # No `container_name`: this is only ever started via `run`, which assigns
   # its own name, and a fixed one would collide rather than help.
-  ignis-build-db:
+  build-db:
     profiles: ["seed"]
     build:
       context: ./../..
@@ -96,14 +98,27 @@ services:
     # reference data, not something that changes independently of a release.
     env_file: [env/app.env]
     depends_on:
-      ignis-db:
+      db:
         condition: service_healthy
 
 volumes:
-  # Pinned so both environments mount one database; unpinned, Compose would
-  # prefix it per project and switching transport would silently lose the data.
-  # Compose then warns the volume belongs to another project and suggests
-  # `external: true`. Not that: external needs the volume to exist already, so
-  # a first run on a clean machine would fail instead of creating it.
-  ignis-db-data:
-    name: building-simulation_ignis-db-data
+  # Project-scoped, so http and https hold separate databases. They can run at
+  # the same time, and two Postgres containers must never share one data
+  # directory. Seed each environment once; the data is rebuilt from the
+  # workbook, so a second copy costs disk rather than provenance.
+  db-data:
+
+# tentacron-net carries the heat services that callers in other repositories
+# resolve. Declared with `name:` and no `external:` so the first stack up
+# creates it and a clean checkout needs no prior setup. The key `shared` and the
+# name must be written identically in every repository that joins: Compose
+# labels the network with the key and refuses to start against a mismatch.
+# Adding a driver, subnet or ipam block here makes a joining project try to
+# delete and recreate the network, so this block stays exactly as it is.
+#
+# Only the http environment attaches. Callers inside the network carry no TLS
+# trust configuration, so an https alias fails at handshake and cannot be fixed
+# in their config.
+networks:
+  shared:
+    name: tentacron-net
