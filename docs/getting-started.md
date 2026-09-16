@@ -27,7 +27,14 @@ A third path, [manual setup](#manual-setup), runs the binaries without container
     `environment/http` and `environment/https` use the same container names (`ignis-app`, `ignis-db`), and container names are unique across the host, so the two cannot run side by side. `docker compose down` in one before `up` in the other.
 
 !!! warning "Upgrading from a checkout made before the project rename"
-    The Compose project names are now `ignis-http` and `ignis-https`, previously `building-simulation` for both. Bring the old stack down before starting the new one: with it still running, `up` fails on the container name rather than replacing it. From an older checkout, `docker compose down`; from this one, `docker compose -p building-simulation down`. The database volume is pinned to its previous name, so it carries over and needs no reseed.
+    The Compose project names are now `ignis-http` and `ignis-https`, previously `building-simulation` for both. An existing stack has to come down before the renamed one starts: with it running, `up` fails on the container name rather than replacing it. Remove the old containers by name, which reaches nothing but ignis:
+
+    ```bash
+    docker stop ignis-app ignis-db ignis-reverse-proxy
+    docker rm ignis-app ignis-db ignis-reverse-proxy
+    ```
+
+    Do not use `docker compose -p building-simulation down`. That targets the project rather than this repository, so on a machine where another service still declares the old project name, it removes that service's containers as well, naming neither. The database volume is pinned to its previous name, so it carries over and needs no reseed.
 
 ## Configuration files
 
