@@ -31,7 +31,7 @@ info:
     url: https://github.com/thd-spatial-ai/
 
 servers:
-  - url: http://localhost:8080
+  - url: http://localhost:8088
     description: Local development, environment/http (no proxy, no TLS)
   - url: https://localhost
     description: Local development, environment/https (Caddy terminates TLS)

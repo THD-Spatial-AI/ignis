@@ -21,7 +21,7 @@
 # and nowhere else until that is deliberately changed.
 #
 # .env is optional: every ${...} below has a default (HOST_BIND 127.0.0.1,
-# HOST_PORT 8080, APP_PORT 8080).
+# HOST_PORT 8088, APP_PORT 8080).
 #
 # Compose project name = the concern this stack belongs to. The energy-modelling
 # application is split into concerns, each its own namespace; ignis and buem are
@@ -67,9 +67,10 @@ services:
     # Bound to the loopback interface by default: nothing outside this host can
     # connect. Set HOST_BIND=0.0.0.0 in .env to publish on every interface, and
     # only where something else (a firewall, an upstream proxy) controls who
-    # reaches the port.
+    # reaches the port. 8088 rather than 8080, which the EnerPlanET platform's
+    # Keycloak holds on every interface wherever that stack is also running.
     ports:
-      - "${HOST_BIND:-127.0.0.1}:${HOST_PORT:-8080}:${APP_PORT:-8080}"
+      - "${HOST_BIND:-127.0.0.1}:${HOST_PORT:-8088}:${APP_PORT:-8080}"
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:$$APP_PORT/ignis/health"]
       interval: 30s

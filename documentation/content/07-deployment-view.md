@@ -27,7 +27,7 @@ Every component is a container, so the whole stack can be built into images, pus
 
 - **Internal port** (`APP_PORT`, default 8080): the port `ignis-app` listens on inside its container. Container isolation means it never clashes with other services, so it stays the same everywhere. It is set once in `.env` and passed to the app, its health check, and, in the HTTPS environment, the proxy's upstream, rather than hardcoded in each.
 
-- **Host port** (`HOST_PORT`, default 8080, or `HOST_HTTPS_PORT`, default 443): the published port. This is the only one that can clash, since two services cannot own the same host port. An orchestration layer assigns a free port here per service.
+- **Host port** (`HOST_PORT`, default 8088, or `HOST_HTTPS_PORT`, default 443): the published port. This is the only one that can clash, since two services cannot own the same host port. 8088 avoids 8080, which the EnerPlanET platform's Keycloak binds on every interface. An orchestration layer assigns a free port here per service.
 
 - **Host interface** (`HOST_BIND`, `environment/http` only, default `127.0.0.1`): which interface that port is published on.
 

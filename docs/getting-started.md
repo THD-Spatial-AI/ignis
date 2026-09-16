@@ -72,12 +72,12 @@ To build from this checkout instead, so local code changes are picked up, drop t
 | Variable | Description | Default |
 |---|---|---|
 | `HOST_BIND` | Host interface the app is published on | `127.0.0.1` |
-| `HOST_PORT` | Host port the app is published on | `8080` |
+| `HOST_PORT` | Host port the app is published on | `8088` |
 | `APP_PORT` | The app's internal listen port | `8080` |
 
 ### 2. Seed and verify
 
-Follow [Seeding the database](#seeding-the-database), then [Verifying](#verifying). The base URL is `http://localhost:8080`.
+Follow [Seeding the database](#seeding-the-database), then [Verifying](#verifying). The base URL is `http://localhost:8088`.
 
 ---
 
@@ -166,7 +166,7 @@ The TABULA workbook is baked into the `ignis-build-db` image, so there is nothin
 That lists the seeded tables. Then check the API answers, using the base URL for your environment:
 
 ```bash
-curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8080/ignis/health   # environment/http
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8088/ignis/health   # environment/http
 curl -s -o /dev/null -w '%{http_code}\n' https://localhost/ignis/health       # environment/https
 ```
 
@@ -285,7 +285,7 @@ Copy across the whole directory: the compose file, `.env`, the `env/` directory,
 
 ### 2. Prepare `.env`
 
-For `environment/http`: `HOST_BIND` and `HOST_PORT` default to `127.0.0.1` and `8080`. Set `HOST_BIND=0.0.0.0` only where something in front of the host decides who may connect.
+For `environment/http`: `HOST_BIND` and `HOST_PORT` default to `127.0.0.1` and `8088`. Set `HOST_BIND=0.0.0.0` only where something in front of the host decides who may connect.
 
 For `environment/https`: `CADDY_DATA_DIR` is required; `APP_PORT` and `HOST_HTTPS_PORT` default to `8080` and `443`.
 
