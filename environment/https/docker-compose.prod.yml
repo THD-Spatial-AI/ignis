@@ -1,4 +1,4 @@
-# Deploy-time HTTPS environment: pulls the pre-built, CI-published ignis-app
+# Deploy-time HTTPS environment: pulls the pre-built, CI-published ignis
 # and ignis-build-db images from GHCR instead of building from source, for a
 # target machine with no Go toolchain and no source tree — only this file,
 # .env, the env/ directory and the caddy/ directory.
@@ -43,12 +43,12 @@
 # TABULA workbook baked into the ignis-build-db image, so it needs no source
 # checkout, but run it deliberately and never against a populated production
 # database you care about:
-#   docker compose -f docker-compose.prod.yml --profile seed run --rm ignis-build-db
+#   docker compose -f docker-compose.prod.yml --profile seed run --rm build-db
 #
 # No endpoint carries an API key. This deployment sits on an internal network
 # reachable only over VPN, and callers are already authenticated by the
-# platform in front of them; the network is the trust boundary. ignis-app and
-# ignis-db publish no host port, so the proxy remains the only way in.
+# platform in front of them; the network is the trust boundary. ignis and
+# db publish no host port, so the proxy remains the only way in.
 #
 # Deliberately standalone rather than a partial override merged with
 # docker-compose.yml: Compose's merge rules mean a service left with BOTH
@@ -58,20 +58,18 @@
 name: ignis-https
 
 services:
-  ignis-db:
+  db:
     image: postgres:17-alpine
-    container_name: ignis-db
     env_file: [env/db.env]
     volumes:
-      - ignis-db-data:/var/lib/postgresql/data
+      - db-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 3s
       retries: 5
 
-  ignis-app:
-    container_name: ignis-app
+  ignis:
     # Pre-built by .github/workflows/docker-publish.yml on each vX.Y.Z tag.
     # Set IGNIS_IMAGE_TAG in .env to pin a version; defaults to `latest`.
     image: ghcr.io/thd-spatial-ai/ignis:${IGNIS_IMAGE_TAG:-latest}
@@ -79,7 +77,7 @@ services:
     environment:
       - APP_PORT=${APP_PORT:-8080}
     depends_on:
-      ignis-db:
+      db:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:$$APP_PORT/ignis/health"]
@@ -88,14 +86,13 @@ services:
       retries: 3
       start_period: 10s
 
-  ignis-reverse-proxy:
+  proxy:
     image: caddy:2.11-alpine
-    container_name: ignis-reverse-proxy
     env_file: [env/proxy.env]
     environment:
       - APP_PORT=${APP_PORT:-8080}
     depends_on:
-      ignis-app:
+      ignis:
         condition: service_healthy
     # TLS-ALPN-01 (Caddy's default ACME challenge) works entirely over 443,
     # so IGNIS_SITE_ADDRESS can be set to a real domain without publishing
@@ -108,19 +105,17 @@ services:
       - ./caddy:/etc/caddy:ro
       - ${CADDY_DATA_DIR:?CADDY_DATA_DIR is not set}:/data/caddy
 
-  ignis-build-db:
+  build-db:
     image: ghcr.io/thd-spatial-ai/ignis-build-db:${IGNIS_IMAGE_TAG:-latest}
     profiles: [seed]
     env_file: [env/app.env]
     depends_on:
-      ignis-db:
+      db:
         condition: service_healthy
 
 volumes:
-  # Pinned so both environments mount one database; unpinned, Compose would
-  # prefix it per project and switching transport would silently lose the data.
-  # Compose then warns the volume belongs to another project and suggests
-  # `external: true`. Not that: external needs the volume to exist already, so
-  # a first run on a clean machine would fail instead of creating it.
-  ignis-db-data:
-    name: building-simulation_ignis-db-data
+  # Project-scoped, so http and https hold separate databases. They can run at
+  # the same time, and two Postgres containers must never share one data
+  # directory. Seed each environment once; the data is rebuilt from the
+  # workbook, so a second copy costs disk rather than provenance.
+  db-data:

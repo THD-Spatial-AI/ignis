@@ -1,11 +1,11 @@
-# HTTPS environment, building ignis-app and ignis-build-db from source in this
+# HTTPS environment, building ignis and build-db from source in this
 # checkout, so it is the only one of the three here that picks up local code
 # changes. Use docker-compose.quickstart.yml to try the API without a source
 # tree, or docker-compose.prod.yml to deploy a published release.
 #
 # ---
 # Usage:  docker compose up -d
-#         docker compose --profile seed run --rm ignis-build-db
+#         docker compose --profile seed run --rm build-db
 # ---
 #
 # Caddy terminates TLS in front of the app and does nothing else: ignis handles
@@ -39,22 +39,20 @@ name: ignis-https
 # plays. Container names are unique across the host whatever the project is
 # called, which is what stops the http and https environments running at once.
 services:
-  ignis-db:
+  db:
     image: postgres:17-alpine
-    container_name: ignis-db
     env_file: [env/db.env]        # POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB
     volumes:
-      - ignis-db-data:/var/lib/postgresql/data   # persists across container recreation
+      - db-data:/var/lib/postgresql/data   # persists across container recreation
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 3s
       retries: 5
     # No `ports:` mapping — reachable only from other containers on this
-    # network, by service name (`ignis-db`), same as the app itself.
+    # network, by service name (`db`), same as the app itself.
 
-  ignis-app:
-    container_name: ignis-app
+  ignis:
     build:
       # Context is the repository root, two levels up. The dockerfiles stay at
       # environment/ rather than being copied into http/ and https/: the image
@@ -66,7 +64,7 @@ services:
     environment:
       - APP_PORT=${APP_PORT:-8080}    # internal listen port; one value for the app, its health check and the proxy
     depends_on:
-      ignis-db:
+      db:
         condition: service_healthy
     # No `ports:` mapping here on purpose — the app is not reachable from the
     # host directly. Only the reverse proxy is exposed; everyone else must go through it.
@@ -82,10 +80,10 @@ services:
   # One-off DB seed/rebuild job, NOT part of the normal `up` path (see
   # `profiles` below). build_db DROPS and recreates all country tables from
   # the Excel workbook — invoke deliberately, never automatically on startup:
-  #   docker compose --profile seed run --rm ignis-build-db
+  #   docker compose --profile seed run --rm build-db
   # No `container_name`: this is only ever started via `run`, which assigns
   # its own name, and a fixed one would collide rather than help.
-  ignis-build-db:
+  build-db:
     profiles: ["seed"]
     build:
       context: ./../..
@@ -95,17 +93,16 @@ services:
     # reference data, not something that changes independently of a release.
     env_file: [env/app.env]
     depends_on:
-      ignis-db:
+      db:
         condition: service_healthy
 
-  ignis-reverse-proxy:
+  proxy:
     image: caddy:2.11-alpine
-    container_name: ignis-reverse-proxy
     env_file: [env/proxy.env]       # IGNIS_SITE_ADDRESS
     environment:
-      - APP_PORT=${APP_PORT:-8080}    # so the Caddyfile's upstream ignis-app:{$APP_PORT} resolves
+      - APP_PORT=${APP_PORT:-8080}    # so the Caddyfile's upstream ignis:{$APP_PORT} resolves
     depends_on:
-      ignis-app:
+      ignis:
         condition: service_healthy
     ports:
       - "${HOST_HTTPS_PORT:-443}:443" # public entry point; host side assignable per service
@@ -120,10 +117,8 @@ services:
     # `caddy run --config /etc/caddy/Caddyfile --adapter caddyfile`.
 
 volumes:
-  # Pinned so both environments mount one database; unpinned, Compose would
-  # prefix it per project and switching transport would silently lose the data.
-  # Compose then warns the volume belongs to another project and suggests
-  # `external: true`. Not that: external needs the volume to exist already, so
-  # a first run on a clean machine would fail instead of creating it.
-  ignis-db-data:
-    name: building-simulation_ignis-db-data
+  # Project-scoped, so http and https hold separate databases. They can run at
+  # the same time, and two Postgres containers must never share one data
+  # directory. Seed each environment once; the data is rebuilt from the
+  # workbook, so a second copy costs disk rather than provenance.
+  db-data:

@@ -76,7 +76,7 @@ The body also accepts an optional `surfaces` list, one entry per physical elemen
 
 [Open the API reference](openapi/index.html), which can call a locally running ignis directly, no `mkdocs serve` needed to view it.
 
-**Step 1:** Start the stack, from `environment/http/`: `docker compose -f docker-compose.prod.yml up -d`. On a first run, load the TABULA data once: `docker compose -f docker-compose.prod.yml --profile seed run --rm ignis-build-db`.
+**Step 1:** Start the stack, from `environment/http/`: `docker compose -f docker-compose.prod.yml up -d`. On a first run, load the TABULA data once: `docker compose -f docker-compose.prod.yml --profile seed run --rm build-db`.
 
 **Step 2:** Serve `docs/openapi/` on `http://localhost:8000` (`python -m http.server 8000` from that directory works), since `ALLOWED_ORIGINS` allows that origin already. Opening the file directly (`file://`) works for reading the reference, but **Try it out** needs an allowed origin.
 

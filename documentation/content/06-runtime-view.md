@@ -10,7 +10,7 @@ ignis's CORS middleware matches the `Origin` against `ALLOWED_ORIGINS`, echoes i
 
 ## Step 2: the real request
 
-The browser sends `GET /api/v1/fields`. ignis checks the `Origin` again, adds `Access-Control-Allow-Origin` to the response, and returns the payload. Where Caddy is in front, it decrypts the request, forwards it to `ignis-app:8080` as plain HTTP over the internal Docker network, and passes the response back unchanged.
+The browser sends `GET /api/v1/fields`. ignis checks the `Origin` again, adds `Access-Control-Allow-Origin` to the response, and returns the payload. Where Caddy is in front, it decrypts the request, forwards it to `ignis:8080` as plain HTTP over the internal Docker network, and passes the response back unchanged.
 
 ## Step 3: a request from an origin that is not allowed
 

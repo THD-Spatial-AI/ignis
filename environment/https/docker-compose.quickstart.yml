@@ -1,4 +1,4 @@
-# Try-it-out HTTPS environment: pulls the pre-built, CI-published ignis-app and
+# Try-it-out HTTPS environment: pulls the pre-built, CI-published ignis and
 # ignis-build-db images from GHCR, so nothing is compiled locally and no Go
 # toolchain, source tree, `caddy` install or `caddy trust` is needed on the
 # host. Needs only Docker, plus this file, the env/ directory and caddy/
@@ -8,11 +8,11 @@
 #
 # ---
 # Usage:  docker compose -f docker-compose.quickstart.yml up -d
-#         docker compose -f docker-compose.quickstart.yml --profile seed run --rm ignis-build-db
+#         docker compose -f docker-compose.quickstart.yml --profile seed run --rm build-db
 # ---
 #
 # Seed the database once after first start, using the command above.
-# ignis-build-db is gated behind the `seed` profile so it never runs on `up`:
+# build-db is gated behind the `seed` profile so it never runs on `up`:
 # it DROPS and recreates all country tables from the TABULA workbook baked
 # into its image. The workbook is in the image itself (see
 # ignis-db.dockerfile), so seeding needs no source checkout and no manual
@@ -41,20 +41,18 @@
 name: ignis-https
 
 services:
-  ignis-db:
+  db:
     image: postgres:17-alpine
-    container_name: ignis-db
     env_file: [env/db.env]
     volumes:
-      - ignis-db-data:/var/lib/postgresql/data
+      - db-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 3s
       retries: 5
 
-  ignis-app:
-    container_name: ignis-app
+  ignis:
     # Pre-built by .github/workflows/docker-publish.yml on each vX.Y.Z tag.
     # Set IGNIS_IMAGE_TAG to pin a version; defaults to `latest`.
     image: ghcr.io/thd-spatial-ai/ignis:${IGNIS_IMAGE_TAG:-latest}
@@ -62,7 +60,7 @@ services:
     environment:
       - APP_PORT=${APP_PORT:-8080}
     depends_on:
-      ignis-db:
+      db:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:$$APP_PORT/ignis/health"]
@@ -71,14 +69,13 @@ services:
       retries: 3
       start_period: 10s
 
-  ignis-reverse-proxy:
+  proxy:
     image: caddy:2.11-alpine
-    container_name: ignis-reverse-proxy
     env_file: [env/proxy.env]
     environment:
       - APP_PORT=${APP_PORT:-8080}
     depends_on:
-      ignis-app:
+      ignis:
         condition: service_healthy
     ports:
       - "${HOST_HTTPS_PORT:-443}:443"
@@ -88,22 +85,20 @@ services:
       - ./caddy:/etc/caddy:ro
       - caddy-data:/data/caddy
 
-  ignis-build-db:
+  build-db:
     image: ghcr.io/thd-spatial-ai/ignis-build-db:${IGNIS_IMAGE_TAG:-latest}
     profiles: [seed]
     env_file: [env/app.env]
     depends_on:
-      ignis-db:
+      db:
         condition: service_healthy
 
 volumes:
-  # Pinned so both environments mount one database; unpinned, Compose would
-  # prefix it per project and switching transport would silently lose the data.
-  # Compose then warns the volume belongs to another project and suggests
-  # `external: true`. Not that: external needs the volume to exist already, so
-  # a first run on a clean machine would fail instead of creating it.
-  ignis-db-data:
-    name: building-simulation_ignis-db-data
+  # Project-scoped, so http and https hold separate databases. They can run at
+  # the same time, and two Postgres containers must never share one data
+  # directory. Seed each environment once; the data is rebuilt from the
+  # workbook, so a second copy costs disk rather than provenance.
+  db-data:
   # Not pinned: this CA is never added to a trust store (see the header), so
   # regenerating it under the new project name costs one click-through.
   caddy-data:
