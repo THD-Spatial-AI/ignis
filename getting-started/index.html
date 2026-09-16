@@ -919,21 +919,23 @@
 </tbody>
 </table>
 <p>A third path, <a href="#manual-setup">manual setup</a>, runs the binaries without containers.</p>
-<div class="admonition warning">
-<p class="admonition-title">One stack at a time</p>
-<p><code>environment/http</code> and <code>environment/https</code> use the same container names (<code>ignis-app</code>, <code>ignis-db</code>), and container names are unique across the host, so the two cannot run side by side. <code>docker compose down</code> in one before <code>up</code> in the other.</p>
+<div class="admonition info">
+<p class="admonition-title">Both environments can run at once</p>
+<p>They use separate Compose projects (<code>ignis-http</code>, <code>ignis-https</code>), separate generated container names and separate database volumes, so both can be up together and you connect to whichever you need. Each has its own database and so needs its own seeding.</p>
 </div>
 <div class="admonition warning">
 <p class="admonition-title">Upgrading from a checkout made before the project rename</p>
-<p>The Compose project names are now <code>ignis-http</code> and <code>ignis-https</code>, previously <code>building-simulation</code> for both. An existing stack has to come down before the renamed one starts: with it running, <code>up</code> fails on the container name rather than replacing it. Remove the old containers by name, which reaches nothing but ignis:</p>
+<p>The Compose project names are now <code>ignis-http</code> and <code>ignis-https</code>, previously <code>building-simulation</code> for both, and the fixed container names are gone. An existing stack has to come down first, because the old containers still hold those names. Remove them by name, which reaches nothing but ignis:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>docker<span class="w"> </span>stop<span class="w"> </span>ignis-app<span class="w"> </span>ignis-db<span class="w"> </span>ignis-reverse-proxy
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>docker<span class="w"> </span>rm<span class="w"> </span>ignis-app<span class="w"> </span>ignis-db<span class="w"> </span>ignis-reverse-proxy
 </span></code></pre></div>
-<p>Do not use <code>docker compose -p building-simulation down</code>. That targets the project rather than this repository, so on a machine where another service still declares the old project name, it removes that service's containers as well, naming neither. The database volume is pinned to its previous name, so it carries over and needs no reseed.</p>
+<p>Do not use <code>docker compose -p building-simulation down</code>. That targets the project rather than this repository, so on a machine where another service still declares the old project name, it removes that service's containers as well, naming neither.</p>
+<p>Each environment now has its own database volume, so seed each one once after starting it. The previous shared volume, <code>building-simulation_ignis-db-data</code>, is left in place and no longer mounted; remove it with <code>docker volume rm building-simulation_ignis-db-data</code> once you are satisfied the new ones are populated.</p>
+<p>If <code>tentacron-net</code> already exists from <code>make tentacron-stack</code>, <code>up</code> fails with a label mismatch, because a network made by <code>docker network create</code> carries no Compose labels. Remove it with <code>docker network rm tentacron-net</code> while nothing is attached, and the first stack up recreates it correctly.</p>
 </div>
 <div class="admonition note">
-<p class="admonition-title">Compose warns about the database volume</p>
-<p><code>up</code> prints that <code>building-simulation_ignis-db-data</code> was created for a different project and suggests <code>external: true</code>. The warning is expected: the volume is pinned to one name deliberately, so <code>environment/http</code> and <code>environment/https</code> mount the same database rather than one each. Do not switch it to <code>external: true</code>, which requires the volume to exist before <code>up</code> and so breaks a first run on a clean machine.</p>
+<p class="admonition-title">Compose warns about the shared network</p>
+<p>Whichever stack did not create <code>tentacron-net</code> prints that it "exists but was not created for project ..." and suggests <code>external: true</code>. The warning is expected and permanent: one network is deliberately shared by several repositories, so every project but the creator reports it. Do not switch it to <code>external: true</code>, which requires the network to exist before <code>up</code> and so breaks a first run on a clean machine.</p>
 </div>
 <h2 id="configuration-files">Configuration files<a class="headerlink" href="#configuration-files" title="Permanent link">&para;</a></h2>
 <p>Each environment reads an optional <code>.env</code>, interpolated on the host, plus the files under its own <code>env/</code> directory, which are passed into the containers. They are split so each service receives only the variables it reads.</p>
@@ -1061,10 +1063,10 @@
 <p class="admonition-title">Docker Desktop: work from a directory under your home folder</p>
 <p>Docker Desktop only shares paths under your home directory, or another folder added under File Sharing, into its VM. A working directory under <code>/tmp</code> fails with a bind-mount error like "not shared from the host", which does not obviously point at the File Sharing setting. Clone or copy these files under your home directory instead.</p>
 </div>
-<p>This starts <code>ignis-db</code>, then <code>ignis-app</code> once the database reports healthy, then <code>ignis-reverse-proxy</code> once the app reports healthy. Only the proxy publishes a host port (<code>HOST_HTTPS_PORT</code>, default <code>443</code>).</p>
+<p>This starts <code>db</code>, then <code>ignis</code> once the database reports healthy, then <code>proxy</code> once the app reports healthy. Only the proxy publishes a host port (<code>HOST_HTTPS_PORT</code>, default <code>443</code>).</p>
 <p>Then <a href="#seeding-the-database">Seeding the database</a> and <a href="#verifying">Verifying</a>.</p>
 <h3 id="from-source-with-a-trusted-certificate">From source, with a trusted certificate<a class="headerlink" href="#from-source-with-a-trusted-certificate" title="Permanent link">&para;</a></h3>
-<p>Builds <code>ignis-app</code> and <code>ignis-build-db</code> from this checkout, so it picks up local code changes, and reuses a CA your browser already trusts.</p>
+<p>Builds <code>ignis</code> and <code>build-db</code> from this checkout, so it picks up local code changes, and reuses a CA your browser already trusts.</p>
 <p>Install the <code>caddy</code> CLI on the host and run <code>caddy trust</code> once. That installs a local CA into your OS and browser trust store, which the proxy then reuses.</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>caddy<span class="w"> </span>trust
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">cd</span><span class="w"> </span>environment/https
@@ -1107,14 +1109,14 @@
 <h2 id="seeding-the-database">Seeding the database<a class="headerlink" href="#seeding-the-database" title="Permanent link">&para;</a></h2>
 <div class="admonition warning">
 <p class="admonition-title">Required before first use, and destructive</p>
-<p>A fresh <code>ignis-db</code> volume is empty. Seeding drops and recreates all country tables, so it is gated behind the <code>seed</code> profile and never runs automatically. Until it has run once, every endpoint that reads the schema will fail.</p>
+<p>A fresh <code>db</code> volume is empty. Seeding drops and recreates all country tables, so it is gated behind the <code>seed</code> profile and never runs automatically. Until it has run once, every endpoint that reads the schema will fail.</p>
 </div>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>&lt;compose<span class="w"> </span>prefix&gt;<span class="w"> </span>--profile<span class="w"> </span>seed<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>ignis-build-db
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>&lt;compose<span class="w"> </span>prefix&gt;<span class="w"> </span>--profile<span class="w"> </span>seed<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>build-db
 </span></code></pre></div>
 <p><code>&lt;compose prefix&gt;</code> is <code>docker compose</code> for <code>docker-compose.yml</code>, or <code>docker compose -f &lt;file&gt;</code> for the others. On a path that pulls images, <code>--profile seed</code> is also needed on the <code>pull</code>, since profile-gated services are otherwise skipped.</p>
-<p>The TABULA workbook is baked into the <code>ignis-build-db</code> image, so there is nothing to download.</p>
+<p>The TABULA workbook is baked into the <code>build-db</code> image, so there is nothing to download.</p>
 <h2 id="verifying">Verifying<a class="headerlink" href="#verifying" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>&lt;compose<span class="w"> </span>prefix&gt;<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ignis-db<span class="w"> </span>psql<span class="w"> </span>-U<span class="w"> </span>postgres<span class="w"> </span>-d<span class="w"> </span>ignis<span class="w"> </span>-c<span class="w"> </span><span class="s2">"\dt tabula.*"</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>&lt;compose<span class="w"> </span>prefix&gt;<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>db<span class="w"> </span>psql<span class="w"> </span>-U<span class="w"> </span>postgres<span class="w"> </span>-d<span class="w"> </span>ignis<span class="w"> </span>-c<span class="w"> </span><span class="s2">"\dt tabula.*"</span>
 </span></code></pre></div>
 <p>That lists the seeded tables. Then check the API answers, using the base URL for your environment:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code}\n'</span><span class="w"> </span>http://localhost:8088/ignis/health<span class="w">   </span><span class="c1"># environment/http</span>
@@ -1231,23 +1233,23 @@
 </thead>
 <tbody>
 <tr>
-<td><code>ignis-app</code></td>
+<td><code>ignis</code></td>
 <td><code>ghcr.io/thd-spatial-ai/ignis</code></td>
 <td>HTTP API server</td>
 </tr>
 <tr>
-<td><code>ignis-build-db</code></td>
+<td><code>build-db</code></td>
 <td><code>ghcr.io/thd-spatial-ai/ignis-build-db</code></td>
 <td>one-off TABULA seeder, <code>seed</code> profile only</td>
 </tr>
 <tr>
-<td><code>ignis-db</code></td>
+<td><code>db</code></td>
 <td><code>postgres:17-alpine</code> (not built here)</td>
 <td>PostgreSQL database</td>
 </tr>
 </tbody>
 </table>
-<p>The <code>ignis-app</code> service publishes without the <code>-app</code> suffix. <code>IGNIS_IMAGE_TAG</code> pins both <code>ghcr.io</code> images to one release.</p>
+<p>Service names and image names are independent: the seeder's image keeps the <code>ignis-</code> prefix it publishes under. <code>IGNIS_IMAGE_TAG</code> pins both <code>ghcr.io</code> images to one release. The service is named <code>ignis</code> because a service name is registered as a DNS alias on every network it joins, <code>tentacron-net</code> included, so it has to be unique across the workspace; <code>db</code> and <code>build-db</code> never join it and so stay short.</p>
 </div>
 <h3 id="1-prepare-the-env-files">1. Prepare the <code>env/</code> files<a class="headerlink" href="#1-prepare-the-env-files" title="Permanent link">&para;</a></h3>
 <div class="admonition danger">
@@ -1271,11 +1273,11 @@
 <h3 id="4-pull-start-seed">4. Pull, start, seed<a class="headerlink" href="#4-pull-start-seed" title="Permanent link">&para;</a></h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.prod.yml<span class="w"> </span>--profile<span class="w"> </span>seed<span class="w"> </span>pull
 </span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.prod.yml<span class="w"> </span>up<span class="w"> </span>-d
-</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.prod.yml<span class="w"> </span>--profile<span class="w"> </span>seed<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>ignis-build-db
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.prod.yml<span class="w"> </span>--profile<span class="w"> </span>seed<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>build-db
 </span></code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Pull first, and include the seed profile</p>
-<p>With <code>IGNIS_IMAGE_TAG</code> unset, a host that already has <code>latest</code> cached keeps running the old build after a release, with nothing on that host revealing it. The <code>--profile seed</code> on the pull is what fetches <code>ignis-build-db</code>, since profile-gated services are otherwise skipped.</p>
+<p>With <code>IGNIS_IMAGE_TAG</code> unset, a host that already has <code>latest</code> cached keeps running the old build after a release, with nothing on that host revealing it. The <code>--profile seed</code> on the pull is what fetches <code>build-db</code>, since profile-gated services are otherwise skipped.</p>
 </div>
 <p>Seed only on first deployment. Running it against a populated database drops every country table.</p>
 <h3 id="5-verify">5. Verify<a class="headerlink" href="#5-verify" title="Permanent link">&para;</a></h3>
@@ -1285,7 +1287,7 @@
 <p>Expect <code>200</code>, then a list of variant codes. If the second call fails while health returns <code>200</code>, the database is reachable but not seeded.</p>
 <hr />
 <h2 id="health-checks">Health checks<a class="headerlink" href="#health-checks" title="Permanent link">&para;</a></h2>
-<p>Compose orders startup by health: <code>ignis-app</code> waits for a healthy <code>ignis-db</code>, and in <code>environment/https</code> the proxy waits for a healthy <code>ignis-app</code>.</p>
+<p>Compose orders startup by health: <code>ignis</code> waits for a healthy <code>db</code>, and in <code>environment/https</code> the proxy waits for a healthy <code>ignis</code>.</p>
 <p><code>/ignis/health</code> reports process liveness only and does not test the database connection, so a healthy container does not by itself mean the schema is seeded or reachable.</p>
 
 

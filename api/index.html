@@ -728,7 +728,7 @@ Returns the same archetype's <code>q_h_nd</code> recalculated for a 150-heating-
 </details>
 <h2 id="testing-it-yourself">Testing it yourself<a class="headerlink" href="#testing-it-yourself" title="Permanent link">&para;</a></h2>
 <p><a href="../openapi/">Open the API reference</a>, which can call a locally running ignis directly, no <code>mkdocs serve</code> needed to view it.</p>
-<p><strong>Step 1:</strong> Start the stack, from <code>environment/http/</code>: <code>docker compose -f docker-compose.prod.yml up -d</code>. On a first run, load the TABULA data once: <code>docker compose -f docker-compose.prod.yml --profile seed run --rm ignis-build-db</code>.</p>
+<p><strong>Step 1:</strong> Start the stack, from <code>environment/http/</code>: <code>docker compose -f docker-compose.prod.yml up -d</code>. On a first run, load the TABULA data once: <code>docker compose -f docker-compose.prod.yml --profile seed run --rm build-db</code>.</p>
 <p><strong>Step 2:</strong> Serve <code>docs/openapi/</code> on <code>http://localhost:8000</code> (<code>python -m http.server 8000</code> from that directory works), since <code>ALLOWED_ORIGINS</code> allows that origin already. Opening the file directly (<code>file://</code>) works for reading the reference, but <strong>Try it out</strong> needs an allowed origin.</p>
 <p><strong>Step 3:</strong> Pick <code>http://localhost:8088</code> from the <strong>Servers</strong> dropdown, then expand an endpoint, click <strong>Try it out</strong>, fill in the parameters, and <strong>Execute</strong>.</p>
 <div class="admonition info">
