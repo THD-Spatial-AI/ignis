@@ -23,17 +23,19 @@
 # .env is optional: every ${...} below has a default (HOST_BIND 127.0.0.1,
 # HOST_PORT 8088, APP_PORT 8080).
 #
-# Compose project name = the concern this stack belongs to. The energy-modelling
-# application is split into concerns, each its own namespace; ignis and buem are
-# both building-simulation concerns, so their containers share this namespace.
-# Every compose file under environment/ declares the same name, so they address
-# the same containers, network and volumes. Run one at a time.
-name: building-simulation
+# Compose project name. This is the unit Compose takes destructive action
+# against, not a label for related things: `down --remove-orphans` removes every
+# container carrying the project label, including ones declared in another
+# repository's compose file. Scoped per repository and per transport for that
+# reason; buem-gateway declares its own rather than sharing this one.
+name: ignis-http
 
 # Container naming convention: <service>-<role>, where role is one of
 # app | db (this environment has no reverse-proxy). Service name and
 # container_name are kept identical, so a container name always says both which
-# service it belongs to and what role it plays.
+# service it belongs to and what role it plays. Container names are unique
+# across the host whatever the project is called, which is what stops the http
+# and https environments running at once.
 services:
   ignis-db:
     image: postgres:17-alpine
@@ -98,4 +100,8 @@ services:
         condition: service_healthy
 
 volumes:
+  # Pinned, so it keeps one name across both environments. Unpinned, Compose
+  # prefixes a volume with the project name, so http and https would each mount
+  # their own empty database and switching transport would lose the data.
   ignis-db-data:
+    name: building-simulation_ignis-db-data

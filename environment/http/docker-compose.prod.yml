@@ -47,7 +47,7 @@
 # checkout, but run it deliberately and never against a populated database you
 # care about:
 #   docker compose -f docker-compose.prod.yml --profile seed run --rm ignis-build-db
-name: building-simulation
+name: ignis-http
 
 services:
   ignis-db:
@@ -94,4 +94,8 @@ services:
         condition: service_healthy
 
 volumes:
+  # Pinned, so it keeps one name across both environments. Unpinned, Compose
+  # prefixes a volume with the project name, so http and https would each mount
+  # their own empty database and switching transport would lose the data.
   ignis-db-data:
+    name: building-simulation_ignis-db-data

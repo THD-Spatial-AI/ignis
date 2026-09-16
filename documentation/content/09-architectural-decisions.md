@@ -54,19 +54,19 @@
 
 **Open:** A real caller credential, should ignis ever be deployed somewhere the network is not the trust boundary. A short-lived token from the orchestration layer and mutual TLS are both candidates; neither is chosen.
 
-## ADR-005: Group containers into per-concern namespaces, named <service>-<role>
+## ADR-005: One Compose project per repository and transport, containers named <service>-<role>
 
 **Status:** Decided
 
 **Context:** The energy-modelling system is several services (ignis, buem, and more), each with a proxy, app, and sometimes a database.
 
-**Decision:** Group containers by concern into a Docker Compose namespace (project name), here `building-simulation`, shared by all building-modelling services. Name each container `<service>-<role>`: `ignis-app`, `ignis-db`, `ignis-reverse-proxy`, and later `buem-app`, `buem-reverse-proxy`, and so on.
+**Decision:** Name the Compose project after the repository and the transport: `ignis-http` and `ignis-https`. Name each container `<service>-<role>`: `ignis-app`, `ignis-db`, `ignis-reverse-proxy`. Pin `ignis-db-data` to its existing volume name in every compose file, so both environments keep mounting one database.
 
-**Reason:** A container name then says both which service it belongs to and what role it plays, and the namespace groups related services together. The host port is the only thing that can clash between them, so it is set per service (`HOST_PORT` or `HOST_HTTPS_PORT`); the internal port stays fixed, since container isolation keeps it from clashing.
+**Reason:** A container name then says both which service it belongs to and what role it plays. The project name is a separate concern: Compose treats it as the unit it takes destructive action against, not as a label for related things. `docker compose down --remove-orphans` removes every container carrying the project label, so a project shared with another repository lets a command run there destroy this stack, silently and without naming what it took. Volumes are prefixed with the project name unless pinned, which is why pinning is part of the decision rather than a migration step: without it the two transports would mount separate databases. The host port is the only thing that can clash between services, so it is set per service (`HOST_PORT` or `HOST_HTTPS_PORT`); the internal port stays fixed, since container isolation keeps it from clashing.
 
-**Rejected:** Directory-derived project names and ad-hoc container names. They don't convey role or concern and don't group cleanly as more services are added.
+**Rejected:** One namespace per concern (`building-simulation`), shared by every building-modelling service. Grouping related containers is worth wanting, but a Compose project is the wrong place to put it, and the grouping survives anyway in the `<service>-` container prefix. Splitting by transport alone (`building-simulation-http`) was also rejected: it silences the orphan warnings between one repository's two transports and leaves the cross-repository case, which is the one that destroys containers. Directory-derived and ad-hoc container names convey neither role nor service.
 
-**Open:** When buem joins, two repos each declaring the same namespace will coexist but Compose may warn about "orphan" containers. A single top-level compose (`include:`) or a shared external network resolves it. Decide when buem is wired in.
+**Open:** None. Neither repository resolves the other by container name, so separate projects and separate networks cost nothing.
 
 ## ADR-006: Two Compose environments, http and https, rather than one with a toggle
 

@@ -38,7 +38,7 @@
 # bind mount), and Compose merges `volumes:` lists by appending rather than
 # replacing, so an override would leave both mounted at /data/caddy.
 
-name: building-simulation
+name: ignis-https
 
 services:
   ignis-db:
@@ -97,5 +97,11 @@ services:
         condition: service_healthy
 
 volumes:
+  # Pinned, so it keeps one name across both environments. Unpinned, Compose
+  # prefixes a volume with the project name, so http and https would each mount
+  # their own empty database and switching transport would lose the data.
   ignis-db-data:
+    name: building-simulation_ignis-db-data
+  # Not pinned: this CA is never added to a trust store (see the header), so
+  # regenerating it under the new project name costs one click-through.
   caddy-data:

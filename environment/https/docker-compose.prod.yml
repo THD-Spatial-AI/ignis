@@ -55,7 +55,7 @@
 # `build:` (from the base file) and `image:` (from an override) can still
 # fall back to building locally if no matching image is cached — exactly the
 # thing this file exists to avoid on a source-less deploy target.
-name: building-simulation
+name: ignis-https
 
 services:
   ignis-db:
@@ -117,4 +117,8 @@ services:
         condition: service_healthy
 
 volumes:
+  # Pinned, so it keeps one name across both environments. Unpinned, Compose
+  # prefixes a volume with the project name, so http and https would each mount
+  # their own empty database and switching transport would lose the data.
   ignis-db-data:
+    name: building-simulation_ignis-db-data

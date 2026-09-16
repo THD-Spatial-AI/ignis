@@ -24,7 +24,10 @@ Each directory holds one compose file per source of images:
 A third path, [manual setup](#manual-setup), runs the binaries without containers.
 
 !!! warning "One stack at a time"
-    Every compose file declares the same project name (`building-simulation`) and the same container names, so `environment/http` and `environment/https` cannot run side by side. `docker compose down` in one before `up` in the other.
+    `environment/http` and `environment/https` use the same container names (`ignis-app`, `ignis-db`), and container names are unique across the host, so the two cannot run side by side. `docker compose down` in one before `up` in the other.
+
+!!! warning "Upgrading from a checkout made before the project rename"
+    The Compose project names are now `ignis-http` and `ignis-https`, previously `building-simulation` for both. Bring the old stack down before starting the new one: with it still running, `up` fails on the container name rather than replacing it. From an older checkout, `docker compose down`; from this one, `docker compose -p building-simulation down`. The database volume is pinned to its previous name, so it carries over and needs no reseed.
 
 ## Configuration files
 

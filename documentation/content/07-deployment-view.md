@@ -9,7 +9,7 @@
 | `environment/http` | `ignis-app`, `ignis-db` | `ignis-app`, published on `HOST_BIND:HOST_PORT` |
 | `environment/https` | `ignis-app`, `ignis-db`, `ignis-reverse-proxy` | the proxy, published on `HOST_HTTPS_PORT` |
 
-Both form the `building-simulation` namespace (the Docker Compose project name), shared with other building-modelling services such as buem, and use the same container names, so only one runs at a time. Neither needs anything on the host except Docker, and `environment/https` from source additionally needs the `caddy` CLI for its one-off trust step.
+Each declares its own Docker Compose project, `ignis-http` and `ignis-https`. Both use the same container names, which are unique across the host, so only one runs at a time. Neither needs anything on the host except Docker, and `environment/https` from source additionally needs the `caddy` CLI for its one-off trust step.
 
 The two dockerfiles stay at `environment/` rather than being copied into each directory: the image is identical for both, and the publishing workflow builds from that one path.
 
@@ -53,4 +53,4 @@ This is a local-development convenience, tied to one machine. A real deployment 
 
 ## Network
 
-All containers in an environment share one Docker Compose network (`building-simulation_default`). Docker's DNS resolves each service name to its container: the proxy reaches the app at `ignis-app`, the app reaches the database at `ignis-db`. This only works within the same network, which is why keeping the database off any host port keeps the stack self-contained.
+All containers in an environment share one Docker Compose network (`ignis-https_default` in the HTTPS environment). Docker's DNS resolves each service name to its container: the proxy reaches the app at `ignis-app`, the app reaches the database at `ignis-db`. This only works within the same network, which is why keeping the database off any host port keeps the stack self-contained.
