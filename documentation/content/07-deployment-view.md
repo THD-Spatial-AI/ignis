@@ -53,4 +53,4 @@ This is a local-development convenience, tied to one machine. A real deployment 
 
 ## Network
 
-All containers in an environment share one Docker Compose network (`ignis-https_default` in the HTTPS environment). Docker's DNS resolves each service name to its container: the proxy reaches the app at `ignis-app`, the app reaches the database at `ignis-db`. This only works within the same network, which is why keeping the database off any host port keeps the stack self-contained.
+All containers in an environment share one Docker Compose network (`ignis-https_default` in the HTTPS environment). The name is derived from the Compose project, so it changes whenever the project does, and services in other repositories have attached to it to resolve `ignis-app` by name. Renaming the project breaks those callers with a DNS failure at their first outbound call, not at start-up. See ADR-005. Docker's DNS resolves each service name to its container: the proxy reaches the app at `ignis-app`, the app reaches the database at `ignis-db`. This only works within the same network, which is why keeping the database off any host port keeps the stack self-contained.

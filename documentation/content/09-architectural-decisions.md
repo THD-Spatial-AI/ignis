@@ -66,7 +66,7 @@
 
 **Rejected:** One namespace per concern (`building-simulation`), shared by every building-modelling service. Grouping related containers is worth wanting, but a Compose project is the wrong place to put it, and the grouping survives anyway in the `<service>-` container prefix. Splitting by transport alone (`building-simulation-http`) was also rejected: it silences the orphan warnings between one repository's two transports and leaves the cross-repository case, which is the one that destroys containers. Directory-derived and ad-hoc container names convey neither role nor service.
 
-**Open:** None. Neither repository resolves the other by container name, so separate projects and separate networks cost nothing.
+**Open:** How a caller in another repository should resolve these containers. Separate networks were assumed to cost nothing, which was wrong: tentacron had joined `building-simulation_default` and resolved `ignis-app` by container name, so the rename broke it until it joined the new network. A Compose project's default network is named after the project, which makes it an implementation detail rather than an interface, and a caller relying on it gets no signal when it changes: the service starts normally and fails at its first outbound call. A purpose-named external network is the likely answer. It cannot simply be added to these files, because a Compose file declaring an external network that does not exist fails to start at all, so it has to be an opt-in overlay rather than a requirement of the base file.
 
 ## ADR-006: Two Compose environments, http and https, rather than one with a toggle
 
