@@ -932,6 +932,7 @@
 <p>Do not use <code>docker compose -p building-simulation down</code>. That targets the project rather than this repository, so on a machine where another service still declares the old project name, it removes that service's containers as well, naming neither.</p>
 <p>Each environment now has its own database volume, so seed each one once after starting it. The previous shared volume, <code>building-simulation_ignis-db-data</code>, is left in place and no longer mounted; remove it with <code>docker volume rm building-simulation_ignis-db-data</code> once you are satisfied the new ones are populated.</p>
 <p>If <code>tentacron-net</code> already exists from <code>make tentacron-stack</code>, <code>up</code> fails with a label mismatch, because a network made by <code>docker network create</code> carries no Compose labels. Remove it with <code>docker network rm tentacron-net</code> while nothing is attached, and the first stack up recreates it correctly.</p>
+<p>The same error appears, with a different expected value, if a compose file declares the network under a key other than <code>tentacron-net</code>. Compose compares the key rather than the <code>name:</code>, so the two files can name the same network and still refuse to start. The message reports a label, not a name, which is why it does not read as a naming problem.</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Compose warns about the shared network</p>
