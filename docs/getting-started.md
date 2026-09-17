@@ -75,7 +75,7 @@ ignis carries no credential and asks for none. There is no API key on any endpoi
 What limits who can reach it is the port mapping, not `ALLOWED_ORIGINS`. CORS is enforced by a browser on behalf of a page it has loaded; a server-to-server caller sends no `Origin` header and ignores the response headers entirely.
 
 !!! danger "Decide reachability at the network layer"
-    In `environment/http` the app is bound to `127.0.0.1` by default, so nothing off the host can connect. In `environment/https` the app publishes no port at all and only the proxy is exposed. Set `HOST_BIND=0.0.0.0` only where something in front of the host decides who may connect: the intended deployment is an internal network reachable over VPN, behind a platform that has already authenticated the user.
+    In `environment/http` the app is bound to `127.0.0.1` by default, so nothing off the host can connect. In `environment/https` the app publishes no port at all and only the proxy is exposed. Set `HOST_BIND=0.0.0.0` only where something in front of the host decides who may connect. Deploy it only on a network whose access you control, behind a platform that has already authenticated the user.
 
 ---
 

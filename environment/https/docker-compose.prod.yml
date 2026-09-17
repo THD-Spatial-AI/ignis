@@ -45,9 +45,9 @@
 # database you care about:
 #   docker compose -f docker-compose.prod.yml --profile seed run --rm build-db
 #
-# No endpoint carries an API key. This deployment sits on an internal network
-# reachable only over VPN, and callers are already authenticated by the
-# platform in front of them; the network is the trust boundary. ignis and
+# No endpoint carries an API key. This is deployed only on a network whose
+# access is controlled, and callers are already authenticated by the platform
+# in front of them; the network is the trust boundary. ignis and
 # db publish no host port, so the proxy remains the only way in.
 #
 # Deliberately standalone rather than a partial override merged with

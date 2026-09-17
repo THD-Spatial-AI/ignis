@@ -46,7 +46,7 @@
 
 **Context:** ignis should be reachable only by a trusted caller. An earlier revision gated Caddy on a static, shared `X-Api-Key`. That key was visible in the page source of its only caller, Building Configurator, which runs in the browser, so it stopped casual access and kept no real secret.
 
-**Decision:** Remove the key. ignis checks no credential. It is deployed on an internal network reachable only over VPN, behind a platform that has already authenticated the end user, and reachability is decided by the port mapping.
+**Decision:** Remove the key. ignis checks no credential. It is deployed only on a network whose access is controlled, behind a platform that has already authenticated the end user, and reachability is decided by the port mapping.
 
 **Reason:** The gate was not load-bearing where ignis actually runs, and it cost every caller a header, every environment an extra secret to rotate, and the local-development path a configuration step for no security it did not already have.
 
