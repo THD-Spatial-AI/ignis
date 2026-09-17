@@ -617,7 +617,7 @@
 <h1 id="api-reference">API reference<a class="headerlink" href="#api-reference" title="Permanent link">&para;</a></h1>
 <p>The interactive reference lives in its own standalone page, <a href="../openapi/"><code>openapi/index.html</code></a>, so it can be opened directly without running <code>mkdocs serve</code>. It renders <a href="../openapi/openapi.yaml"><code>openapi/openapi.yaml</code></a>; download that file to generate a client or import it into Postman.</p>
 <h2 id="authentication">Authentication<a class="headerlink" href="#authentication" title="Permanent link">&para;</a></h2>
-<p>ignis carries no credential and asks for none. Every endpoint is reachable by anything that can open a connection to it, so who that is gets decided at the network layer: ignis is published on an internal network reachable over VPN, behind a platform that has already authenticated the end user.</p>
+<p>ignis carries no credential and asks for none. Every endpoint is reachable by anything that can open a connection to it, so who that is gets decided at the network layer. Deploy it only on a network whose access you control, behind a platform that has already authenticated the end user.</p>
 <div class="admonition warning">
 <p class="admonition-title">Do not publish ignis on a public interface</p>
 <p>There is nothing in ignis to stop an unauthenticated caller. Keep it on an internal network, or behind something that authenticates for it. A user-facing login in front of your own system (EnerPlanET uses Keycloak) authenticates the user to <em>that system</em>, not to ignis; that system's backend then calls ignis on the user's behalf.</p>

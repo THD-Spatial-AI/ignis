@@ -987,7 +987,7 @@
 <p>What limits who can reach it is the port mapping, not <code>ALLOWED_ORIGINS</code>. CORS is enforced by a browser on behalf of a page it has loaded; a server-to-server caller sends no <code>Origin</code> header and ignores the response headers entirely.</p>
 <div class="admonition danger">
 <p class="admonition-title">Decide reachability at the network layer</p>
-<p>In <code>environment/http</code> the app is bound to <code>127.0.0.1</code> by default, so nothing off the host can connect. In <code>environment/https</code> the app publishes no port at all and only the proxy is exposed. Set <code>HOST_BIND=0.0.0.0</code> only where something in front of the host decides who may connect: the intended deployment is an internal network reachable over VPN, behind a platform that has already authenticated the user.</p>
+<p>In <code>environment/http</code> the app is bound to <code>127.0.0.1</code> by default, so nothing off the host can connect. In <code>environment/https</code> the app publishes no port at all and only the proxy is exposed. Set <code>HOST_BIND=0.0.0.0</code> only where something in front of the host decides who may connect. Deploy it only on a network whose access you control, behind a platform that has already authenticated the user.</p>
 </div>
 <hr />
 <h2 id="http">http<a class="headerlink" href="#http" title="Permanent link">&para;</a></h2>
