@@ -25,8 +25,8 @@
 # connect.
 #
 # No endpoint carries an API key. Callers are already authenticated by the
-# platform in front of them, and the deployment sits on an internal network
-# reachable only over VPN; the network is the trust boundary.
+# platform in front of them, and this is deployed only on a network whose
+# access is controlled; the network is the trust boundary.
 #
 # `pull` first, deliberately: IGNIS_IMAGE_TAG defaults to `latest`, and a host
 # that already has `latest` cached will keep running the old build after a

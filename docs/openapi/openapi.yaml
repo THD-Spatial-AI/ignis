@@ -13,9 +13,9 @@ info:
 
     ignis carries no credential of its own and asks for none. Every endpoint
     below is reachable by anything that can open a connection to it, so a
-    deployment decides who that is at the network layer: ignis is published
-    on an internal network reachable over VPN, behind a platform that has
-    already authenticated the end user.
+    deployment decides who that is at the network layer. Deploy it only on a
+    network whose access you control, behind a platform that has already
+    authenticated the end user.
 
     If the system calling ignis has its own user-facing login (EnerPlanET,
     for example, uses Keycloak), that login authenticates the user *to that

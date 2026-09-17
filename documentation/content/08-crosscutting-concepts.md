@@ -14,7 +14,7 @@ Locally this is proven directly: `caddy trust` trusts the local CA once, and eve
 
 ## The network is the trust boundary
 
-ignis checks no credential. It is deployed on an internal network reachable only over VPN, behind a platform that has already authenticated the end user, so an access check in front of ignis would gate traffic that is already gated. See ADR-004.
+ignis checks no credential. It is deployed only on a network whose access is controlled, behind a platform that has already authenticated the end user, so an access check in front of ignis would gate traffic that is already gated. See ADR-004.
 
 What decides who can reach ignis is therefore its port mapping. `db` publishes nothing in either environment; `ignis` publishes nothing in the HTTPS environment and binds to the host loopback in the HTTP one. Widening that binding is the deliberate act that exposes the service.
 

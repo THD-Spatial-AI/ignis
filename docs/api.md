@@ -4,7 +4,7 @@ The interactive reference lives in its own standalone page, [`openapi/index.html
 
 ## Authentication
 
-ignis carries no credential and asks for none. Every endpoint is reachable by anything that can open a connection to it, so who that is gets decided at the network layer: ignis is published on an internal network reachable over VPN, behind a platform that has already authenticated the end user.
+ignis carries no credential and asks for none. Every endpoint is reachable by anything that can open a connection to it, so who that is gets decided at the network layer. Deploy it only on a network whose access you control, behind a platform that has already authenticated the end user.
 
 !!! warning "Do not publish ignis on a public interface"
     There is nothing in ignis to stop an unauthenticated caller. Keep it on an internal network, or behind something that authenticates for it. A user-facing login in front of your own system (EnerPlanET uses Keycloak) authenticates the user to *that system*, not to ignis; that system's backend then calls ignis on the user's behalf.
