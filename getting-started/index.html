@@ -932,7 +932,11 @@
 <p>Do not use <code>docker compose -p building-simulation down</code>. That targets the project rather than this repository, so on a machine where another service still declares the old project name, it removes that service's containers as well, naming neither.</p>
 <p>Each environment now has its own database volume, so seed each one once after starting it. The previous shared volume, <code>building-simulation_ignis-db-data</code>, is left in place and no longer mounted; remove it with <code>docker volume rm building-simulation_ignis-db-data</code> once you are satisfied the new ones are populated.</p>
 <p>If <code>tentacron-net</code> already exists from <code>make tentacron-stack</code>, <code>up</code> fails with a label mismatch, because a network made by <code>docker network create</code> carries no Compose labels. Remove it with <code>docker network rm tentacron-net</code> while nothing is attached, and the first stack up recreates it correctly.</p>
-<p>The same error appears, with a different expected value, if a compose file declares the network under a key other than <code>tentacron-net</code>. Compose compares the key rather than the <code>name:</code>, so the two files can name the same network and still refuse to start. The message reports a label, not a name, which is why it does not read as a naming problem.</p>
+<p>Both cases report the same thing, a label rather than a name, which is why neither reads as a naming problem:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>network tentacron-net was found but has incorrect label
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>com.docker.compose.network set to "" (expected: "tentacron-net")
+</span></code></pre></div>
+<p>An empty value means the network was created outside Compose, by <code>docker network create</code>; remove it as above. Any other value means a compose file declared the network under a different key, because Compose compares the key rather than the <code>name:</code>, so two files can name the same network and still refuse to start. Spell the key <code>tentacron-net</code>, the same as the name.</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Compose warns about the shared network</p>
@@ -989,9 +993,9 @@
 <h2 id="http">http<a class="headerlink" href="#http" title="Permanent link">&para;</a></h2>
 <p>Nothing on the host but Docker. No certificate to trust, no key to send.</p>
 <h3 id="1-start-the-stack">1. Start the stack<a class="headerlink" href="#1-start-the-stack" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">cd</span><span class="w"> </span>environment/http
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.prod.yml<span class="w"> </span>pull
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.prod.yml<span class="w"> </span>up<span class="w"> </span>-d
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nb">cd</span><span class="w"> </span>environment/http
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.prod.yml<span class="w"> </span>pull
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.prod.yml<span class="w"> </span>up<span class="w"> </span>-d
 </span></code></pre></div>
 <p>To build from this checkout instead, so local code changes are picked up, drop the <code>-f</code> and use <code>docker compose up -d</code>.</p>
 <p><code>.env</code> is optional: every variable has a default.</p>
@@ -1056,9 +1060,9 @@
 </div>
 <h3 id="quickstart-pulled-images-no-host-setup">Quickstart: pulled images, no host setup<a class="headerlink" href="#quickstart-pulled-images-no-host-setup" title="Permanent link">&para;</a></h3>
 <p>Needs only Docker. No Go toolchain, no <code>caddy</code> install, no <code>.env</code>.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/thd-spatial-ai/ignis.git
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">cd</span><span class="w"> </span>ignis/environment/https
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.quickstart.yml<span class="w"> </span>up<span class="w"> </span>-d
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/thd-spatial-ai/ignis.git
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">cd</span><span class="w"> </span>ignis/environment/https
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.quickstart.yml<span class="w"> </span>up<span class="w"> </span>-d
 </span></code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Docker Desktop: work from a directory under your home folder</p>
@@ -1069,10 +1073,10 @@
 <h3 id="from-source-with-a-trusted-certificate">From source, with a trusted certificate<a class="headerlink" href="#from-source-with-a-trusted-certificate" title="Permanent link">&para;</a></h3>
 <p>Builds <code>ignis</code> and <code>build-db</code> from this checkout, so it picks up local code changes, and reuses a CA your browser already trusts.</p>
 <p>Install the <code>caddy</code> CLI on the host and run <code>caddy trust</code> once. That installs a local CA into your OS and browser trust store, which the proxy then reuses.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>caddy<span class="w"> </span>trust
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">cd</span><span class="w"> </span>environment/https
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>cp<span class="w"> </span>.env.example<span class="w"> </span>.env
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>caddy<span class="w"> </span>trust
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nb">cd</span><span class="w"> </span>environment/https
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>cp<span class="w"> </span>.env.example<span class="w"> </span>.env
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
 </span></code></pre></div>
 <p><code>.env</code> must define:</p>
 <table>
@@ -1112,27 +1116,27 @@
 <p class="admonition-title">Required before first use, and destructive</p>
 <p>A fresh <code>db</code> volume is empty. Seeding drops and recreates all country tables, so it is gated behind the <code>seed</code> profile and never runs automatically. Until it has run once, every endpoint that reads the schema will fail.</p>
 </div>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>&lt;compose<span class="w"> </span>prefix&gt;<span class="w"> </span>--profile<span class="w"> </span>seed<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>build-db
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>&lt;compose<span class="w"> </span>prefix&gt;<span class="w"> </span>--profile<span class="w"> </span>seed<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>build-db
 </span></code></pre></div>
 <p><code>&lt;compose prefix&gt;</code> is <code>docker compose</code> for <code>docker-compose.yml</code>, or <code>docker compose -f &lt;file&gt;</code> for the others. On a path that pulls images, <code>--profile seed</code> is also needed on the <code>pull</code>, since profile-gated services are otherwise skipped.</p>
 <p>The TABULA workbook is baked into the <code>build-db</code> image, so there is nothing to download.</p>
 <h2 id="verifying">Verifying<a class="headerlink" href="#verifying" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>&lt;compose<span class="w"> </span>prefix&gt;<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>db<span class="w"> </span>psql<span class="w"> </span>-U<span class="w"> </span>postgres<span class="w"> </span>-d<span class="w"> </span>ignis<span class="w"> </span>-c<span class="w"> </span><span class="s2">"\dt tabula.*"</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>&lt;compose<span class="w"> </span>prefix&gt;<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>db<span class="w"> </span>psql<span class="w"> </span>-U<span class="w"> </span>postgres<span class="w"> </span>-d<span class="w"> </span>ignis<span class="w"> </span>-c<span class="w"> </span><span class="s2">"\dt tabula.*"</span>
 </span></code></pre></div>
 <p>That lists the seeded tables. Then check the API answers, using the base URL for your environment:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code}\n'</span><span class="w"> </span>http://localhost:8088/ignis/health<span class="w">   </span><span class="c1"># environment/http</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code}\n'</span><span class="w"> </span>https://localhost/ignis/health<span class="w">       </span><span class="c1"># environment/https</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code}\n'</span><span class="w"> </span>http://localhost:8088/ignis/health<span class="w">   </span><span class="c1"># environment/http</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code}\n'</span><span class="w"> </span>https://localhost/ignis/health<span class="w">       </span><span class="c1"># environment/https</span>
 </span></code></pre></div>
 <p>Both return <code>200</code>. Add <code>-k</code> on the https quickstart path, where the certificate does not chain to a CA you trust.</p>
 <h2 id="tearing-down">Tearing down<a class="headerlink" href="#tearing-down" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>&lt;compose<span class="w"> </span>prefix&gt;<span class="w"> </span>down<span class="w"> </span>-v
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>&lt;compose<span class="w"> </span>prefix&gt;<span class="w"> </span>down<span class="w"> </span>-v
 </span></code></pre></div>
 <p>The <code>-v</code> removes the database volume, so the next start needs seeding again. Omit it to keep the seeded data.</p>
 <h2 id="pinning-a-version">Pinning a version<a class="headerlink" href="#pinning-a-version" title="Permanent link">&para;</a></h2>
 <p>The paths that pull images default to the <code>latest</code> published release. To pin a specific one, set <code>IGNIS_IMAGE_TAG</code> before starting:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">IGNIS_IMAGE_TAG</span><span class="o">=</span><span class="m">0</span>.2.4-alpha
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>&lt;compose<span class="w"> </span>prefix&gt;<span class="w"> </span>--profile<span class="w"> </span>seed<span class="w"> </span>pull
-</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>&lt;compose<span class="w"> </span>prefix&gt;<span class="w"> </span>up<span class="w"> </span>-d
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">IGNIS_IMAGE_TAG</span><span class="o">=</span><span class="m">0</span>.2.4-alpha
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>&lt;compose<span class="w"> </span>prefix&gt;<span class="w"> </span>--profile<span class="w"> </span>seed<span class="w"> </span>pull
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>&lt;compose<span class="w"> </span>prefix&gt;<span class="w"> </span>up<span class="w"> </span>-d
 </span></code></pre></div>
 <div class="admonition info">
 <p class="admonition-title">Tag format</p>
@@ -1167,9 +1171,9 @@
 <div class="admonition warning">
 <p class="admonition-title">Install Git LFS before cloning</p>
 <p><code>data/tabula-calculator-lite.xlsx</code> is stored via Git LFS. Without <code>git lfs install</code>, the checkout contains a small text pointer instead of the workbook, and <code>build_db</code> fails naming the cause directly: "is a Git LFS pointer, not the workbook itself, run <code>git lfs install &amp;&amp; git lfs pull</code>".</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>git<span class="w"> </span>lfs<span class="w"> </span>install
-</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/thd-spatial-ai/ignis.git
-</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="nb">cd</span><span class="w"> </span>ignis
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>git<span class="w"> </span>lfs<span class="w"> </span>install
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/thd-spatial-ai/ignis.git
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="nb">cd</span><span class="w"> </span>ignis
 </span></code></pre></div>
 <p>If you have already cloned without it, run <code>git lfs install &amp;&amp; git lfs pull</code>. Verify with <code>ls -l data/tabula-calculator-lite.xlsx</code>, which should be roughly 11 MB rather than a few hundred bytes.</p>
 </div>
@@ -1206,16 +1210,16 @@
 <p>The binary listens on every interface. Nothing in ignis limits who may call it, so keep it off any interface you do not control.</p>
 </div>
 <h3 id="build-and-run">Build and run<a class="headerlink" href="#build-and-run" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>go<span class="w"> </span>build<span class="w"> </span>-buildvcs<span class="o">=</span><span class="nb">false</span><span class="w"> </span>-o<span class="w"> </span>bin/<span class="w"> </span>./cmd/...
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>go<span class="w"> </span>build<span class="w"> </span>-buildvcs<span class="o">=</span><span class="nb">false</span><span class="w"> </span>-o<span class="w"> </span>bin/<span class="w"> </span>./cmd/...
 </span></code></pre></div>
 <p>This produces <code>bin/ignis</code>, <code>bin/build_db</code>, and <code>bin/validate</code>.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>./bin/build_db
-</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>./bin/ignis
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>./bin/build_db
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>./bin/ignis
 </span></code></pre></div>
 <p><code>build_db</code> is destructive: it drops and recreates the <code>tabula</code> schema. <code>ignis</code> starts on <code>APP_PORT</code>, default <code>8080</code>.</p>
 <h3 id="validate">Validate<a class="headerlink" href="#validate" title="Permanent link">&para;</a></h3>
 <p>Runs the full 17-level TABULA calculation pipeline against every row in the database and checks that each result stays within 2% of the reference value from the workbook.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>./bin/validate
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>./bin/validate
 </span></code></pre></div>
 <p>This path only: there is no containerised <code>validate</code>. See the <a href="../validation/">validation report</a> for current results.</p>
 <hr />
@@ -1272,9 +1276,9 @@
 <p>It defaults to <code>localhost</code>. Set it in <code>env/proxy.env</code> to the deployment's real domain, or Caddy will neither serve it nor provision a certificate for it. TLS-ALPN-01 (Caddy's default ACME challenge) works entirely over port 443, which is all the compose file publishes, so no port change is needed.</p>
 </div>
 <h3 id="4-pull-start-seed">4. Pull, start, seed<a class="headerlink" href="#4-pull-start-seed" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.prod.yml<span class="w"> </span>--profile<span class="w"> </span>seed<span class="w"> </span>pull
-</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.prod.yml<span class="w"> </span>up<span class="w"> </span>-d
-</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.prod.yml<span class="w"> </span>--profile<span class="w"> </span>seed<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>build-db
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.prod.yml<span class="w"> </span>--profile<span class="w"> </span>seed<span class="w"> </span>pull
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.prod.yml<span class="w"> </span>up<span class="w"> </span>-d
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.prod.yml<span class="w"> </span>--profile<span class="w"> </span>seed<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>build-db
 </span></code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Pull first, and include the seed profile</p>
@@ -1282,8 +1286,8 @@
 </div>
 <p>Seed only on first deployment. Running it against a populated database drops every country table.</p>
 <h3 id="5-verify">5. Verify<a class="headerlink" href="#5-verify" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code}\n'</span><span class="w"> </span>https://your-domain/ignis/health
-</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>https://your-domain/api/v1/variants/DE<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-c<span class="w"> </span><span class="m">200</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>-w<span class="w"> </span><span class="s1">'%{http_code}\n'</span><span class="w"> </span>https://your-domain/ignis/health
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>https://your-domain/api/v1/variants/DE<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-c<span class="w"> </span><span class="m">200</span>
 </span></code></pre></div>
 <p>Expect <code>200</code>, then a list of variant codes. If the second call fails while health returns <code>200</code>, the database is reachable but not seeded.</p>
 <hr />
