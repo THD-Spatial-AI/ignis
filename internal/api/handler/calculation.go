@@ -63,9 +63,11 @@ func init() {
 // so this is often a large lever: TABULA's generic default is frequently a poor
 // match for a specific real building (a lecture hall or workshop can easily run
 // 4-5m against a 2.5m archetype default). n_Storey overrides the assumed storey
-// count (BuildingAppearance.N_Storey), which feeds the envelope-area *estimation*
-// path (calc_level_02.go/03.go/06.go) — has less effect once real surfaces are
-// also given, since those bypass estimation for the categories they cover.
+// count (BuildingAppearance.N_Storey). It is validated but changes no result:
+// it reaches the output only through the envelope-area estimation path, gated on
+// Code_TypeIntake_EnvelopeArea == "Estimation" (calc_level_05.go/06.go/07.go),
+// which no shipped TABULA variant selects, and its other consumers are the
+// plausibility ratios ending in Check_EnvArea_ExactToEstim, which nothing reads.
 //
 // surfaces replaces TABULA's fixed 2-3 slots per element category with an
 // arbitrary list of individual physical surfaces (as a real building's

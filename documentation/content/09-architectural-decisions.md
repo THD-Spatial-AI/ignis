@@ -22,7 +22,7 @@
 
 **Decision:** They run as separate containers.
 
-**Reason:** Docker expects one process per container. Two processes under a wrapper script lose supervision: if the app crashed, Docker wouldn't notice, since the script keeps running. Separate containers also let the proxy be reloaded or recreated without touching the app, which we relied on repeatedly during this work.
+**Reason:** Docker expects one process per container. Two processes under a wrapper script lose supervision: if the app crashes, Docker does not notice, because the script keeps running. Separate containers also let the proxy be reloaded or recreated without touching the app.
 
 **Rejected:** One container with a process supervisor (e.g. `supervisord`). Extra complexity for nothing this deployment needs.
 
