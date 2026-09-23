@@ -1,10 +1,14 @@
+---
+audience: developer
+---
+
 # Getting started
 
 ignis is an HTTP API that computes TABULA heating demand for building archetypes. It ships as a Docker Compose stack: the Go application and its own PostgreSQL instance, optionally behind a Caddy reverse proxy that terminates TLS.
 
 ## Choosing an environment
 
-`environment/` holds two self-contained directories. Pick one, `cd` into it, and everything you need is there.
+`environment/` holds two self-contained directories. Each one is complete on its own.
 
 | Directory | Containers | Use when |
 |---|---|---|
@@ -19,12 +23,12 @@ Each directory holds one compose file per source of images:
 |---|---|
 | `docker-compose.yml` | built from this checkout, so it picks up local code changes |
 | `docker-compose.prod.yml` | pulled from GHCR, no Go toolchain or source tree needed |
-| `docker-compose.quickstart.yml` (`https` only) | pulled from GHCR, with Caddy's CA in a Docker volume instead of your trust store |
+| `docker-compose.quickstart.yml` (`https` only) | pulled from GHCR, with Caddy's CA in a Docker volume instead of the host trust store |
 
 A third path, [manual setup](#manual-setup), runs the binaries without containers.
 
 !!! info "Both environments can run at once"
-    They use separate Compose projects (`ignis-http`, `ignis-https`), separate generated container names and separate database volumes, so both can be up together and you connect to whichever you need. Each has its own database and so needs its own seeding.
+    They use separate Compose projects (`ignis-http`, `ignis-https`), separate generated container names and separate database volumes, so both can run at once. Each has its own database and so needs its own seeding.
 
 !!! warning "Upgrading from a checkout made before the project rename"
     The Compose project names are now `ignis-http` and `ignis-https`, previously `building-simulation` for both, and the fixed container names are gone. An existing stack has to come down first, because the old containers still hold those names. Remove them by name, which reaches nothing but ignis:
@@ -34,9 +38,9 @@ A third path, [manual setup](#manual-setup), runs the binaries without container
     docker rm ignis-app ignis-db ignis-reverse-proxy
     ```
 
-    Do not use `docker compose -p building-simulation down`. That targets the project rather than this repository, so on a machine where another service still declares the old project name, it removes that service's containers as well, naming neither.
+    Do not use `docker compose -p building-simulation down`. That targets the project rather than this repository, so on a machine where another service still declares the old project name it removes that service's containers as well, naming neither.
 
-    Each environment now has its own database volume, so seed each one once after starting it. The previous shared volume, `building-simulation_ignis-db-data`, is left in place and no longer mounted; remove it with `docker volume rm building-simulation_ignis-db-data` once you are satisfied the new ones are populated.
+    Each environment now has its own database volume, so seed each one once after starting it. The previous shared volume, `building-simulation_ignis-db-data`, is left in place and no longer mounted; remove it with `docker volume rm building-simulation_ignis-db-data` once the new ones are populated.
 
     If `tentacron-net` already exists from `make tentacron-stack`, `up` fails with a label mismatch, because a network made by `docker network create` carries no Compose labels. Remove it with `docker network rm tentacron-net` while nothing is attached, and the first stack up recreates it correctly.
 
@@ -117,7 +121,7 @@ How `https://localhost` behaves depends on where Caddy's local CA is stored.
 
 | Compose file | CA location | Result |
 |---|---|---|
-| `docker-compose.quickstart.yml` | Docker-managed volume | Never enters your trust store. Expect an untrusted-certificate warning. |
+| `docker-compose.quickstart.yml` | Docker-managed volume | Never enters the host trust store. Expect an untrusted-certificate warning. |
 | `docker-compose.yml`, `docker-compose.prod.yml` | Host directory (`CADDY_DATA_DIR`), created by `caddy trust` | Trusted, no warning, no `-k` needed. |
 
 On the quickstart path, click through the warning in the browser, or pass `-k` (curl), `--no-check-certificate` (wget), or "disable SSL verification" (Postman).
@@ -135,8 +139,8 @@ cd ignis/environment/https
 docker compose -f docker-compose.quickstart.yml up -d
 ```
 
-!!! warning "Docker Desktop: work from a directory under your home folder"
-    Docker Desktop only shares paths under your home directory, or another folder added under File Sharing, into its VM. A working directory under `/tmp` fails with a bind-mount error like "not shared from the host", which does not obviously point at the File Sharing setting. Clone or copy these files under your home directory instead.
+!!! warning "Docker Desktop: work from a directory under the home folder"
+    Docker Desktop only shares paths under the user's home directory, or another folder added under File Sharing, into its VM. A working directory under `/tmp` fails with a bind-mount error such as "not shared from the host", which does not obviously point at the File Sharing setting. Clone or copy these files under the home directory instead.
 
 This starts `db`, then `ignis` once the database reports healthy, then `proxy` once the app reports healthy. Only the proxy publishes a host port (`HOST_HTTPS_PORT`, default `443`).
 
@@ -144,9 +148,9 @@ Then [Seeding the database](#seeding-the-database) and [Verifying](#verifying).
 
 ### From source, with a trusted certificate
 
-Builds `ignis` and `build-db` from this checkout, so it picks up local code changes, and reuses a CA your browser already trusts.
+Builds `ignis` and `build-db` from this checkout, so it picks up local code changes, and reuses a CA the browser already trusts.
 
-Install the `caddy` CLI on the host and run `caddy trust` once. That installs a local CA into your OS and browser trust store, which the proxy then reuses.
+Install the `caddy` CLI on the host and run `caddy trust` once. That installs a local CA into the OS and browser trust store, which the proxy then reuses.
 
 ```bash
 caddy trust
@@ -189,14 +193,14 @@ The TABULA workbook is baked into the `build-db` image, so there is nothing to d
 <compose prefix> exec db psql -U postgres -d ignis -c "\dt tabula.*"
 ```
 
-That lists the seeded tables. Then check the API answers, using the base URL for your environment:
+That lists the seeded tables. Then check that the API answers, using the base URL of the environment in use:
 
 ```bash
 curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8088/ignis/health   # environment/http
 curl -s -o /dev/null -w '%{http_code}\n' https://localhost/ignis/health       # environment/https
 ```
 
-Both return `200`. Add `-k` on the https quickstart path, where the certificate does not chain to a CA you trust.
+Both return `200`. Add `-k` on the https quickstart path, where the certificate does not chain to a trusted CA.
 
 ## Tearing down
 
@@ -242,7 +246,7 @@ For local development without containers.
     cd ignis
     ```
 
-    If you have already cloned without it, run `git lfs install && git lfs pull`. Verify with `ls -l data/tabula-calculator-lite.xlsx`, which should be roughly 11 MB rather than a few hundred bytes.
+    After a clone made without it, run `git lfs install && git lfs pull`. Verify with `ls -l data/tabula-calculator-lite.xlsx`, which should be roughly 11 MB rather than a few hundred bytes.
 
 ### Configuration
 
@@ -250,13 +254,13 @@ This path reads `environment/http/env/app.env` for database settings and `enviro
 
 | Variable | Change to |
 |---|---|
-| `DB_HOST` | `localhost`, or wherever your PostgreSQL instance runs |
-| `DB_PASSWORD` | your own credential, no default |
+| `DB_HOST` | `localhost`, or wherever the PostgreSQL instance runs |
+| `DB_PASSWORD` | a real credential, no default |
 | `DB_SSL_MODE` | `disable` only for a local database on the same machine, `require` everywhere else |
 | `ALLOWED_ORIGINS` | the browser origins calling ignis directly. Leave unset for server-to-server calls, the intended deployment model |
 
 !!! warning "Bind it to localhost"
-    The binary listens on every interface. Nothing in ignis limits who may call it, so keep it off any interface you do not control.
+    The binary listens on every interface. Nothing in ignis limits who may call it, so keep it off any interface whose access is not controlled.
 
 ### Build and run
 
@@ -275,7 +279,7 @@ This produces `bin/ignis`, `bin/build_db`, and `bin/validate`.
 
 ### Validate
 
-Runs the full 17-level TABULA calculation pipeline against every row in the database and checks that each result stays within 2% of the reference value from the workbook.
+Runs the full 17-level TABULA calculation pipeline against every row in the database and checks that each result stays within 2.5% of the reference value from the workbook.
 
 ```bash
 ./bin/validate
@@ -315,7 +319,7 @@ For `environment/http`: `HOST_BIND` and `HOST_PORT` default to `127.0.0.1` and `
 
 For `environment/https`: `CADDY_DATA_DIR` is required; `APP_PORT` and `HOST_HTTPS_PORT` default to `8080` and `443`.
 
-Set `IGNIS_IMAGE_TAG` to pin a release, which is strongly advised for anything you do not want moving underneath you. See [Pinning a version](#pinning-a-version).
+Set `IGNIS_IMAGE_TAG` to pin a release. This is strongly advised for any deployment that should not move on the next publish. See [Pinning a version](#pinning-a-version).
 
 ### 3. Set the site address (https only)
 

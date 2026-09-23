@@ -5,7 +5,7 @@
 
 Go microservice implementing the **EN ISO 13790** annual heating energy demand calculation pipeline derived from [tabula-calculator.xlsx](https://episcope.eu/welcome/) *(Accessed on: 26.06.26)*. The calculation method has been documented in [TABULA CommonCalculationMethod](https://episcope.eu/fileadmin/tabula/public/docs/report/TABULA_CommonCalculationMethod.pdf) *(Accessed on: 26.06.2026)*. The tool covers all European building typologies across 20 countries defined by **TABULA & EPISCOPE (IEE Projects)**.
 
-The results have been validated against the Excel Workbook output. So far **19/20 countries at 100% accuracy in total 2,091 / 2,147 buildings validated.** See the [validation report](docs/validation.md).
+Results are validated against the workbook's own output: **19 of 20 countries at 100% accuracy, 2,091 of 2,147 buildings passing.** See the [validation report](docs/validation.md).
 
 ---
 
@@ -14,7 +14,7 @@ The results have been validated against the Excel Workbook output. So far **19/2
 | Dependency | Version |
 | ---------- | ------- |
 | Go | 1.26+ |
-| PostgreSQL | >= 15 |
+| PostgreSQL | 15 to 17 |
 
 ---
 
@@ -38,7 +38,7 @@ Architecture documentation (arc42): under development, not yet published.
 
 ![test coverage](https://codecov.io/github/THD-Spatial-AI/ignis/graphs/icicle.svg?token=CTUZED1ELJ)
 
-The top section in the graphic above, represents the entire project. Proceeding with folders and finally individual files. The size and color of each slice is representing the number of statements and the coverage, respectively.
+In the graphic above, the top section is the whole project, the sections below it are folders, and the smallest are individual files. Slice size is the number of statements and slice colour is the coverage.
 
 > [!NOTE]
 > **AI usage disclaimer:** Some tests in this repository were written with the assistance of AI coding tools, then reviewed and validated by a maintainer before merging.
