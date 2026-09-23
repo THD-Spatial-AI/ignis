@@ -30,7 +30,7 @@ type TestResult struct {
 	ErrorMessage   string
 }
 
-const tolerancePercent = 2.5 // 2% tolerance for heating demand cross-country variations
+const tolerancePercent = 2.5 // percent, allowed deviation from the TABULA reference q_h_nd
 
 var cfg = config.LoadConfig()
 
@@ -210,7 +210,7 @@ func runPipelineTest(pool *pgxpool.Pool, tableName string, rowID int) TestResult
 		result.PercentError = 100.0
 	}
 
-	// Determine if test passed (allow 2% tolerance for cross-country variations)
+	// Determine if test passed
 	result.Passed = result.PercentError <= tolerancePercent
 
 	return result
