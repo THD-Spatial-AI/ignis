@@ -38,12 +38,11 @@
 # The Caddyfile's site address must match the deployment's real domain, not
 # `localhost`, or Caddy will not serve or provision a certificate for it.
 #
-# Seeding is a one-off admin operation, gated behind the `seed` profile so it
-# never runs on `up`. It DROPS and recreates all country tables from the
-# TABULA workbook baked into the ignis-build-db image, so it needs no source
-# checkout, but run it deliberately and never against a populated production
-# database you care about:
-#   docker compose -f docker-compose.prod.yml --profile seed run --rm build-db
+# `up` seeds an empty database from the TABULA workbook baked into the
+# ignis-build-db image and leaves a populated one alone. ignis starts only
+# after build-db exits successfully, so a failed seed fails `up`. Rebuilding a
+# populated database DROPS and recreates all country tables:
+#   docker compose -f docker-compose.prod.yml run --rm build-db -if-empty=false
 #
 # No endpoint carries an API key. This is deployed only on a network whose
 # access is controlled, and callers are already authenticated by the platform
@@ -79,6 +78,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      build-db:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:$$APP_PORT/ignis/health"]
       interval: 30s
@@ -107,7 +108,7 @@ services:
 
   build-db:
     image: ghcr.io/thd-spatial-ai/ignis-build-db:${IGNIS_IMAGE_TAG:-latest}
-    profiles: [seed]
+    command: ["-if-empty"]   # needs an image from v0.7.0 or later
     env_file: [env/app.env]
     depends_on:
       db:

@@ -8,16 +8,14 @@
 #
 # ---
 # Usage:  docker compose -f docker-compose.quickstart.yml up -d
-#         docker compose -f docker-compose.quickstart.yml --profile seed run --rm build-db
 # ---
 #
-# Seed the database once after first start, using the command above.
-# build-db is gated behind the `seed` profile so it never runs on `up`:
-# it DROPS and recreates all country tables from the TABULA workbook baked
-# into its image. The workbook is in the image itself (see
-# ignis-db.dockerfile), so seeding needs no source checkout and no manual
-# download. Until it has run once, the schema is empty and every endpoint
-# that reads it will fail.
+# `up` seeds an empty database from the TABULA workbook baked into the
+# ignis-build-db image (see ignis-db.dockerfile), so seeding needs no source
+# checkout and no manual download. A populated database is left alone, and
+# ignis starts only after build-db exits successfully. Rebuilding a populated
+# database DROPS and recreates all country tables:
+#   docker compose -f docker-compose.quickstart.yml run --rm build-db -if-empty=false
 #
 # Trade-off vs. docker-compose.prod.yml: Caddy's local CA lives in a
 # Docker-managed volume (caddy-data) instead of a host bind mount, so it is
@@ -62,6 +60,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      build-db:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:$$APP_PORT/ignis/health"]
       interval: 30s
@@ -87,7 +87,7 @@ services:
 
   build-db:
     image: ghcr.io/thd-spatial-ai/ignis-build-db:${IGNIS_IMAGE_TAG:-latest}
-    profiles: [seed]
+    command: ["-if-empty"]   # needs an image from v0.7.0 or later
     env_file: [env/app.env]
     depends_on:
       db:
