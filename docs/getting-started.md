@@ -105,9 +105,9 @@ To build from this checkout instead, so local code changes are picked up, drop t
 | `HOST_PORT` | Host port the app is published on | `8088` |
 | `APP_PORT` | The app's internal listen port | `8080` |
 
-### 2. Seed and verify
+### 2. Verify
 
-Follow [Seeding the database](#seeding-the-database), then [Verifying](#verifying). The base URL is `http://localhost:8088`.
+`up` seeds an empty database before it starts `ignis`, so there is no separate seed step (see [Seeding the database](#seeding-the-database)). Follow [Verifying](#verifying). The base URL is `http://localhost:8088`.
 
 ---
 
@@ -176,6 +176,22 @@ Then [Seeding the database](#seeding-the-database) and [Verifying](#verifying).
 
 ## Seeding the database
 
+The TABULA workbook is baked into the `build-db` image, so there is nothing to download. A seed runs in one transaction: if it fails, nothing is committed and any previous tables stay.
+
+`<compose prefix>` below is `docker compose` for `docker-compose.yml`, or `docker compose -f <file>` for the others.
+
+### environment/http
+
+`up` runs `build-db -if-empty` and starts `ignis` only once it exits successfully. An empty database is seeded, a populated one is left unchanged, and a failed seed fails `up` with `service "build-db" didn't complete successfully`.
+
+To rebuild a populated database from the workbook, which drops and recreates all country tables:
+
+```bash
+<compose prefix> run --rm build-db -if-empty=false
+```
+
+### environment/https
+
 !!! warning "Required before first use, and destructive"
     A fresh `db` volume is empty. Seeding drops and recreates all country tables, so it is gated behind the `seed` profile and never runs automatically. Until it has run once, every endpoint that reads the schema will fail.
 
@@ -183,9 +199,7 @@ Then [Seeding the database](#seeding-the-database) and [Verifying](#verifying).
 <compose prefix> --profile seed run --rm build-db
 ```
 
-`<compose prefix>` is `docker compose` for `docker-compose.yml`, or `docker compose -f <file>` for the others. On a path that pulls images, `--profile seed` is also needed on the `pull`, since profile-gated services are otherwise skipped.
-
-The TABULA workbook is baked into the `build-db` image, so there is nothing to download.
+On a path that pulls images, `--profile seed` is also needed on the `pull`, since profile-gated services are otherwise skipped.
 
 ## Verifying
 
@@ -208,7 +222,7 @@ Both return `200`. Add `-k` on the https quickstart path, where the certificate 
 <compose prefix> down -v
 ```
 
-The `-v` removes the database volume, so the next start needs seeding again. Omit it to keep the seeded data.
+The `-v` removes the database volume, so the next start seeds again (http) or needs seeding again (https). Omit it to keep the seeded data.
 
 ## Pinning a version
 
@@ -299,7 +313,7 @@ Copy across the whole directory: the compose file, `.env`, the `env/` directory,
     | Compose service | Published image | Role |
     |---|---|---|
     | `ignis` | `ghcr.io/thd-spatial-ai/ignis` | HTTP API server |
-    | `build-db` | `ghcr.io/thd-spatial-ai/ignis-build-db` | one-off TABULA seeder, `seed` profile only |
+    | `build-db` | `ghcr.io/thd-spatial-ai/ignis-build-db` | TABULA seeder: on `up` in `environment/http`, `seed` profile only in `environment/https` |
     | `db` | `postgres:17-alpine` (not built here) | PostgreSQL database |
 
     Service names and image names are independent: the seeder's image keeps the `ignis-` prefix it publishes under. `IGNIS_IMAGE_TAG` pins both `ghcr.io` images to one release. The service is named `ignis` because a service name is registered as a DNS alias on every network it joins, `tentacron-net` included, so it has to be unique across the workspace; `db` and `build-db` never join it and so stay short.
@@ -328,16 +342,25 @@ Set `IGNIS_IMAGE_TAG` to pin a release. This is strongly advised for any deploym
 
 ### 4. Pull, start, seed
 
+For `environment/http`, `up` seeds an empty database itself:
+
+```bash
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d
+```
+
+For `environment/https`:
+
 ```bash
 docker compose -f docker-compose.prod.yml --profile seed pull
 docker compose -f docker-compose.prod.yml up -d
 docker compose -f docker-compose.prod.yml --profile seed run --rm build-db
 ```
 
-!!! warning "Pull first, and include the seed profile"
-    With `IGNIS_IMAGE_TAG` unset, a host that already has `latest` cached keeps running the old build after a release, with nothing on that host revealing it. The `--profile seed` on the pull is what fetches `build-db`, since profile-gated services are otherwise skipped.
+!!! warning "Pull first"
+    With `IGNIS_IMAGE_TAG` unset, a host that already has `latest` cached keeps running the old build after a release, with nothing on that host revealing it. On `environment/https`, the `--profile seed` on the pull is what fetches `build-db`, since profile-gated services are otherwise skipped.
 
-Seed only on first deployment. Running it against a populated database drops every country table.
+On `environment/https`, seed only on first deployment. Running it against a populated database drops every country table.
 
 ### 5. Verify
 
