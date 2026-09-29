@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"github.com/thd-spatial-ai/ignis/internal/config"
 	importer "github.com/thd-spatial-ai/ignis/internal/db"
@@ -14,6 +15,9 @@ import (
 )
 
 func main() {
+	ifEmpty := flag.Bool("if-empty", false, "skip the rebuild when the tabula schema already holds tables")
+	flag.Parse()
+
 	startTime := time.Now()
 	fmt.Println("============================================================")
 	fmt.Println("=== ignis Database Rebuild Tool ===")
@@ -47,6 +51,17 @@ func main() {
 	}
 	fmt.Println("Database connection successful")
 	fmt.Println("")
+
+	if *ifEmpty {
+		seeded, err := importer.IsSeeded(context.Background(), pool, cfg.DB.Schemas.Tabula)
+		if err != nil {
+			log.Fatalf("Checking whether the database is seeded: %v", err)
+		}
+		if seeded {
+			fmt.Printf("Schema %s already holds tables, leaving it unchanged (-if-empty)\n", cfg.DB.Schemas.Tabula)
+			return
+		}
+	}
 
 	// Run table constructor
 	fmt.Println("Starting table construction...")
