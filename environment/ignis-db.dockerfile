@@ -2,8 +2,8 @@
 
 # One-off DB rebuild job, not a long-running service. With no arguments
 # build_db DROPS and recreates all country tables from the Excel workbook.
-# environment/http runs it on `up` with -if-empty, which leaves a populated
-# database alone; the other environments gate it behind the `seed` profile.
+# Every compose file runs it on `up` with -if-empty, which leaves a populated
+# database alone.
 #
 # Despite the filename, this builds the `ignis-build-db` seeder image, not
 # the database. The database is the `ignis-db` service, plain postgres with

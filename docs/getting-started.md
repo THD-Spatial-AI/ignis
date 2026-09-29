@@ -28,7 +28,7 @@ Each directory holds one compose file per source of images:
 A third path, [manual setup](#manual-setup), runs the binaries without containers.
 
 !!! info "Both environments can run at once"
-    They use separate Compose projects (`ignis-http`, `ignis-https`), separate generated container names and separate database volumes, so both can run at once. Each has its own database and so needs its own seeding.
+    They use separate Compose projects (`ignis-http`, `ignis-https`), separate generated container names and separate database volumes, so both can run at once. Each has its own database and seeds it on its own `up`.
 
 !!! warning "Upgrading from a checkout made before the project rename"
     The Compose project names are now `ignis-http` and `ignis-https`, previously `building-simulation` for both, and the fixed container names are gone. An existing stack has to come down first, because the old containers still hold those names. Remove them by name, which reaches nothing but ignis:
@@ -40,7 +40,7 @@ A third path, [manual setup](#manual-setup), runs the binaries without container
 
     Do not use `docker compose -p building-simulation down`. That targets the project rather than this repository, so on a machine where another service still declares the old project name it removes that service's containers as well, naming neither.
 
-    Each environment now has its own database volume, so seed each one once after starting it. The previous shared volume, `building-simulation_ignis-db-data`, is left in place and no longer mounted; remove it with `docker volume rm building-simulation_ignis-db-data` once the new ones are populated.
+    Each environment now has its own database volume, and each seeds itself on its first `up`. The previous shared volume, `building-simulation_ignis-db-data`, is left in place and no longer mounted; remove it with `docker volume rm building-simulation_ignis-db-data` once the new ones are populated.
 
     If `tentacron-net` already exists from `make tentacron-stack`, `up` fails with a label mismatch, because a network made by `docker network create` carries no Compose labels. Remove it with `docker network rm tentacron-net` while nothing is attached, and the first stack up recreates it correctly.
 
@@ -107,7 +107,7 @@ To build from this checkout instead, so local code changes are picked up, drop t
 
 ### 2. Verify
 
-`up` seeds an empty database before it starts `ignis`, so there is no separate seed step (see [Seeding the database](#seeding-the-database)). Follow [Verifying](#verifying). The base URL is `http://localhost:8088`.
+`up` seeds an empty database before it starts `ignis` (see [Seeding the database](#seeding-the-database)). Follow [Verifying](#verifying). The base URL is `http://localhost:8088`.
 
 ---
 
@@ -144,7 +144,7 @@ docker compose -f docker-compose.quickstart.yml up -d
 
 This starts `db`, then `ignis` once the database reports healthy, then `proxy` once the app reports healthy. Only the proxy publishes a host port (`HOST_HTTPS_PORT`, default `443`).
 
-Then [Seeding the database](#seeding-the-database) and [Verifying](#verifying).
+`up` seeds an empty database before it starts `ignis` (see [Seeding the database](#seeding-the-database)). Then [Verifying](#verifying).
 
 ### From source, with a trusted certificate
 
@@ -170,7 +170,7 @@ docker compose up -d
 !!! warning "CADDY_DATA_DIR"
     A wrong value silently produces an untrusted certificate. A missing one fails validation instead, reported by name: `required variable CADDY_DATA_DIR is missing a value`.
 
-Then [Seeding the database](#seeding-the-database) and [Verifying](#verifying).
+`up` seeds an empty database before it starts `ignis` (see [Seeding the database](#seeding-the-database)). Then [Verifying](#verifying).
 
 ---
 
@@ -178,28 +178,16 @@ Then [Seeding the database](#seeding-the-database) and [Verifying](#verifying).
 
 The TABULA workbook is baked into the `build-db` image, so there is nothing to download. A seed runs in one transaction: if it fails, nothing is committed and any previous tables stay.
 
-`<compose prefix>` below is `docker compose` for `docker-compose.yml`, or `docker compose -f <file>` for the others.
-
-### environment/http
-
 `up` runs `build-db -if-empty` and starts `ignis` only once it exits successfully. An empty database is seeded, a populated one is left unchanged, and a failed seed fails `up` with `service "build-db" didn't complete successfully`.
 
-To rebuild a populated database from the workbook, which drops and recreates all country tables:
+!!! warning "Rebuilding is destructive"
+    Rebuilding a populated database from the workbook drops and recreates all country tables:
 
-```bash
-<compose prefix> run --rm build-db -if-empty=false
-```
+    ```bash
+    <compose prefix> run --rm build-db -if-empty=false
+    ```
 
-### environment/https
-
-!!! warning "Required before first use, and destructive"
-    A fresh `db` volume is empty. Seeding drops and recreates all country tables, so it is gated behind the `seed` profile and never runs automatically. Until it has run once, every endpoint that reads the schema will fail.
-
-```bash
-<compose prefix> --profile seed run --rm build-db
-```
-
-On a path that pulls images, `--profile seed` is also needed on the `pull`, since profile-gated services are otherwise skipped.
+    `<compose prefix>` is `docker compose` for `docker-compose.yml`, or `docker compose -f <file>` for the others.
 
 ## Verifying
 
@@ -222,20 +210,20 @@ Both return `200`. Add `-k` on the https quickstart path, where the certificate 
 <compose prefix> down -v
 ```
 
-The `-v` removes the database volume, so the next start seeds again (http) or needs seeding again (https). Omit it to keep the seeded data.
+The `-v` removes the database volume, so the next `up` seeds again. Omit it to keep the seeded data.
 
 ## Pinning a version
 
 The paths that pull images default to the `latest` published release. To pin a specific one, set `IGNIS_IMAGE_TAG` before starting:
 
 ```bash
-export IGNIS_IMAGE_TAG=0.2.4-alpha
-<compose prefix> --profile seed pull
+export IGNIS_IMAGE_TAG=0.7.0
+<compose prefix> pull
 <compose prefix> up -d
 ```
 
 !!! info "Tag format"
-    Published image tags carry no `v` prefix, even though the Git tags do. Release `v0.2.4-alpha` publishes as `0.2.4-alpha`. Export the variable rather than prefixing a single command, so the app and seed images come from the same release.
+    Published image tags carry no `v` prefix, even though the Git tags do. Release `v0.7.0` publishes as `0.7.0`, the first release whose `build-db` accepts `-if-empty`. Export the variable rather than prefixing a single command, so the app and seed images come from the same release.
 
 ---
 
@@ -313,7 +301,7 @@ Copy across the whole directory: the compose file, `.env`, the `env/` directory,
     | Compose service | Published image | Role |
     |---|---|---|
     | `ignis` | `ghcr.io/thd-spatial-ai/ignis` | HTTP API server |
-    | `build-db` | `ghcr.io/thd-spatial-ai/ignis-build-db` | TABULA seeder: on `up` in `environment/http`, `seed` profile only in `environment/https` |
+    | `build-db` | `ghcr.io/thd-spatial-ai/ignis-build-db` | TABULA seeder, runs on `up` and exits |
     | `db` | `postgres:17-alpine` (not built here) | PostgreSQL database |
 
     Service names and image names are independent: the seeder's image keeps the `ignis-` prefix it publishes under. `IGNIS_IMAGE_TAG` pins both `ghcr.io` images to one release. The service is named `ignis` because a service name is registered as a DNS alias on every network it joins, `tentacron-net` included, so it has to be unique across the workspace; `db` and `build-db` never join it and so stay short.
@@ -340,27 +328,17 @@ Set `IGNIS_IMAGE_TAG` to pin a release. This is strongly advised for any deploym
 !!! warning "Set IGNIS_SITE_ADDRESS before deploying"
     It defaults to `localhost`. Set it in `env/proxy.env` to the deployment's real domain, or Caddy will neither serve it nor provision a certificate for it. TLS-ALPN-01 (Caddy's default ACME challenge) works entirely over port 443, which is all the compose file publishes, so no port change is needed.
 
-### 4. Pull, start, seed
+### 4. Pull and start
 
-For `environment/http`, `up` seeds an empty database itself:
+`up` seeds an empty database itself.
 
 ```bash
 docker compose -f docker-compose.prod.yml pull
 docker compose -f docker-compose.prod.yml up -d
 ```
 
-For `environment/https`:
-
-```bash
-docker compose -f docker-compose.prod.yml --profile seed pull
-docker compose -f docker-compose.prod.yml up -d
-docker compose -f docker-compose.prod.yml --profile seed run --rm build-db
-```
-
 !!! warning "Pull first"
-    With `IGNIS_IMAGE_TAG` unset, a host that already has `latest` cached keeps running the old build after a release, with nothing on that host revealing it. On `environment/https`, the `--profile seed` on the pull is what fetches `build-db`, since profile-gated services are otherwise skipped.
-
-On `environment/https`, seed only on first deployment. Running it against a populated database drops every country table.
+    With `IGNIS_IMAGE_TAG` unset, a host that already has `latest` cached keeps running the old build after a release, with nothing on that host revealing it.
 
 ### 5. Verify
 
