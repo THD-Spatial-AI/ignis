@@ -181,3 +181,72 @@ func TestTableConstructor_Run_missingWorkbook_returnsError(t *testing.T) {
 		t.Fatal("expected error for missing workbook")
 	}
 }
+
+// withUninsertableRow adds a Date column to the fixture at path whose first
+// DE row holds a value Postgres rejects, so the insert for that row fails.
+func withUninsertableRow(t *testing.T, path string) {
+	t.Helper()
+	f, err := excelize.OpenFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	sheet := "Calc.Set.Building"
+	for cell, v := range map[string]string{"F1": "Date_Test", "F6": "Date", "F13": "not-a-date"} {
+		if err := f.SetCellValue(sheet, cell, v); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := f.Save(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestTableConstructor_Run_failedInsert_returnsErrorAndLeavesNoTables(t *testing.T) {
+	xlsxPath := writeFixtureWorkbook(t)
+	withUninsertableRow(t, xlsxPath)
+	cfg := &config.Config{
+		Data: &config.DataPaths{ExcelFile: xlsxPath},
+		DB:   &config.DBConfig{Schemas: &config.Schemas{Tabula: "tc_failed"}},
+	}
+
+	if err := importer.NewTableConstructor(testPool, cfg).Run(); err == nil {
+		t.Fatal("Run() returned nil for a row Postgres rejects")
+	}
+
+	seeded, err := importer.IsSeeded(context.Background(), testPool, "tc_failed")
+	if err != nil {
+		t.Fatalf("IsSeeded: %v", err)
+	}
+	if seeded {
+		t.Error("a failed Run left tables behind in tc_failed")
+	}
+}
+
+func TestIsSeeded_reportsWhetherSchemaHasTables(t *testing.T) {
+	ctx := context.Background()
+	cfg := &config.Config{
+		Data: &config.DataPaths{ExcelFile: writeFixtureWorkbook(t)},
+		DB:   &config.DBConfig{Schemas: &config.Schemas{Tabula: "tc_seeded"}},
+	}
+
+	seeded, err := importer.IsSeeded(ctx, testPool, "tc_seeded")
+	if err != nil {
+		t.Fatalf("IsSeeded before Run: %v", err)
+	}
+	if seeded {
+		t.Fatal("IsSeeded = true before any Run")
+	}
+
+	if err := importer.NewTableConstructor(testPool, cfg).Run(); err != nil {
+		t.Fatalf("Run() unexpected error: %v", err)
+	}
+
+	seeded, err = importer.IsSeeded(ctx, testPool, "tc_seeded")
+	if err != nil {
+		t.Fatalf("IsSeeded after Run: %v", err)
+	}
+	if !seeded {
+		t.Error("IsSeeded = false after a successful Run")
+	}
+}
