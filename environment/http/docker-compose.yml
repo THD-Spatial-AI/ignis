@@ -4,7 +4,6 @@
 #
 # ---
 # Usage:  docker compose up -d
-#         docker compose --profile seed run --rm build-db
 # ---
 #
 # No reverse proxy, no TLS, no API key, and nothing to install on the host but
@@ -68,6 +67,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      build-db:
+        condition: service_completed_successfully
     # Bound to the loopback interface by default: nothing outside this host can
     # connect. Set HOST_BIND=0.0.0.0 in .env to publish on every interface, and
     # only where something else (a firewall, an upstream proxy) controls who
@@ -82,14 +83,12 @@ services:
       retries: 3
       start_period: 10s
 
-  # One-off DB seed/rebuild job, NOT part of the normal `up` path (see
-  # `profiles` below). build_db DROPS and recreates all country tables from
-  # the Excel workbook — invoke deliberately, never automatically on startup:
-  #   docker compose --profile seed run --rm build-db
-  # No `container_name`: this is only ever started via `run`, which assigns
-  # its own name, and a fixed one would collide rather than help.
+  # Seeds an empty database on `up` and exits; a populated one is left alone
+  # (-if-empty) and ignis waits for it to succeed. Rebuilding a populated
+  # database DROPS and recreates all country tables:
+  #   docker compose run --rm build-db -if-empty=false
   build-db:
-    profiles: ["seed"]
+    command: ["-if-empty"]
     build:
       context: ./../..
       dockerfile: environment/ignis-db.dockerfile

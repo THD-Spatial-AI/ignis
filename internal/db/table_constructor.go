@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/xuri/excelize/v2"
 )
@@ -54,6 +55,7 @@ type HeaderInfo struct {
 
 type TableConstructor struct {
 	conn          *pgxpool.Pool
+	tx            pgx.Tx // open only for the duration of Run
 	cfg           *config.Config
 	xlsxFile      *excelize.File
 	headers       map[string]*HeaderInfo
@@ -70,6 +72,22 @@ func NewTableConstructor(conn *pgxpool.Pool, cfg *config.Config) *TableConstruct
 	}
 }
 
+// IsSeeded reports whether schema holds any table. Run writes in a single
+// transaction, so a schema with tables is one a Run completed.
+func IsSeeded(ctx context.Context, pool *pgxpool.Pool, schema string) (bool, error) {
+	var seeded bool
+	err := pool.QueryRow(ctx,
+		`SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = $1)`,
+		schema,
+	).Scan(&seeded)
+	if err != nil {
+		return false, fmt.Errorf("checking for tables in schema %s: %w", schema, err)
+	}
+	return seeded, nil
+}
+
+// Run drops and recreates every country table from the workbook in one
+// transaction: on any error nothing is committed and the previous tables stay.
 func (tc *TableConstructor) Run() error {
 	defer tc.close()
 
@@ -84,9 +102,26 @@ func (tc *TableConstructor) Run() error {
 
 	tc.extractHeaders(rows)
 	tc.extractCountryCodes(rows)
-	tc.createTables()
-	tc.insertData(rows)
-	tc.updateDropdownColumns()
+
+	ctx := context.Background()
+	tc.tx, err = tc.conn.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("starting seed transaction: %w", err)
+	}
+	defer tc.tx.Rollback(ctx) // no-op once committed
+
+	if err := tc.createTables(); err != nil {
+		return err
+	}
+	if err := tc.insertData(rows); err != nil {
+		return err
+	}
+	if err := tc.updateDropdownColumns(); err != nil {
+		return err
+	}
+	if err := tc.tx.Commit(ctx); err != nil {
+		return fmt.Errorf("committing seed transaction: %w", err)
+	}
 
 	utils.Info.Println("Table construction completed successfully")
 	return nil
@@ -205,8 +240,11 @@ func (tc *TableConstructor) extractCountryCodes(rows [][]string) {
 	sort.Strings(tc.countryCodes)
 }
 
-func (tc *TableConstructor) createTables() {
-	tc.conn.Exec(context.Background(), fmt.Sprintf("CREATE SCHEMA IF NOT EXISTS %s", tc.cfg.DB.Schemas.Tabula))
+func (tc *TableConstructor) createTables() error {
+	schema := tc.cfg.DB.Schemas.Tabula
+	if _, err := tc.tx.Exec(context.Background(), fmt.Sprintf("CREATE SCHEMA IF NOT EXISTS %s", schema)); err != nil {
+		return fmt.Errorf("creating schema %s: %w", schema, err)
+	}
 
 	var cols []string
 	for header, info := range tc.headers {
@@ -219,12 +257,17 @@ func (tc *TableConstructor) createTables() {
 
 	for _, code := range tc.countryCodes {
 		table := fmt.Sprintf("%s.%s", tc.cfg.DB.Schemas.Tabula, tc.countryHelper.CodeToCountry(code))
-		tc.conn.Exec(context.Background(), fmt.Sprintf("DROP TABLE IF EXISTS %s CASCADE", table))
-		tc.conn.Exec(context.Background(), fmt.Sprintf("CREATE TABLE %s (id SERIAL PRIMARY KEY, %s)", table, strings.Join(cols, ", ")))
+		if _, err := tc.tx.Exec(context.Background(), fmt.Sprintf("DROP TABLE IF EXISTS %s CASCADE", table)); err != nil {
+			return fmt.Errorf("dropping table %s: %w", table, err)
+		}
+		if _, err := tc.tx.Exec(context.Background(), fmt.Sprintf("CREATE TABLE %s (id SERIAL PRIMARY KEY, %s)", table, strings.Join(cols, ", "))); err != nil {
+			return fmt.Errorf("creating table %s: %w", table, err)
+		}
 	}
+	return nil
 }
 
-func (tc *TableConstructor) insertData(rows [][]string) {
+func (tc *TableConstructor) insertData(rows [][]string) error {
 	headerMap := make(map[string]int)
 	for i, header := range rows[0] {
 		headerMap[header] = i
@@ -243,11 +286,14 @@ func (tc *TableConstructor) insertData(rows [][]string) {
 			continue
 		}
 
-		tc.insertRow(code, headerMap, rows[i])
+		if err := tc.insertRow(code, headerMap, rows[i]); err != nil {
+			return fmt.Errorf("workbook row %d: %w", i+1, err)
+		}
 	}
+	return nil
 }
 
-func (tc *TableConstructor) insertRow(countryCode string, headerMap map[string]int, dataRow []string) {
+func (tc *TableConstructor) insertRow(countryCode string, headerMap map[string]int, dataRow []string) error {
 	table := fmt.Sprintf("%s.%s", tc.cfg.DB.Schemas.Tabula, tc.countryHelper.CodeToCountry(countryCode))
 
 	var cols, placeholders []string
@@ -290,13 +336,13 @@ func (tc *TableConstructor) insertRow(countryCode string, headerMap map[string]i
 	}
 
 	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", table, strings.Join(cols, ", "), strings.Join(placeholders, ", "))
-	_, err := tc.conn.Exec(context.Background(), query, vals...)
-	if err != nil {
-		utils.Error.Printf("Failed to insert row into %s: %v\n", table, err)
+	if _, err := tc.tx.Exec(context.Background(), query, vals...); err != nil {
+		return fmt.Errorf("inserting into %s: %w", table, err)
 	}
+	return nil
 }
 
-func (tc *TableConstructor) updateDropdownColumns() {
+func (tc *TableConstructor) updateDropdownColumns() error {
 	for _, code := range tc.countryCodes {
 		table := fmt.Sprintf("%s.%s", tc.cfg.DB.Schemas.Tabula, tc.countryHelper.CodeToCountry(code))
 
@@ -312,9 +358,12 @@ func (tc *TableConstructor) updateDropdownColumns() {
 		}
 
 		if len(updates) > 0 {
-			tc.conn.Exec(context.Background(), fmt.Sprintf("UPDATE %s SET %s", table, strings.Join(updates, ", ")))
+			if _, err := tc.tx.Exec(context.Background(), fmt.Sprintf("UPDATE %s SET %s", table, strings.Join(updates, ", "))); err != nil {
+				return fmt.Errorf("setting dropdown columns on %s: %w", table, err)
+			}
 		}
 	}
+	return nil
 }
 
 func (tc *TableConstructor) close() error {

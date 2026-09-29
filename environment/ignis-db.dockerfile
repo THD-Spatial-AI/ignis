@@ -1,10 +1,9 @@
 # syntax=docker/dockerfile:1
 
-# One-off DB rebuild job — NOT a long-running service. build_db DROPS and
-# recreates all country tables from the Excel workbook (see cmd/build_db's
-# own startup banner). Never wire this into a container's default startup;
-# it must only run when explicitly invoked (see the compose files'
-# `ignis-build-db` service, gated behind the `seed` profile).
+# One-off DB rebuild job, not a long-running service. With no arguments
+# build_db DROPS and recreates all country tables from the Excel workbook.
+# environment/http runs it on `up` with -if-empty, which leaves a populated
+# database alone; the other environments gate it behind the `seed` profile.
 #
 # Despite the filename, this builds the `ignis-build-db` seeder image, not
 # the database. The database is the `ignis-db` service, plain postgres with
