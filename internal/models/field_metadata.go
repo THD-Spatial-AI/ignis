@@ -308,7 +308,7 @@ var AllFieldMetadata = []FieldMetadata{
 		Key:               "c_m",
 		Group:             "HeatTransfer",
 		Path:              "AdvancedParameters.HeatTransfer.c_m",
-		Unit:              "J/(m²K)",
+		Unit:              "Wh/(m²K)",
 		Label:             "Thermal mass",
 		SimpleDescription: "How much heat the building's structure (walls, floors) can store — heavier, denser buildings store more.",
 		ExpertDescription: "Internal heat capacity per m² of useful floor area.",
