@@ -543,10 +543,10 @@ components:
           type: number
           format: double
           description: >
-            Overrides HeatTransfer.C_m (J/(m²K)), the internal heat capacity per m²
+            Overrides HeatTransfer.C_m (Wh/(m²K)), the internal heat capacity per m²
             of useful floor area. Feeds the gain-utilization time constant
             (calc_level_12.go). Must be greater than 0.
-          example: 165000
+          example: 45
         surfaces:
           type: array
           description: >

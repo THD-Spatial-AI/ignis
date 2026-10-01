@@ -82,7 +82,7 @@
     "c_m": {
       "type": "number",
       "exclusiveMinimum": 0,
-      "description": "Overrides the effective heat capacity, J/K."
+      "description": "Overrides the internal heat capacity per m² of reference floor area, Wh/(m²K)."
     },
     "surfaces": {
       "type": "array",

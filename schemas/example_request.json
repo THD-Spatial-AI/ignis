@@ -14,7 +14,7 @@
   "n_Storey": 3,
   "n_air_infiltration": 0.15,
   "n_air_use": 0.4,
-  "c_m": 165000,
+  "c_m": 45,
   "surfaces": [
     {"id": "wall-1", "type": "wall", "area": 60.0, "u_value": 0.8, "azimuth": 180},
     {"id": "wall-2", "type": "wall", "area": 45.0, "u_value": 0.8, "azimuth": 90},
