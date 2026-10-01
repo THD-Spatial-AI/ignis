@@ -1,0 +1,632 @@
+openapi: 3.0.3
+
+info:
+  title: ignis API
+  version: 1.0.0
+  description: |
+    ignis calculates annual heating energy demand (`q_h_nd`, in kWh/(m²·a))
+    for European building typologies, following EN ISO 13790 over the TABULA
+    building dataset. Given a TABULA variant code, it returns the demand and the
+    underlying parameters. All endpoints are read-only.
+
+    ## Authentication
+
+    ignis carries no credential of its own and asks for none. Every endpoint
+    below is reachable by anything that can open a connection to it, so a
+    deployment decides who that is at the network layer. Deploy it only on a
+    network whose access you control, behind a platform that has already
+    authenticated the end user.
+
+    If the system calling ignis has its own user-facing login (EnerPlanET,
+    for example, uses Keycloak), that login authenticates the user *to that
+    system*; ignis never sees it. That system's backend then calls ignis on
+    the user's behalf.
+
+    Do not publish ignis on a public interface.
+  license:
+    name: MIT
+    url: https://github.com/thd-spatial-ai/ignis/blob/main/LICENSE
+  contact:
+    name: THD-Spatial-AI
+    url: https://github.com/thd-spatial-ai/
+
+# Explicitly no security scheme. ignis carries no credential and asks for none;
+# reachability is decided at the network layer (ADR-004). The empty list states
+# that, and is what satisfies redocly's security-defined rule in the docs
+# workflow.
+security: []
+
+servers:
+  - url: http://localhost:8088
+    description: Local development, environment/http (no proxy, no TLS)
+  - url: https://localhost
+    description: Local development, environment/https (Caddy terminates TLS)
+  - url: https://{host}
+    description: Deployed behind the platform's ingress
+    variables:
+      host:
+        default: ignis.example.org
+        description: The host ignis is published on
+
+tags:
+  - name: Health
+    description: Liveness check
+  - name: Variants
+    description: Look up TABULA building variant codes
+  - name: Data
+    description: Read building parameters and field metadata
+  - name: Calculation
+    description: Run the heating-demand pipeline
+
+
+paths:
+  /ignis/health:
+    get:
+      tags: [Health]
+      operationId: checkHealth
+      summary: Liveness check
+      description: Returns 200 while the server is running. Does not check the database.
+      responses:
+        "200":
+          description: Server is up
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /api/v1/variants/{country_iso2}:
+    get:
+      tags: [Variants]
+      operationId: listVariants
+      summary: List all variant codes for a country
+      parameters:
+        - $ref: "#/components/parameters/CountryIso2"
+      responses:
+        "200":
+          description: Variant codes for the country
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VariantsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/variants/{country_iso2}/match:
+    get:
+      tags: [Variants]
+      operationId: matchVariant
+      summary: Match refurbishment variants for a building type and period
+      description: >
+        Returns the refurbishment levels for one building type and construction
+        period, ordered from existing state to most refurbished. Give the period
+        either directly (period) or as a construction year (year), which ignis
+        resolves to the period whose band contains it for that country and type.
+        A year before the earliest or after the latest band defined for that
+        type resolves to the oldest or newest period rather than failing to
+        match. A year that falls in a gap between two defined bands, or a type
+        with no bands at all, returns an empty data list.
+      parameters:
+        - $ref: "#/components/parameters/CountryIso2"
+        - name: type
+          in: query
+          required: true
+          description: TABULA building type code
+          schema:
+            type: string
+            enum: [SFH, TH, MFH, AB]
+          example: SFH
+        - name: period
+          in: query
+          required: false
+          description: >
+            TABULA construction-period code. Exactly one of period or year is
+            required.
+          schema:
+            type: string
+          example: "01"
+        - name: year
+          in: query
+          required: false
+          description: >
+            Construction year, resolved to a period. Exactly one of period or
+            year is required. Must be a non-negative integer no later than the
+            current calendar year.
+          schema:
+            type: integer
+            minimum: 0
+          example: 1975
+      responses:
+        "200":
+          description: Matched refurbishment levels
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MatchResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/periods/{country_iso2}:
+    get:
+      tags: [Variants]
+      operationId: listPeriods
+      summary: List a country's construction-year bands
+      description: >
+        The construction periods for a country, oldest first. year_from 0 is
+        open-ended (oldest band); year_to 9999 is open-ended (newest band).
+        period is the value the match endpoint's period parameter takes.
+      parameters:
+        - $ref: "#/components/parameters/CountryIso2"
+      responses:
+        "200":
+          description: Construction-year bands for the country
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PeriodsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/v1/data/{code}:
+    get:
+      tags: [Data]
+      operationId: getData
+      summary: Get raw TABULA parameters for a variant
+      parameters:
+        - $ref: "#/components/parameters/VariantCode"
+      responses:
+        "200":
+          description: Full parameter set for the variant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/fields:
+    get:
+      tags: [Data]
+      operationId: listFields
+      summary: List field metadata
+      description: >
+        Static description of every TABULA input field: where it sits in a
+        /data/{code} response, its unit, a short label, and plain and technical
+        descriptions. Identical for every country.
+      responses:
+        "200":
+          description: Field metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FieldsResponse"
+
+  /api/v1/calculate/{code}:
+    post:
+      tags: [Calculation]
+      operationId: calculate
+      summary: Run the heating-demand pipeline for a variant
+      parameters:
+        - $ref: "#/components/parameters/VariantCode"
+      requestBody:
+        required: false
+        description: Optional overrides. Omit the body to use the TABULA defaults.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CalculateRequest"
+      responses:
+        "200":
+          description: Calculated annual heating demand
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalculateResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+components:
+  parameters:
+    CountryIso2:
+      name: country_iso2
+      in: path
+      required: true
+      description: ISO 3166-1 alpha-2 country code
+      schema:
+        type: string
+        minLength: 2
+        maxLength: 2
+      example: DE
+    VariantCode:
+      name: code
+      in: path
+      required: true
+      description: >
+        TABULA variant code. The first two characters are the ISO 3166-1 alpha-2
+        country code, which selects the database table.
+      schema:
+        type: string
+      example: DE.N.SFH.01.Gen.ReEx.001.001
+
+  responses:
+    BadRequest:
+      description: >
+        Invalid input (unknown country, malformed code, a match request missing
+        type or giving neither or both of period and year or a non-integer year,
+        or an invalid CalculateRequest override (A_ref, h_room, n_Storey or c_m)
+        not greater than 0, HeatingDays, I_Sol_*, n_air_infiltration, or
+        n_air_use negative, a thermal-bridging ΔU negative, or a surface with an
+        unknown type / non-positive area / non-positive u_value)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: no TABULA dataset configured for XX
+    NotFound:
+      description: Variant code not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: Variant not found
+    ServerError:
+      description: Pipeline failed or returned a non-finite result
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+      required: [status]
+
+    VariantsResponse:
+      type: object
+      properties:
+        country:
+          type: string
+          description: Country name for the queried ISO code
+          example: germany
+        data:
+          type: array
+          items:
+            type: string
+          description: All variant codes for the country
+      required: [country, data]
+
+    MatchResponse:
+      type: object
+      properties:
+        country:
+          type: string
+          example: germany
+        prefix:
+          type: string
+          description: Shared code prefix for the matched building type and period
+          example: DE.N.SFH.01
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/VariantLevel"
+      required: [country, prefix, data]
+
+    VariantLevel:
+      type: object
+      properties:
+        code:
+          type: string
+          example: DE.N.SFH.01.Gen.ReEx.001.001
+        label:
+          type: string
+          example: Existing state
+      required: [code, label]
+
+    PeriodsResponse:
+      type: object
+      properties:
+        country:
+          type: string
+          example: germany
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConstructionPeriod"
+      required: [country, data]
+
+    ConstructionPeriod:
+      type: object
+      properties:
+        period:
+          type: string
+          description: Period code, as taken by the match endpoint's period parameter
+          example: "03"
+        year_from:
+          type: integer
+          description: First year of the band; 0 means open-ended
+          example: 1958
+        year_to:
+          type: integer
+          description: Last year of the band; 9999 means open-ended
+          example: 1968
+      required: [period, year_from, year_to]
+
+    DataResponse:
+      type: object
+      properties:
+        country:
+          type: string
+          example: germany
+        variant_code:
+          type: string
+          example: DE.N.SFH.01.Gen.ReEx.001.001
+        expected_q_h_nd:
+          type: number
+          format: double
+          description: TABULA reference value for this variant, used for validation
+          example: 282.7
+        tabula_data:
+          $ref: "#/components/schemas/TabulaData"
+      required: [country, variant_code, tabula_data]
+
+    TabulaData:
+      type: object
+      description: >
+        Full TABULA parameter set (~200 fields), nested under two groups. Use
+        /api/v1/fields to resolve each field's path, unit, and label.
+        BasicParameters.BuildingAppearance.Year1_Building and
+        Year2_Building are the earliest/latest construction year of this
+        variant's period band (0 and 9999 are the same open-ended sentinels
+        used by /api/v1/periods).
+        BasicParameters.BuildingAppearance.n_Apartment is the number of
+        dwellings in the archetype building: 1 for SFH and TH, the block's
+        dwelling count for MFH and AB, 0 where TABULA gives no count.
+      properties:
+        BasicParameters:
+          type: object
+          additionalProperties: true
+        AdvancedParameters:
+          type: object
+          additionalProperties: true
+
+    FieldsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/FieldMetadata"
+      required: [data]
+
+    FieldMetadata:
+      type: object
+      properties:
+        key:
+          type: string
+          example: A_C_Ref_Input
+        group:
+          type: string
+          example: Envelope
+        path:
+          type: string
+          description: Dotted path into a /data/{code} response
+          example: BasicParameters.Envelope.A_C_Ref_Input
+        unit:
+          type: string
+          example: m²
+        label:
+          type: string
+          example: Reference floor area
+        simple_description:
+          type: string
+          example: The total heated floor area of the building.
+        expert_description:
+          type: string
+          example: Reference floor area from input dataset, used for calculating area fractions for measures.
+      required: [key, group, path, unit, label]
+
+    CalculateRequest:
+      type: object
+      description: >
+        Every field is an optional override of the corresponding TABULA record
+        value; omit a field to keep its TABULA default. Fields map 1:1 onto the
+        AdvancedParameters groups documented in /api/v1/fields (ClimateConditions,
+        SolarGains, ThermalBridges) plus A_ref, the floor area override.
+      properties:
+        A_ref:
+          type: number
+          format: double
+          description: >
+            Overrides the reference floor area (A_C_Ref_Input) from the TABULA
+            record. Must be greater than 0.
+          example: 150.0
+        HeatingDays:
+          type: integer
+          description: Overrides ClimateConditions.HeatingDays. Must not be negative.
+          example: 200
+        Theta_e:
+          type: number
+          format: double
+          description: Overrides ClimateConditions.Theta_e (external design temperature, °C). Unbounded.
+          example: -5.0
+        theta_i:
+          type: number
+          format: double
+          description: Overrides ClimateConditions.Theta_i (internal design temperature, °C). Unbounded.
+          example: 20.0
+        I_Sol_South:
+          type: number
+          format: double
+          description: Overrides SolarGains.I_Sol_South (Wh/m²·a). Must not be negative.
+          example: 400.0
+        I_Sol_East:
+          type: number
+          format: double
+          description: Overrides SolarGains.I_Sol_East (Wh/m²·a). Must not be negative.
+          example: 150.0
+        I_Sol_West:
+          type: number
+          format: double
+          description: Overrides SolarGains.I_Sol_West (Wh/m²·a). Must not be negative.
+          example: 150.0
+        I_Sol_North:
+          type: number
+          format: double
+          description: Overrides SolarGains.I_Sol_North (Wh/m²·a). Must not be negative.
+          example: 80.0
+        I_Sol_Hor:
+          type: number
+          format: double
+          description: Overrides SolarGains.I_Sol_Horizontal (Wh/m²·a). Must not be negative.
+          example: 500.0
+        delta_U_ThermalBridging_Original:
+          type: number
+          format: double
+          description: >
+            Overrides ThermalBridges.Delta_U_ThermalBridging_Original (W/m²K,
+            added to the envelope's U-values). Must not be negative.
+          example: 0.1
+        delta_U_ThermalBridging_Refurbished:
+          type: number
+          format: double
+          description: >
+            Overrides ThermalBridges.Delta_U_ThermalBridging_Refurbished (W/m²K,
+            added to the envelope's U-values). Must not be negative.
+          example: 0.05
+        h_room:
+          type: number
+          format: double
+          description: >
+            Overrides BuildingAppearance.H_room (m), the archetype's assumed room
+            height. Feeds the ventilation heat transfer coefficient directly,
+            often a large lever, since TABULA's generic default is frequently a
+            poor match for a specific real building. Must be greater than 0.
+          example: 2.8
+        n_Storey:
+          type: integer
+          description: >
+            Overrides BuildingAppearance.N_Storey, the archetype's assumed storey
+            count. Accepted and validated, but without effect on any shipped
+            TABULA variant: it reaches the result only through the envelope-area
+            estimation path, which applies when Code_TypeIntake_EnvelopeArea is
+            "Estimation", and no shipped variant carries that code. Its other
+            consumers are the envelope plausibility ratios, which end in
+            Check_EnvArea_ExactToEstim, and nothing reads that.
+            Must be greater than 0.
+          example: 3
+        n_air_infiltration:
+          type: number
+          format: double
+          description: >
+            Overrides AirInfiltration.N_air_infiltration (1/h), the uncontrolled
+            air-change rate through gaps and cracks. Must not be negative.
+          example: 0.2
+        n_air_use:
+          type: number
+          format: double
+          description: >
+            Overrides AirInfiltration.N_air_use (1/h), the ventilation air-change
+            rate during occupancy. Must not be negative.
+          example: 0.4
+        c_m:
+          type: number
+          format: double
+          description: >
+            Overrides HeatTransfer.C_m (Wh/(m²K)), the internal heat capacity per m²
+            of useful floor area. Feeds the gain-utilization time constant
+            (calc_level_12.go). Must be greater than 0.
+          example: 45
+        surfaces:
+          type: array
+          description: >
+            Replaces TABULA's fixed 2-3 slots per element category with an
+            arbitrary list of individual physical surfaces, as a real
+            building's geometry has rather than a generic archetype.
+            Surfaces are grouped by type and collapsed into an area-weighted
+            equivalent (summed area, area-weighted average U-value) before
+            the pipeline runs. This is mathematically exact, since U-values are
+            conductances and conductances in parallel add weighted by area.
+            A category with no surfaces given keeps its TABULA default.
+            The caller owns the geometric accuracy of the areas, U-values
+            and orientations it sends; ignis does not cross-check them
+            against the archetype.
+          items:
+            $ref: "#/components/schemas/Surface"
+
+    Surface:
+      type: object
+      description: >
+        One physical building element. Shape mirrors BuEM's
+        envelope.elements[] so the same source data can drive both models.
+      properties:
+        id:
+          type: string
+          description: Caller-assigned identifier, used only in error messages.
+          example: wall-1
+        type:
+          type: string
+          enum: [roof, wall, floor, window, door]
+        area:
+          type: number
+          format: double
+          description: m². Must be greater than 0.
+          example: 60.0
+        u_value:
+          type: number
+          format: double
+          description: W/(m²K). Must be greater than 0.
+          example: 0.8
+        azimuth:
+          type: number
+          format: double
+          description: >
+            Degrees, 0=N/90=E/180=S/270=W. Windows only: rounds to the
+            nearest of ignis's five solar-gain buckets (N/E/S/W/Horizontal).
+            Defaults to South (180) if omitted.
+          example: 180
+        tilt:
+          type: number
+          format: double
+          description: >
+            Degrees from horizontal, windows only: 0 is a flat skylight, 90 a
+            vertical window. Within 5° of 0 the window is bucketed as
+            Horizontal regardless of azimuth. This is the inverse of
+            city2tabula's surface tilt (0 = vertical wall, 90 = flat roof); a
+            caller passing city2tabula geometry must convert first with
+            ignis_tilt = 90 - c2t_tilt.
+          example: 90
+      required: [id, type, area, u_value]
+
+    CalculateResponse:
+      type: object
+      properties:
+        variant_code:
+          type: string
+          example: DE.N.SFH.01.Gen.ReEx.001.001
+        q_h_nd:
+          type: number
+          format: double
+          description: Annual net heating energy demand
+          example: 282.72
+        unit:
+          type: string
+          example: kWh/(m2.a)
+      required: [variant_code, q_h_nd, unit]
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
