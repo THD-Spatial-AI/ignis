@@ -11,7 +11,7 @@ Go microservice implementing the ISO 13790 annual heating energy demand calculat
 
 ignis is designed as an internal microservice. Given a TABULA building variant code, it returns the annual heating energy demand in kWh/(m²·a) via a simple REST API.
 
-**19/20 countries at 100% accuracy: 2,091 / 2,147 buildings validated.** See the [validation report](validation.md).
+**19/20 countries at 100% accuracy: 2,124 / 2,147 buildings within ±2.5%** (`./bin/validate`, 2026-10-02). See the [validation report](validation.md).
 
 ---
 
