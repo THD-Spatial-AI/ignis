@@ -3,15 +3,18 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"github.com/thd-spatial-ai/ignis/internal/config"
 	"github.com/thd-spatial-ai/ignis/internal/models"
 	"github.com/thd-spatial-ai/ignis/internal/pipeline"
+	"io"
 	"log"
 	"math"
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strings"
 	"time"
 
@@ -32,13 +35,17 @@ type TestResult struct {
 
 const tolerancePercent = 2.5 // percent, allowed deviation from the TABULA reference q_h_nd
 
-var cfg = config.LoadConfig()
+// cfg is loaded in main, not at package init, so the package can be tested
+// without a database configuration.
+var cfg config.Config
 
 func main() {
+	strict := flag.Bool("strict", false, "exit 1 when any building falls outside the tolerance")
+	flag.Parse()
+
 	fmt.Println("=== ignis Validation Tool ===")
 	startTime := time.Now()
-	// Load configuration
-	cfg := config.LoadConfig()
+	cfg = config.LoadConfig()
 
 	fmt.Printf("Database: %s@%s:%s/%s\n\n", cfg.DB.User, cfg.DB.Host, cfg.DB.Port, cfg.DB.Name)
 
@@ -84,20 +91,71 @@ func main() {
 		fmt.Printf(" - %s\n", tn)
 	}
 
-	// Test all buildings
-	totalRows := 0
+	results := make(map[string][]TestResult, len(tableNames))
 	for _, tableName := range tableNames {
-		// fmt.Printf("\n=== Testing buildings in table: %s ===\n", tableName)
-
-		totalRows += testAllBuildings(pool, *cfg.DB, tableName)
+		results[tableName] = testAllBuildings(pool, *cfg.DB, tableName)
 	}
 
-	elapsed := time.Since(startTime)
-	fmt.Printf("\n=== Validation completed in %s ===\n", elapsed)
-	fmt.Printf("Total buildings tested across all tables: %d\n", totalRows)
+	failed := report(os.Stdout, tableNames, results)
+	fmt.Printf("\n=== Validation completed in %s ===\n", time.Since(startTime))
+
+	pool.Close()
+	os.Exit(exitCode(failed, *strict))
 }
 
-func testAllBuildings(pool *pgxpool.Pool, cfg config.DBConfig, tableName string) int {
+// report writes each table's pass count, then every failing building, then
+// the overall count, and returns the number of buildings that did not pass.
+// A building with an ErrorMessage counts as failed.
+func report(w io.Writer, tableNames []string, results map[string][]TestResult) int {
+	fmt.Fprintf(w, "\nPass rate per table (tolerance %.1f%%):\n", tolerancePercent)
+	var failures []string
+	total, passed := 0, 0
+	for _, tableName := range tableNames {
+		tablePassed := 0
+		for _, r := range results[tableName] {
+			switch {
+			case r.ErrorMessage != "":
+				failures = append(failures, fmt.Sprintf("  %-15s %-35s %s", tableName, r.BuildingID, r.ErrorMessage))
+			case r.Passed:
+				tablePassed++
+			default:
+				failures = append(failures, fmt.Sprintf("  %-15s %-35s calculated %10.2f  expected %10.2f  error %.2f%%",
+					tableName, r.BuildingID, r.CalculatedQHND, r.ExpectedQHND, r.PercentError))
+			}
+		}
+		n := len(results[tableName])
+		total += n
+		passed += tablePassed
+		fmt.Fprintf(w, "  %-15s %4d/%-4d %6.1f%%\n", tableName, tablePassed, n, percent(tablePassed, n))
+	}
+
+	if len(failures) > 0 {
+		fmt.Fprintf(w, "\nFailures (%d):\n", len(failures))
+		for _, line := range failures {
+			fmt.Fprintln(w, line)
+		}
+	}
+	fmt.Fprintf(w, "\nTotal: %d/%d passed (%.1f%%)\n", passed, total, percent(passed, total))
+	return total - passed
+}
+
+func percent(part, whole int) float64 {
+	if whole == 0 {
+		return 0
+	}
+	return float64(part) / float64(whole) * 100
+}
+
+// exitCode is 1 only under -strict with at least one failure, so a plain run
+// reports failures without failing the caller.
+func exitCode(failed int, strict bool) int {
+	if strict && failed > 0 {
+		return 1
+	}
+	return 0
+}
+
+func testAllBuildings(pool *pgxpool.Pool, cfg config.DBConfig, tableName string) []TestResult {
 	// Get all row IDs
 	query := fmt.Sprintf(`SELECT id FROM %s.%s ORDER BY id`, cfg.Schemas.Tabula, tableName)
 	rows, err := pool.Query(context.Background(), query)
@@ -119,7 +177,7 @@ func testAllBuildings(pool *pgxpool.Pool, cfg config.DBConfig, tableName string)
 	// Run tests in parallel
 	var results []TestResult
 	resultsChan := make(chan TestResult, len(rowIDs))
-	
+
 	// Launch goroutines for parallel execution
 	for _, rowID := range rowIDs {
 		go func(id int) {
@@ -127,45 +185,15 @@ func testAllBuildings(pool *pgxpool.Pool, cfg config.DBConfig, tableName string)
 			resultsChan <- result
 		}(rowID)
 	}
-	
+
 	// Collect results
 	for range rowIDs {
 		results = append(results, <-resultsChan)
 	}
 	close(resultsChan)
 
-	// // Print summary
-	// fmt.Println("\n" + strings.Repeat("=", 60))
-	// fmt.Println("=== Test Summary ===")
-	// fmt.Println(strings.Repeat("=", 60))
-
-	passCount := 0
-	failCount := 0
-	for _, result := range results {
-		if result.Passed {
-			passCount++
-		} else {
-			failCount++
-		}
-	}
-
-	// fmt.Printf("Total buildings tested: %d\n", len(results))
-	// fmt.Printf("Passed: %d (%.1f%%)\n", passCount, float64(passCount)/float64(len(rowIDs))*100)
-	// fmt.Printf("Failed: %d (%.1f%%)\n", failCount, float64(failCount)/float64(len(rowIDs))*100)
-
-	// // Print detailed results for failed tests (limited to first 10)
-	// if failCount > 0 {
-	// 	fmt.Println("\n=== Failed Tests Details (showing first 10) ===")
-	// 	count := 0
-	// 	for _, result := range results {
-	// 		if !result.Passed && count < 10 {
-	// 			printTestResult(result)
-	// 			count++
-	// 		}
-	// 	}
-	// }
-
-	return len(results)
+	sort.Slice(results, func(i, j int) bool { return results[i].RowID < results[j].RowID })
+	return results
 }
 
 func runPipelineTest(pool *pgxpool.Pool, tableName string, rowID int) TestResult {
@@ -409,34 +437,6 @@ func setFieldValue(field reflect.Value, value interface{}) {
 			field.SetFloat(float64(v))
 		}
 	}
-}
-
-// printTestResult prints detailed test result information
-func printTestResult(result TestResult) {
-	separator := strings.Repeat("=", 60)
-	fmt.Println("\n" + separator)
-	fmt.Printf("Row ID: %d | Building: %s\n", result.RowID, result.BuildingID)
-	fmt.Println(separator)
-
-	if result.ErrorMessage != "" {
-		fmt.Printf("Status: ✗ FAILED\n")
-		fmt.Printf("Error: %s\n", result.ErrorMessage)
-		fmt.Println(separator)
-		return
-	}
-
-	if result.Passed {
-		fmt.Printf("Status: o PASSED\n")
-	} else {
-		fmt.Printf("Status: x FAILED\n")
-	}
-
-	fmt.Printf("\nResults:\n")
-	fmt.Printf("  Calculated q_h_nd: %.6f kWh/(m²·a)\n", result.CalculatedQHND)
-	fmt.Printf("  Expected q_h_nd:   %.6f kWh/(m²·a)\n", result.ExpectedQHND)
-	fmt.Printf("  Difference:        %.6f kWh/(m²·a)\n", result.Difference)
-	fmt.Printf("  Percent Error:     %.4f%%\n", result.PercentError)
-	fmt.Println(separator)
 }
 
 // saveTabulaModelAsJSON saves the TabulaBuildingParameters as a JSON file

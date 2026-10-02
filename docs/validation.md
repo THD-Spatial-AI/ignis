@@ -80,7 +80,12 @@ The offset is uniform rather than scattered: -2.32% for references below 5 kWh/(
 
 ```bash
 go build -buildvcs=false -o bin/ ./cmd/...
-./bin/validate
+./bin/validate            # report only, exits 0
+./bin/validate -strict    # exits 1 if any building is outside ±2.5%
 ```
 
 Requires a populated database (`./bin/build_db` must have been run first) and a valid `.env` file.
+
+The output gives the pass count per country, one line per failing building with its calculated and expected `q_h_nd` and percentage error, and the overall pass count. A building whose pipeline run errors counts as failed and shows the error instead.
+
+`validate` compares the pipeline's unrounded result, while `POST /api/v1/calculate/{code}` rounds `q_h_nd` to two decimals, so a building within a few hundredths of a percent of the tolerance can pass in one and fail in the other.
