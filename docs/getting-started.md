@@ -287,7 +287,7 @@ Runs the full 17-level TABULA calculation pipeline against every row in the data
 ./bin/validate
 ```
 
-This path only: there is no containerised `validate`. See the [validation report](validation.md) for current results.
+Add `-strict` to exit 1 when any building is outside the tolerance. This path only: there is no containerised `validate`. See the [validation report](validation.md) for current results.
 
 ---
 
