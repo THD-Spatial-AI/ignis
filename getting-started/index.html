@@ -1222,7 +1222,7 @@
 <p>Runs the full 17-level TABULA calculation pipeline against every row in the database and checks that each result stays within 2.5% of the reference value from the workbook.</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>./bin/validate
 </span></code></pre></div>
-<p>This path only: there is no containerised <code>validate</code>. See the <a href="../validation/">validation report</a> for current results.</p>
+<p>Add <code>-strict</code> to exit 1 when any building is outside the tolerance. This path only: there is no containerised <code>validate</code>. See the <a href="../validation/">validation report</a> for current results.</p>
 <hr />
 <h2 id="deployment">Deployment<a class="headerlink" href="#deployment" title="Permanent link">&para;</a></h2>
 <p>Use <code>docker-compose.prod.yml</code> from whichever environment matches how TLS is handled. It pulls published images and needs no source tree on the target machine.</p>

@@ -789,9 +789,12 @@ body reaches the same code path this validation covers.</p>
 <hr />
 <h2 id="running-validation">Running validation<a class="headerlink" href="#running-validation" title="Permanent link">&para;</a></h2>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>go<span class="w"> </span>build<span class="w"> </span>-buildvcs<span class="o">=</span><span class="nb">false</span><span class="w"> </span>-o<span class="w"> </span>bin/<span class="w"> </span>./cmd/...
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>./bin/validate
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>./bin/validate<span class="w">            </span><span class="c1"># report only, exits 0</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>./bin/validate<span class="w"> </span>-strict<span class="w">    </span><span class="c1"># exits 1 if any building is outside ±2.5%</span>
 </span></code></pre></div>
 <p>Requires a populated database (<code>./bin/build_db</code> must have been run first) and a valid <code>.env</code> file.</p>
+<p>The output gives the pass count per country, one line per failing building with its calculated and expected <code>q_h_nd</code> and percentage error, and the overall pass count. A building whose pipeline run errors counts as failed and shows the error instead.</p>
+<p><code>validate</code> compares the pipeline's unrounded result, while <code>POST /api/v1/calculate/{code}</code> rounds <code>q_h_nd</code> to two decimals, so a building within a few hundredths of a percent of the tolerance can pass in one and fail in the other.</p>
 
 
 
