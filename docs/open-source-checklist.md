@@ -90,7 +90,7 @@ If your project uses third-party components, assets, or generated code that requ
 - [x] `ATTRIBUTIONS.md` file created in repository root
 - [x] TABULA building typology data (IWU) listed
 - [x] Source platform or author identified
-- [x] License type specified: CC BY 4.0
+- [x] Terms of use specified: TABULA usage rules, credit "IEE Projects TABULA + EPISCOPE (www.episcope.eu)"
 - [x] Links to original sources included
 - [x] Go dependencies noted
 
