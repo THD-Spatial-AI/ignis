@@ -10,7 +10,8 @@ This directory contains the TABULA Webtool workbook used to seed the heat demand
 | **Source** | TABULA Webtool, [building-typology.eu](https://webtool.building-typology.eu/) |
 | **Author** | Institut Wohnen und Umwelt (IWU), Darmstadt, Germany |
 | **Project** | Intelligent Energy Europe, IEE/09/739/SI2.558245 |
-| **License** | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
+| **Credit** | IEE Projects TABULA + EPISCOPE (www.episcope.eu) |
+| **Terms of use** | [TABULA usage rules](https://episcope.eu/communication/download/): non-exclusive use, with the credit above visibly mentioned as the source |
 
 The workbook contains per-country building typology data (U-values, areas, infiltration rates, climate parameters) and reference heating demand values (`q_h_nd`) used to validate the calculation pipeline within ±2.5%.
 
@@ -18,7 +19,7 @@ The workbook contains per-country building typology data (U-values, areas, infil
 
 > Loga, T., Stein, B., Diefenbach, N., Born, R. (2016): *Deutsche Wohngebäudetypologie. Beispielhafte Maßnahmen zur Verbesserung der Energieeffizienz von typischen Wohngebäuden.* 2nd edition. Institut Wohnen und Umwelt, Darmstadt.
 
-This file is distributed under the same CC BY 4.0 terms as the original TABULA dataset. See [`ATTRIBUTIONS.md`](../ATTRIBUTIONS.md) for the full attribution statement.
+This file is distributed under the TABULA usage rules, not under the MIT licence of this repository. See [`ATTRIBUTIONS.md`](../ATTRIBUTIONS.md) for the full attribution statement.
 
 ## tabula-calculator-lite.xlsx
 
@@ -31,7 +32,7 @@ Sheets kept:
 
 The result is **11 MB**, down from **28 MB**. The removed sheets were roughly two-thirds of the file, including `Calc.Set.System`, which alone was larger than the sheet in use.
 
-This is a derivative of TABULA Webtool data and remains under the same **CC BY 4.0** licence as the original; see the attribution above and in [`ATTRIBUTIONS.md`](../ATTRIBUTIONS.md). `environment/ignis-db.dockerfile` bakes it into the `ignis-build-db` image. The data is static reference data, read once to seed Postgres and never modified afterwards, so shipping it inside the image rather than mounting it at runtime makes a given image tag reproducible.
+This is a derivative of TABULA Webtool data and is distributed under the same TABULA usage rules as the original; see the attribution above and in [`ATTRIBUTIONS.md`](../ATTRIBUTIONS.md). `environment/ignis-db.dockerfile` bakes it into the `ignis-build-db` image. The data is static reference data, read once to seed Postgres and never modified afterwards, so shipping it inside the image rather than mounting it at runtime makes a given image tag reproducible.
 
 ## Usage
 

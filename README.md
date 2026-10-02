@@ -63,7 +63,7 @@ python -m venv .venv
 
 ## License
 
-MIT License — Copyright 2026 BigGeoData & Spatial AI, Technische Hochschule Deggendorf. See [LICENSE](LICENSE) for the full text.
+MIT License. Copyright 2026 BigGeoData & Spatial AI, Technische Hochschule Deggendorf. See [LICENSE](LICENSE) for the full text. The licence covers the code. The TABULA workbooks in `data/` are distributed under the TABULA usage rules; see [ATTRIBUTIONS.md](ATTRIBUTIONS.md).
 
 Found a security issue? See [SECURITY.md](SECURITY.md) for how to report it privately.
 
@@ -73,4 +73,4 @@ Developed in the context of the RENvolveIT research project (<https://projekte.f
 
 <img src="docs/assets/sponsors/CETP-logo.svg" alt="CETPartnership" width="144" height="72">&nbsp;&nbsp;&nbsp;<img src="docs/assets/sponsors/EN_Co-fundedbytheEU_RGB_POS.png" alt="EU" width="180" height="40">
 
-**TABULA & EPISCOPE (IEE Projects):** building-characteristic data ([episcope.eu](https://episcope.eu/iee-project/tabula/), accessed 08.07.2026)
+Building-characteristic data source: **IEE Projects TABULA + EPISCOPE (www.episcope.eu)**, used under the [TABULA usage rules](https://episcope.eu/communication/download/) (accessed 08.07.2026).

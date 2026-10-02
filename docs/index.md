@@ -7,7 +7,7 @@ audience: developer
 
 [![CI](https://github.com/thd-spatial-ai/ignis/actions/workflows/ci.yml/badge.svg)](https://github.com/thd-spatial-ai/ignis/actions/workflows/ci.yml)&nbsp;&nbsp;&nbsp;[![MkDocs](https://github.com/thd-spatial-ai/ignis/actions/workflows/docs.yml/badge.svg)](https://thd-spatial-ai.github.io/ignis)&nbsp;&nbsp;&nbsp;[![codecov](https://codecov.io/gh/THD-Spatial-AI/ignis/graph/badge.svg?token=CTUZED1ELJ)](https://codecov.io/gh/THD-Spatial-AI/ignis)&nbsp;&nbsp;&nbsp;[![GitHub release](https://img.shields.io/github/v/release/thd-spatial-ai/ignis?include_prereleases&label=release&logo=github)](https://github.com/thd-spatial-ai/ignis/releases)
 
-Go microservice implementing the ISO 13790 annual heating energy demand calculation pipeline, validated against the [TABULA](https://episcope.eu/building-typology/tabula-webtool/) European building typology database.
+Go microservice implementing the ISO 13790 annual heating energy demand calculation pipeline, validated against the [TABULA](https://episcope.eu/building-typology/tabula-webtool/) European building typology database. Data source: IEE Projects TABULA + EPISCOPE (www.episcope.eu).
 
 ignis is designed as an internal microservice. Given a TABULA building variant code, it returns the annual heating energy demand in kWh/(m²·a) via a simple REST API.
 
