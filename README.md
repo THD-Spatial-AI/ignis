@@ -5,7 +5,7 @@
 
 Go microservice implementing the **EN ISO 13790** annual heating energy demand calculation pipeline derived from [tabula-calculator.xlsx](https://episcope.eu/welcome/) *(Accessed on: 26.06.26)*. The calculation method has been documented in [TABULA CommonCalculationMethod](https://episcope.eu/fileadmin/tabula/public/docs/report/TABULA_CommonCalculationMethod.pdf) *(Accessed on: 26.06.2026)*. The tool covers all European building typologies across 20 countries defined by **TABULA & EPISCOPE (IEE Projects)**.
 
-Results are validated against the workbook's own output: **19 of 20 countries at 100% accuracy, 2,091 of 2,147 buildings passing.** See the [validation report](docs/validation.md).
+Results are validated against the workbook's own output: **19 of 20 countries at 100% accuracy, 2,124 of 2,147 buildings within ±2.5%** (`./bin/validate`, 2026-10-02). See the [validation report](docs/validation.md).
 
 ---
 
