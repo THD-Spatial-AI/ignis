@@ -390,8 +390,9 @@ components:
         variant's period band (0 and 9999 are the same open-ended sentinels
         used by /api/v1/periods).
         BasicParameters.BuildingAppearance.n_Apartment is the number of
-        dwellings in the archetype building: 1 for SFH and TH, the block's
-        dwelling count for MFH and AB, 0 where TABULA gives no count.
+        dwellings in the archetype building, 0 where TABULA gives no count.
+        It is usually 1 for SFH and TH, but some SFH variants carry 2 or 4
+        and some TH variants carry up to 13.
       properties:
         BasicParameters:
           type: object
