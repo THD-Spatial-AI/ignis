@@ -18,12 +18,13 @@ type Surface struct {
 	Area    float64  `json:"area"`              // m²
 	UValue  float64  `json:"u_value"`           // W/m²K
 	Azimuth *float64 `json:"azimuth,omitempty"` // degrees, 0=N/90=E/180=S/270=W; windows only, defaults to South (180)
-	Tilt    *float64 `json:"tilt,omitempty"`    // degrees; windows only, ~0 = horizontal (skylight)
+	Tilt    *float64 `json:"tilt,omitempty"`    // degrees; windows only, below 30 = horizontal
 }
 
-// horizontalTiltThreshold is how close Tilt must be to 0 for a window to be
-// bucketed as horizontal (skylight) rather than by azimuth.
-const horizontalTiltThreshold = 5.0
+// horizontalTiltThreshold is the tilt below which a window is bucketed as
+// horizontal rather than by azimuth. It matches TABULA's definition of
+// A_Window_Horizontal (see calc_level_01.go).
+const horizontalTiltThreshold = 30.0
 
 // aggregateSurfaces collapses an arbitrary list of physical surfaces into the
 // area-weighted category totals ignis's pipeline already consumes
@@ -93,11 +94,11 @@ func aggregateSurfaces(surfaces []Surface, building *models.TabulaBuildingParame
 }
 
 // windowOrientationBucket maps a window surface to one of ignis's five
-// existing solar-gain buckets (North/East/South/West/Horizontal). Tilt near
-// 0 wins (skylight); otherwise azimuth rounds to the nearest cardinal.
+// existing solar-gain buckets (North/East/South/West/Horizontal). Tilt below
+// horizontalTiltThreshold wins; otherwise azimuth rounds to the nearest cardinal.
 // A window with no azimuth given defaults to South.
 func windowOrientationBucket(s Surface) string {
-	if s.Tilt != nil && math.Abs(*s.Tilt) <= horizontalTiltThreshold {
+	if s.Tilt != nil && math.Abs(*s.Tilt) < horizontalTiltThreshold {
 		return "Horizontal"
 	}
 	if s.Azimuth == nil {
