@@ -89,6 +89,27 @@ func TestAggregateSurfaces_windowOrientationBucketing(t *testing.T) {
 	}
 }
 
+func TestWindowOrientationBucket_tiltThreshold(t *testing.T) {
+	south := 180.0
+	cases := []struct {
+		tilt float64
+		want string
+	}{
+		{0, "Horizontal"},
+		{20, "Horizontal"},
+		{29.9, "Horizontal"},
+		{30, "South"},
+		{90, "South"},
+	}
+	for _, c := range cases {
+		tilt := c.tilt
+		got := windowOrientationBucket(Surface{ID: "win", Type: "window", Azimuth: &south, Tilt: &tilt})
+		if got != c.want {
+			t.Errorf("tilt %v: bucket = %q, want %q", c.tilt, got, c.want)
+		}
+	}
+}
+
 func TestAggregateSurfaces_unknownType_returnsError(t *testing.T) {
 	building := realisticBuilding()
 	surfaces := []Surface{{ID: "mystery", Type: "skylight-tube", Area: 1, UValue: 1}}
