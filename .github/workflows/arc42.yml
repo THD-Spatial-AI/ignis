@@ -1,0 +1,32 @@
+name: arc42
+
+on:
+  push:
+    branches:
+      - master
+      - main
+    paths:
+      - "documentation/**"
+permissions:
+  contents: read
+jobs:
+  # The PDF is uploaded as a run artifact only and stays off the site until
+  # the architecture documentation is ready to be public.
+  build-arc42:
+    runs-on: ubuntu-latest
+    container: texlive/texlive:latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pull LFS content (figures are stored via Git LFS)
+        run: |
+          apt-get update -qq && apt-get install -y -qq git-lfs
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git lfs install
+          git lfs pull
+      - name: Build arc42 documentation
+        working-directory: documentation
+        run: make
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arc42-pdf
+          path: documentation/documentation.pdf

@@ -6,60 +6,17 @@ on:
       - master
       - main
     paths:
-      - "documentation/**"
       - "docs/**"
       - "mkdocs.yml"
+  workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 jobs:
-  build-arc42:
-    runs-on: ubuntu-latest
-    container: texlive/texlive:latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Pull LFS content (figures are stored via Git LFS)
-        run: |
-          apt-get update -qq && apt-get install -y -qq git-lfs
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          git lfs install
-          git lfs pull
-      - name: Build arc42 documentation
-        working-directory: documentation
-        run: make
-      - uses: actions/upload-artifact@v4
-        with:
-          name: arc42-pdf
-          path: documentation/documentation.pdf
-
-  deploy:
-    needs: build-arc42
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Configure Git Credentials
-        run: |
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-      - uses: actions/setup-python@v5
-        with:
-          python-version: 3.x
-      - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
-      - uses: actions/cache@v4
-        with:
-          key: mkdocs-material-${{ env.cache_id }}
-          path: ~/.cache
-          restore-keys: |
-            mkdocs-material-
-      - run: pip install -r docs/requirements.txt
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - name: Lint OpenAPI specification
-        run: npx @redocly/cli lint docs/openapi/openapi.yaml --format=github-actions
-      - run: mkdocs build
-      # arc42 PDF is intentionally not copied into site/: the architecture
-      # documentation is still under development and not ready to be public.
-      - uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./site
+  docs:
+    uses: THD-Spatial-AI/.github/.github/workflows/mkdocs-pages.yml@v1
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    with:
+      openapi-spec: docs/openapi/openapi.yaml
