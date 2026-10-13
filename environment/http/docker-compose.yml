@@ -37,6 +37,7 @@ name: ignis-http
 # and https environments running at once.
 services:
   db:
+    restart: unless-stopped
     image: postgres:17-alpine
     env_file: [env/db.env]        # POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB
     volumes:
@@ -50,6 +51,7 @@ services:
     # network, by service name (`db`).
 
   ignis:
+    restart: unless-stopped
     build:
       # Context is the repository root, two levels up. The dockerfiles stay at
       # environment/ rather than being copied into http/ and https/: the image

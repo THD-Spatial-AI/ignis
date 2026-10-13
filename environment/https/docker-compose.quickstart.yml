@@ -40,6 +40,7 @@ name: ignis-https
 
 services:
   db:
+    restart: unless-stopped
     image: postgres:17-alpine
     env_file: [env/db.env]
     volumes:
@@ -51,6 +52,7 @@ services:
       retries: 5
 
   ignis:
+    restart: unless-stopped
     # Pre-built by .github/workflows/docker-publish.yml on each vX.Y.Z tag.
     # Set IGNIS_IMAGE_TAG to pin a version; defaults to `latest`.
     image: ghcr.io/thd-spatial-ai/ignis:${IGNIS_IMAGE_TAG:-latest}
@@ -70,6 +72,7 @@ services:
       start_period: 10s
 
   proxy:
+    restart: unless-stopped
     image: caddy:2.11-alpine
     env_file: [env/proxy.env]
     environment:
