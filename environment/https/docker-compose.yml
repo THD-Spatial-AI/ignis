@@ -39,6 +39,7 @@ name: ignis-https
 # called, which is what stops the http and https environments running at once.
 services:
   db:
+    restart: unless-stopped
     image: postgres:17-alpine
     env_file: [env/db.env]        # POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB
     volumes:
@@ -52,6 +53,7 @@ services:
     # network, by service name (`db`), same as the app itself.
 
   ignis:
+    restart: unless-stopped
     build:
       # Context is the repository root, two levels up. The dockerfiles stay at
       # environment/ rather than being copied into http/ and https/: the image
@@ -96,6 +98,7 @@ services:
         condition: service_healthy
 
   proxy:
+    restart: unless-stopped
     image: caddy:2.11-alpine
     env_file: [env/proxy.env]       # IGNIS_SITE_ADDRESS
     environment:
