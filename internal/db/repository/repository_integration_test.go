@@ -135,6 +135,24 @@ func seedFixtures(ctx context.Context, pool *pgxpool.Pool) error {
 		`INSERT INTO tabula.netherlands ("Code_BuildingVariant", "n_Apartment") VALUES
 			('NL.N.AB.03.Gen.ReEx.001.001',  15),
 			('NL.N.SFH.01.Gen.ReEx.001.001', 1)`,
+		// belgium carries the refurbishment-variant match cases: TH.05 has two
+		// subtypes, Gen lacks variant 2 (as in the workbook's newest BE period),
+		// and .004 and ReEx.002.* are not standard refurbishment variants.
+		// "0" is how the workbook stores a missing description.
+		`CREATE TABLE tabula.belgium (
+			id SERIAL PRIMARY KEY,
+			"Code_BuildingVariant" VARCHAR,
+			"Number_BuildingVariant" INTEGER,
+			"Description_BuildingVariant" TEXT
+		)`,
+		`INSERT INTO tabula.belgium ("Code_BuildingVariant", "Number_BuildingVariant", "Description_BuildingVariant") VALUES
+			('BE.N.TH.05.Gen.ReEx.001.003',  3, 'nZEB'),
+			('BE.N.TH.05.Gen.ReEx.001.001',  1, '0'),
+			('BE.N.TH.05.Gen.ReEx.001.004',  4, 'deep retrofit'),
+			('BE.N.TH.05.Gen.ReEx.002.001',  1, 'alternative dataset'),
+			('BE.N.TH.05.Semi.ReEx.001.001', 1, 'Existing condition'),
+			('BE.N.TH.05.Semi.ReEx.001.002', 2, 'Standard refurbishment'),
+			('BE.N.TH.05.Semi.ReEx.001.003', 3, 'Advanced refurbishment')`,
 	}
 	for _, stmt := range statements {
 		if _, err := pool.Exec(ctx, stmt); err != nil {
@@ -173,23 +191,32 @@ func TestTabulaRepository_ListVariants_queryError(t *testing.T) {
 
 func TestTabulaRepository_MatchVariants_success(t *testing.T) {
 	r := repository.NewTabulaRepository(testPool, "tabula")
-	codes, err := r.MatchVariants(context.Background(), "germany", "DE.N.SFH.01")
+	got, err := r.MatchVariants(context.Background(), "belgium", "BE.N.TH.05.Gen")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(codes) != 2 {
-		t.Fatalf("codes = %v, want 2 SFH.01 variants", codes)
+	want := []repository.RefurbishmentVariant{
+		{Code: "BE.N.TH.05.Gen.ReEx.001.001", Number: 1, Description: ""},
+		{Code: "BE.N.TH.05.Gen.ReEx.001.003", Number: 3, Description: "nZEB"},
+	}
+	if len(got) != len(want) {
+		t.Fatalf("variants = %+v, want %+v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Errorf("variants[%d] = %+v, want %+v", i, got[i], want[i])
+		}
 	}
 }
 
 func TestTabulaRepository_MatchVariants_noMatches(t *testing.T) {
 	r := repository.NewTabulaRepository(testPool, "tabula")
-	codes, err := r.MatchVariants(context.Background(), "germany", "DE.N.SFH.99")
+	got, err := r.MatchVariants(context.Background(), "belgium", "BE.N.TH.99.Gen")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(codes) != 0 {
-		t.Errorf("codes = %v, want none", codes)
+	if len(got) != 0 {
+		t.Errorf("variants = %+v, want none", got)
 	}
 }
 

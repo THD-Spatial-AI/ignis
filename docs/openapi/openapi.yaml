@@ -95,10 +95,12 @@ paths:
     get:
       tags: [Variants]
       operationId: matchVariant
-      summary: Match refurbishment variants for a building type and period
+      summary: Match refurbishment variants for a building type, period and subtype
       description: >
-        Returns the refurbishment levels for one building type and construction
-        period, ordered from existing state to most refurbished. Give the period
+        Returns TABULA's standard refurbishment variants (existing state, usual
+        and advanced refurbishment) of one building subtype, ordered by variant
+        number. A subtype that lacks some of them returns only those it has, and
+        one with none returns an empty data list. Give the period
         either directly (period) or as a construction year (year), which ignis
         resolves to the period whose band contains it for that country and type.
         A year before the earliest or after the latest band defined for that
@@ -135,9 +137,19 @@ paths:
             type: integer
             minimum: 0
           example: 1975
+        - name: subtype
+          in: query
+          required: false
+          description: >
+            TABULA building subtype, the fifth segment of a variant code (for
+            example Semi in BE.N.TH.05.Semi.ReEx.001.001). Defaults to Gen.
+          schema:
+            type: string
+            default: Gen
+          example: Gen
       responses:
         "200":
-          description: Matched refurbishment levels
+          description: Matched refurbishment variants
           content:
             application/json:
               schema:
@@ -314,13 +326,16 @@ components:
           example: germany
         prefix:
           type: string
-          description: Shared code prefix for the matched building type and period
-          example: DE.N.SFH.01
+          description: Shared code prefix for the matched building type, period and subtype
+          example: DE.N.SFH.01.Gen
+        subtype:
+          type: string
+          example: Gen
         data:
           type: array
           items:
             $ref: "#/components/schemas/VariantLevel"
-      required: [country, prefix, data]
+      required: [country, prefix, subtype, data]
 
     VariantLevel:
       type: object
@@ -328,10 +343,24 @@ components:
         code:
           type: string
           example: DE.N.SFH.01.Gen.ReEx.001.001
+        number:
+          type: integer
+          description: TABULA variant number. 1 existing state, 2 usual refurbishment, 3 advanced refurbishment.
+          example: 1
         label:
           type: string
+          description: >
+            The description when there is one, otherwise TABULA's name for the
+            variant number.
           example: Existing state
-      required: [code, label]
+        description:
+          type: string
+          description: >
+            TABULA's own wording for the variant, empty where TABULA gives none.
+            In recent construction periods it names a construction standard
+            rather than a refurbishment state.
+          example: ""
+      required: [code, number, label, description]
 
     PeriodsResponse:
       type: object
