@@ -53,36 +53,52 @@ func (r *TabulaRepository) ListVariants(ctx context.Context, tableName string) (
 	return variants, nil
 }
 
-// MatchVariants returns all variant codes whose Code_BuildingVariant starts with the given prefix.
-// The prefix should be in the form "CC.N.TYPE.PERIOD" (e.g. "DE.N.SFH.01") — a trailing "."
-// is appended automatically so that only variants of that exact building+period are returned.
-func (r *TabulaRepository) MatchVariants(ctx context.Context, tableName, prefix string) ([]string, error) {
-	pattern := prefix + ".%"
+// RefurbishmentVariant is one of TABULA's standard refurbishment variants of a building subtype.
+type RefurbishmentVariant struct {
+	Code        string
+	Number      int    // Number_BuildingVariant: 1 existing state, 2 usual, 3 advanced refurbishment
+	Description string // TABULA's own wording for the variant; "" where TABULA gives none
+}
+
+// refurbishmentSuffixes are TABULA's standard variants. Other suffixes (.004, .011, ReEx.002.*)
+// are additional packages or alternative datasets, not refurbishment states.
+var refurbishmentSuffixes = []string{".ReEx.001.001", ".ReEx.001.002", ".ReEx.001.003"}
+
+// MatchVariants returns the variants prefix + refurbishmentSuffixes that exist in the table,
+// ordered by variant number. prefix is "CC.N.TYPE.PERIOD.SUBTYPE" (e.g. "DE.N.SFH.01.Gen").
+func (r *TabulaRepository) MatchVariants(ctx context.Context, tableName, prefix string) ([]RefurbishmentVariant, error) {
+	codes := make([]string, len(refurbishmentSuffixes))
+	for i, suffix := range refurbishmentSuffixes {
+		codes[i] = prefix + suffix
+	}
+	// TABULA records with no description carry "0" in Description_BuildingVariant.
 	query := fmt.Sprintf(
-		`SELECT "Code_BuildingVariant" FROM %s WHERE "Code_BuildingVariant" LIKE $1 ORDER BY "Code_BuildingVariant"`,
+		`SELECT "Code_BuildingVariant", "Number_BuildingVariant",
+		        COALESCE(NULLIF(NULLIF(TRIM("Description_BuildingVariant"), '0'), ''), '')
+		 FROM %s WHERE "Code_BuildingVariant" = ANY($1) ORDER BY "Number_BuildingVariant"`,
 		r.qualifyTable(tableName),
 	)
 
-	rows, err := r.pool.Query(ctx, query, pattern)
+	rows, err := r.pool.Query(ctx, query, codes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to match variants: %w", err)
+		return nil, fmt.Errorf("failed to match variants for %s: %w", prefix, err)
 	}
 	defer rows.Close()
 
-	var codes []string
+	var variants []RefurbishmentVariant
 	for rows.Next() {
-		var code string
-		if err := rows.Scan(&code); err != nil {
-			return nil, fmt.Errorf("failed to scan variant code: %w", err)
+		var v RefurbishmentVariant
+		if err := rows.Scan(&v.Code, &v.Number, &v.Description); err != nil {
+			return nil, fmt.Errorf("failed to scan matched variant for %s: %w", prefix, err)
 		}
-		codes = append(codes, code)
+		variants = append(variants, v)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("failed to iterate matched variants: %w", err)
+		return nil, fmt.Errorf("failed to iterate matched variants for %s: %w", prefix, err)
 	}
 
-	return codes, nil
+	return variants, nil
 }
 
 // ConstructionPeriod is one TABULA construction-year band for a country.

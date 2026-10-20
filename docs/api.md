@@ -20,7 +20,7 @@ ignis carries no credential and asks for none. Every endpoint is reachable by an
 
 | Step | Endpoint | Returns |
 |---|---|---|
-| 1 | `GET /api/v1/variants/{country}/match?type=...&period=...` | The matching TABULA archetypes for that country, building type and construction period: the existing state and its refurbishment levels (medium, advanced). Each carries a `code` used by the next two endpoints. |
+| 1 | `GET /api/v1/variants/{country}/match?type=...&period=...&subtype=...` | The TABULA archetypes for that country, building type, construction period and subtype (default `Gen`): the existing state and its usual and advanced refurbishment. Each carries a `code` used by the next two endpoints. |
 | 2 | `GET /api/v1/data/{code}` | Every physical input behind that archetype (roughly 200 fields): envelope areas, U-values, climate data, solar gains. `GET /api/v1/fields` gives a plain-language description of each field. |
 | 3 | `POST /api/v1/calculate/{code}` | Annual heating demand `q_h_nd` in kWh/(m²·a), from the ISO 13790 pipeline. |
 

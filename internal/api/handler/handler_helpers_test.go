@@ -99,27 +99,27 @@ func TestTableNameFromISO_unknownCountry(t *testing.T) {
 
 // --- refurbishmentLabel ---
 
-func TestRefurbishmentLabel_knownPositions(t *testing.T) {
+func TestRefurbishmentLabel_withoutDescription_usesTabulaName(t *testing.T) {
 	cases := []struct {
-		index int
-		want  string
+		number int
+		want   string
 	}{
-		{0, "Existing state"},
-		{1, "Medium refurbishment"},
-		{2, "Advanced refurbishment"},
+		{1, "Existing state"},
+		{2, "Usual refurbishment"},
+		{3, "Advanced refurbishment"},
 	}
 	for _, tc := range cases {
-		got := refurbishmentLabel(tc.index)
+		got := refurbishmentLabel(repository.RefurbishmentVariant{Number: tc.number})
 		if got != tc.want {
-			t.Errorf("refurbishmentLabel(%d) = %q, want %q", tc.index, got, tc.want)
+			t.Errorf("refurbishmentLabel(number %d) = %q, want %q", tc.number, got, tc.want)
 		}
 	}
 }
 
-func TestRefurbishmentLabel_beyondKnownPositions(t *testing.T) {
-	got := refurbishmentLabel(5)
-	if got == "" {
-		t.Error("refurbishmentLabel(5): expected non-empty fallback label")
+func TestRefurbishmentLabel_withDescription_usesDescription(t *testing.T) {
+	got := refurbishmentLabel(repository.RefurbishmentVariant{Number: 3, Description: "passive house"})
+	if got != "passive house" {
+		t.Errorf("refurbishmentLabel = %q, want %q", got, "passive house")
 	}
 }
 
@@ -150,39 +150,79 @@ func TestMatchVariants_unknownCountry_returns400(t *testing.T) {
 
 func TestMatchVariants_returnsLabelledVariants(t *testing.T) {
 	mock := &mockRepo{
-		matchVariants: func(_ context.Context, _, _ string) ([]string, error) {
-			return []string{"DE.N.SFH.01.Gen", "DE.N.SFH.01.ReEx", "DE.N.SFH.01.Add"}, nil
+		matchVariants: func(_ context.Context, _, _ string) ([]repository.RefurbishmentVariant, error) {
+			// Variant 2 absent, as in the newest BE and NL periods.
+			return []repository.RefurbishmentVariant{
+				{Code: "NL.N.SFH.06.Gen.ReEx.001.001", Number: 1},
+				{Code: "NL.N.SFH.06.Gen.ReEx.001.003", Number: 3, Description: "nZEB"},
+			}, nil
 		},
 	}
 	h := newTestHandler(mock)
-	w := serve(http.MethodGet, "/variants/DE/match?type=SFH&period=01", "/variants/:country_iso2/match", h.MatchVariants, nil)
+	w := serve(http.MethodGet, "/variants/NL/match?type=SFH&period=06", "/variants/:country_iso2/match", h.MatchVariants, nil)
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d — body: %s", w.Code, w.Body.String())
 	}
 
 	var resp struct {
 		Data []struct {
-			Code  string `json:"code"`
-			Label string `json:"label"`
+			Code        string `json:"code"`
+			Number      int    `json:"number"`
+			Label       string `json:"label"`
+			Description string `json:"description"`
 		} `json:"data"`
 	}
 	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("invalid JSON: %v", err)
 	}
-	if len(resp.Data) != 3 {
-		t.Fatalf("expected 3 entries, got %d", len(resp.Data))
+	if len(resp.Data) != 2 {
+		t.Fatalf("expected 2 entries, got %d", len(resp.Data))
 	}
-	wantLabels := []string{"Existing state", "Medium refurbishment", "Advanced refurbishment"}
-	for i, entry := range resp.Data {
-		if entry.Label != wantLabels[i] {
-			t.Errorf("entry[%d].label = %q, want %q", i, entry.Label, wantLabels[i])
+	if got := resp.Data[0]; got.Number != 1 || got.Label != "Existing state" || got.Description != "" {
+		t.Errorf("entry[0] = %+v, want number 1, label %q, no description", got, "Existing state")
+	}
+	if got := resp.Data[1]; got.Number != 3 || got.Label != "nZEB" || got.Description != "nZEB" {
+		t.Errorf("entry[1] = %+v, want number 3, label and description %q", got, "nZEB")
+	}
+}
+
+func TestMatchVariants_subtype_scopesPrefixAndIsEchoed(t *testing.T) {
+	cases := []struct{ query, wantSubtype string }{
+		{"", "Gen"},
+		{"&subtype=", "Gen"},
+		{"&subtype=Semi", "Semi"},
+	}
+	for _, tc := range cases {
+		var gotPrefix string
+		mock := &mockRepo{
+			matchVariants: func(_ context.Context, _, prefix string) ([]repository.RefurbishmentVariant, error) {
+				gotPrefix = prefix
+				return nil, nil
+			},
+		}
+		h := newTestHandler(mock)
+		w := serve(http.MethodGet, "/variants/BE/match?type=TH&period=01"+tc.query, "/variants/:country_iso2/match", h.MatchVariants, nil)
+		if w.Code != http.StatusOK {
+			t.Fatalf("query %q: expected 200, got %d, body: %s", tc.query, w.Code, w.Body.String())
+		}
+		var resp struct {
+			Prefix  string `json:"prefix"`
+			Subtype string `json:"subtype"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("invalid JSON: %v", err)
+		}
+		wantPrefix := "BE.N.TH.01." + tc.wantSubtype
+		if gotPrefix != wantPrefix || resp.Prefix != wantPrefix || resp.Subtype != tc.wantSubtype {
+			t.Errorf("query %q: repo prefix %q, response prefix %q subtype %q; want prefix %q subtype %q",
+				tc.query, gotPrefix, resp.Prefix, resp.Subtype, wantPrefix, tc.wantSubtype)
 		}
 	}
 }
 
 func TestMatchVariants_repoError_returns500(t *testing.T) {
 	mock := &mockRepo{
-		matchVariants: func(_ context.Context, _, _ string) ([]string, error) {
+		matchVariants: func(_ context.Context, _, _ string) ([]repository.RefurbishmentVariant, error) {
 			return nil, errors.New("connection refused")
 		},
 	}
@@ -195,7 +235,7 @@ func TestMatchVariants_repoError_returns500(t *testing.T) {
 
 func TestMatchVariants_emptyResult_returns200withEmptyList(t *testing.T) {
 	mock := &mockRepo{
-		matchVariants: func(_ context.Context, _, _ string) ([]string, error) {
+		matchVariants: func(_ context.Context, _, _ string) ([]repository.RefurbishmentVariant, error) {
 			return nil, nil
 		},
 	}
@@ -233,11 +273,14 @@ func TestMatchVariants_byYear_resolvesPeriodAndReturnsVariants(t *testing.T) {
 			gotPrefix, gotYear = typePrefix, year
 			return "03", nil
 		},
-		matchVariants: func(_ context.Context, _, prefix string) ([]string, error) {
-			if prefix != "DE.N.SFH.03" {
-				t.Errorf("MatchVariants prefix = %q, want DE.N.SFH.03", prefix)
+		matchVariants: func(_ context.Context, _, prefix string) ([]repository.RefurbishmentVariant, error) {
+			if prefix != "DE.N.SFH.03.Gen" {
+				t.Errorf("MatchVariants prefix = %q, want DE.N.SFH.03.Gen", prefix)
 			}
-			return []string{"DE.N.SFH.03.Gen", "DE.N.SFH.03.ReEx"}, nil
+			return []repository.RefurbishmentVariant{
+				{Code: "DE.N.SFH.03.Gen.ReEx.001.001", Number: 1},
+				{Code: "DE.N.SFH.03.Gen.ReEx.001.002", Number: 2},
+			}, nil
 		},
 	}
 	h := newTestHandler(mock)
@@ -311,7 +354,7 @@ func TestMatchVariants_yearWithNoMatchingArchetype_returns200EmptyList(t *testin
 		resolvePeriodByYear: func(_ context.Context, _, _ string, _ int) (string, error) {
 			return "", nil // no band for this type contains the year
 		},
-		matchVariants: func(_ context.Context, _, _ string) ([]string, error) {
+		matchVariants: func(_ context.Context, _, _ string) ([]repository.RefurbishmentVariant, error) {
 			t.Error("MatchVariants must not be called when no period resolves")
 			return nil, nil
 		},

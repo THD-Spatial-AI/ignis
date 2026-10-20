@@ -44,30 +44,34 @@ func (h *Handler) GetVariants(c *gin.Context) {
 	})
 }
 
-// refurbishmentLabels assigns human-readable labels to refurbishment levels by position.
-// TABULA orders variants alphabetically; the first is always the as-built / existing state.
-var refurbishmentLabels = []string{
-	"Existing state",
-	"Medium refurbishment",
-	"Advanced refurbishment",
+// refurbishmentLabels are TABULA's names for its standard variants, keyed by Number_BuildingVariant.
+var refurbishmentLabels = map[int]string{
+	1: "Existing state",
+	2: "Usual refurbishment",
+	3: "Advanced refurbishment",
 }
 
-// refurbishmentLabel returns a display label for a variant at the given position.
-func refurbishmentLabel(index int) string {
-	if index < len(refurbishmentLabels) {
-		return refurbishmentLabels[index]
+// defaultSubtype is TABULA's generic subtype, present for all but a few building types.
+const defaultSubtype = "Gen"
+
+// refurbishmentLabel returns TABULA's description of a variant, or TABULA's standard name for
+// its number where the record has no description. In recent periods the standard variants are
+// construction standards (e.g. "passive house"), which the standard names would misstate.
+func refurbishmentLabel(v repository.RefurbishmentVariant) string {
+	if v.Description != "" {
+		return v.Description
 	}
-	return fmt.Sprintf("Refurbishment level %d", index+1)
+	return refurbishmentLabels[v.Number]
 }
 
-// MatchVariants returns all refurbishment variants for a building type and construction period.
+// MatchVariants returns TABULA's standard refurbishment variants (existing state, usual and
+// advanced refurbishment) of one building subtype, ordered by variant number.
 // Query params: type (e.g. SFH) is required; exactly one of period (e.g. 01) or
-// year (e.g. 1975) must be given. year must be a non-negative integer no later
-// than the current calendar year. With year, ignis resolves the period whose
-// band contains it for that country and type; a year outside every defined
-// band for that type clamps to the oldest or newest period rather than
-// failing to match. The response is ordered from existing state to
-// most-refurbished.
+// year (e.g. 1975) must be given; subtype (e.g. Semi) is optional and defaults to Gen.
+// year must be a non-negative integer no later than the current calendar year.
+// With year, ignis resolves the period whose band contains it for that country and type;
+// a year outside every defined band for that type clamps to the oldest or newest period
+// rather than failing to match. A subtype without standard variants returns an empty list.
 func (h *Handler) MatchVariants(c *gin.Context) {
 	isoCode := strings.ToUpper(strings.TrimSpace(c.Param("country_iso2")))
 	tableName, err := tableNameFromISO(isoCode)
@@ -79,6 +83,10 @@ func (h *Handler) MatchVariants(c *gin.Context) {
 	buildingType := strings.ToUpper(strings.TrimSpace(c.Query("type")))
 	period := strings.TrimSpace(c.Query("period"))
 	yearParam := strings.TrimSpace(c.Query("year"))
+	subtype := strings.TrimSpace(c.Query("subtype"))
+	if subtype == "" {
+		subtype = defaultSubtype
+	}
 
 	if buildingType == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "query param 'type' is required"})
@@ -117,14 +125,14 @@ func (h *Handler) MatchVariants(c *gin.Context) {
 		}
 		if period == "" {
 			// No archetype of this type covers the year — an empty match list, not an error.
-			c.JSON(http.StatusOK, gin.H{"country": tableName, "prefix": typePrefix, "data": []any{}})
+			c.JSON(http.StatusOK, gin.H{"country": tableName, "prefix": typePrefix, "subtype": subtype, "data": []any{}})
 			return
 		}
 	}
 
-	prefix := fmt.Sprintf("%s.%s", typePrefix, period)
+	prefix := fmt.Sprintf("%s.%s.%s", typePrefix, period, subtype)
 
-	codes, err := h.repo.MatchVariants(ctx, tableName, prefix)
+	variants, err := h.repo.MatchVariants(ctx, tableName, prefix)
 	if err != nil {
 		utils.Error.Printf("failed to match variants for %s: %v", prefix, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query variants"})
@@ -132,17 +140,20 @@ func (h *Handler) MatchVariants(c *gin.Context) {
 	}
 
 	type variantEntry struct {
-		Code  string `json:"code"`
-		Label string `json:"label"`
+		Code        string `json:"code"`
+		Number      int    `json:"number"`
+		Label       string `json:"label"`
+		Description string `json:"description"`
 	}
-	entries := make([]variantEntry, len(codes))
-	for i, code := range codes {
-		entries[i] = variantEntry{Code: code, Label: refurbishmentLabel(i)}
+	entries := make([]variantEntry, len(variants))
+	for i, v := range variants {
+		entries[i] = variantEntry{Code: v.Code, Number: v.Number, Label: refurbishmentLabel(v), Description: v.Description}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"country": tableName,
 		"prefix":  prefix,
+		"subtype": subtype,
 		"data":    entries,
 	})
 }

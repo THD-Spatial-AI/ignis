@@ -12,9 +12,10 @@ type TabulaReader interface {
 	// ListVariants returns all building variant codes for a given country table.
 	ListVariants(ctx context.Context, tableName string) ([]string, error)
 
-	// MatchVariants returns variant codes whose Code_BuildingVariant starts with prefix + ".".
-	// prefix should be "CC.N.TYPE.PERIOD" (e.g. "DE.N.SFH.01").
-	MatchVariants(ctx context.Context, tableName, prefix string) ([]string, error)
+	// MatchVariants returns TABULA's standard refurbishment variants (ReEx.001.001 to
+	// .003) of one building subtype, ordered by variant number.
+	// prefix should be "CC.N.TYPE.PERIOD.SUBTYPE" (e.g. "DE.N.SFH.01.Gen").
+	MatchVariants(ctx context.Context, tableName, prefix string) ([]RefurbishmentVariant, error)
 
 	// ResolvePeriodByYear returns the TABULA period index (e.g. "03") whose
 	// construction-year band contains year, scoped to one building type.
