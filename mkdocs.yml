@@ -13,6 +13,9 @@ edit_uri: edit/main/docs/
 # Theme configuration
 theme:
   name: material
+  # The header is brand ink (#16191c) in both schemes, the background the -dark lockup is drawn for.
+  logo: assets/logo/ignis-lockup-ember-dark-outline.svg
+  favicon: assets/logo/favicon.ico
   features:
     - announce.dismiss
     - content.action.edit
@@ -38,26 +41,31 @@ theme:
   language: en
   palette:
     - media: "(prefers-color-scheme)"
+      primary: custom
+      accent: custom
       toggle:
         icon: material/link
         name: Switch to light mode
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: indigo
-      accent: indigo
+      primary: custom
+      accent: custom
       toggle:
         icon: material/toggle-switch
         name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: black
-      accent: indigo
+      primary: custom
+      accent: custom
       toggle:
         icon: material/toggle-switch-off
         name: Switch to system preference
   font:
     text: Roboto
     code: Roboto Mono
+
+extra_css:
+  - stylesheets/extra.css
 
 # Plugins
 plugins:
