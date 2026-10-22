@@ -13,6 +13,7 @@ edit_uri: edit/main/docs/
 # Theme configuration
 theme:
   name: material
+  custom_dir: overrides
   # The header is brand ink (#16191c) in both schemes, the background the -dark lockup is drawn for.
   logo: assets/logo/ignis-lockup-ember-dark-outline.svg
   favicon: assets/logo/favicon.ico
