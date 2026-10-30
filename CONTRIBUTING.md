@@ -49,6 +49,7 @@ cd ignis
 ### 2. Create a branch
 
 ```bash
+git checkout dev
 git checkout -b type/short-description
 ```
 
@@ -78,7 +79,7 @@ git push -u origin <your-branch-name>
 
 ### 6. Open a pull request
 
-Create a pull request against `main`. Include:
+Create a pull request against `dev`. `main` receives only releases, merged from `dev`. Include:
 
 - What changed and why
 - Any validation results affected
