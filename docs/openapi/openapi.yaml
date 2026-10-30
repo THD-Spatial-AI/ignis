@@ -38,9 +38,9 @@ security: []
 
 servers:
   - url: http://localhost:8088
-    description: Local development, environment/http (no proxy, no TLS)
+    description: Local development, plain HTTP (no proxy, no TLS)
   - url: https://localhost
-    description: Local development, environment/https (Caddy terminates TLS)
+    description: Local development, https profile (Caddy terminates TLS)
   - url: https://{host}
     description: Deployed behind the platform's ingress
     variables:

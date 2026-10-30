@@ -14,7 +14,7 @@ ignis carries no credential and asks for none. Every endpoint is reachable by an
     Nothing in ignis stops an unauthenticated caller. Keep it on an internal network, or behind something that authenticates for it. A user-facing login in front of a calling system (EnerPlanET uses Keycloak) authenticates the user to *that system*, not to ignis; that system's backend then calls ignis on the user's behalf.
 
 !!! note "Base URL"
-    The base URL depends on the environment in use. `environment/http` publishes the app directly, giving `http://localhost:8088`. `environment/https` puts Caddy in front of it for TLS, giving `https://localhost`. In a deployment it is whatever host ignis is published on. Every path below is the same either way.
+    The base URL depends on how the stack runs. By default the API is published directly, giving `http://localhost:8088`. The `https` profile puts Caddy in front of it for TLS, giving `https://localhost`. In a deployment it is whatever host ignis is published on. Every path below is the same either way.
 
 ## Call sequence
 
@@ -83,11 +83,11 @@ The body also accepts an optional `surfaces` list, one entry per physical elemen
 
 [Open the API reference](openapi/index.html), which can call a locally running ignis directly, no `mkdocs serve` needed to view it.
 
-**Step 1:** Start the stack, from `environment/http/`: `docker compose -f docker-compose.prod.yml up -d`. On a first run, load the TABULA data once: `docker compose -f docker-compose.prod.yml --profile seed run --rm build-db`.
+**Step 1:** Start the stack, from `environment/`: `docker compose up -d --pull always --no-build`. `up` seeds an empty database itself.
 
 **Step 2:** Serve `docs/openapi/` on `http://localhost:8000` (`python -m http.server 8000` from that directory), which `ALLOWED_ORIGINS` already allows. Opening the file directly (`file://`) is enough for reading the reference, but **Try it out** needs an allowed origin.
 
 **Step 3:** Pick `http://localhost:8088` from the **Servers** dropdown, then expand an endpoint, click **Try it out**, fill in the parameters, and **Execute**.
 
-!!! info "Using the HTTPS environment instead"
-    `environment/https` serves the same API on `https://localhost`. Select that server in the dropdown. On the quickstart path, open `https://localhost` in a tab once and accept the certificate warning first: browser JavaScript cannot click through it the way a manual page load can.
+!!! info "Using the https profile instead"
+    `docker compose --profile https up -d --pull always --no-build` serves the same API on `https://localhost`. Select that server in the dropdown. With `CADDY_DATA_DIR` unset, open `https://localhost` in a tab once and accept the certificate warning first: browser JavaScript cannot click through it the way a manual page load can.

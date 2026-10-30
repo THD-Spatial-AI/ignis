@@ -1,0 +1,115 @@
+# ignis and its database, served over plain HTTP or, with the `https` profile,
+# behind Caddy terminating TLS. One file covers every way of running it:
+#
+#   docker compose up -d --build                        # build from this checkout
+#   docker compose up -d --pull always --no-build       # run the published release
+#   docker compose --profile https up -d ...            # either, behind Caddy
+#
+# IGNIS_IMAGE_TAG picks the release (default `latest`); COMPOSE_PROFILES=https
+# in .env makes https the default. .env is optional: every ${...} below has a
+# default.
+#
+# What limits who can reach the API is the port mapping, not ALLOWED_ORIGINS.
+# CORS is enforced by a browser on behalf of a page it loaded; a
+# server-to-server caller sends no Origin header and ignores the response.
+# HOST_BIND therefore defaults to 127.0.0.1.
+
+# The unit `down --remove-orphans` acts on, so it is scoped to this repository.
+name: ignis
+
+services:
+  db:
+    restart: unless-stopped
+    image: postgres:17-alpine
+    env_file: [env/db.env]
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api:
+    restart: unless-stopped
+    image: ghcr.io/thd-spatial-ai/ignis:${IGNIS_IMAGE_TAG:-latest}
+    build:
+      # The dockerfiles stay at environment/ because
+      # .github/workflows/docker-publish.yml builds from that path.
+      context: ..
+      dockerfile: environment/ignis-app.dockerfile
+    networks:
+      default:
+      tentacron-net:
+        # Callers in other repositories address `ignis`. The service name
+        # `api` is shared by other repositories on this network and resolves
+        # to any of them, so it is never an address. ignis-http is kept until
+        # every caller has moved to `ignis`.
+        aliases: [ignis, ignis-http]
+    env_file: [env/common.env, env/app.env]
+    environment:
+      - APP_PORT=${APP_PORT:-8080}
+    depends_on:
+      db:
+        condition: service_healthy
+      build-db:
+        condition: service_completed_successfully
+    # 8088 rather than 8080, which the EnerPlanET platform's Keycloak holds on
+    # every interface. Set HOST_BIND=0.0.0.0 only where a firewall or upstream
+    # proxy controls who reaches the port.
+    ports:
+      - "${HOST_BIND:-127.0.0.1}:${HOST_PORT:-8088}:${APP_PORT:-8080}"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:$$APP_PORT/ignis/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  # Seeds an empty database on `up` and exits; a populated one is left alone.
+  # Rebuilding a populated database DROPS and recreates all country tables:
+  #   docker compose run --rm build-db -if-empty=false
+  build-db:
+    image: ghcr.io/thd-spatial-ai/ignis-build-db:${IGNIS_IMAGE_TAG:-latest}
+    build:
+      context: ..
+      dockerfile: environment/ignis-db.dockerfile
+    command: ["-if-empty"]
+    env_file: [env/app.env]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  proxy:
+    profiles: [https]
+    restart: unless-stopped
+    image: caddy:2.11-alpine
+    env_file: [env/proxy.env]
+    environment:
+      - APP_PORT=${APP_PORT:-8080}
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${HOST_HTTPS_PORT:-443}:443"
+    volumes:
+      # A directory mount: editors save by renaming over the file, and a
+      # single-file bind mount keeps serving the old inode.
+      - ./caddy:/etc/caddy:ro
+      # Set CADDY_DATA_DIR to the host directory `caddy trust` created to get
+      # a trusted certificate. Unset, Caddy keeps its CA in a Docker volume
+      # that is in no trust store, and clients see a certificate warning.
+      - ${CADDY_DATA_DIR:-caddy-data}:/data/caddy
+
+volumes:
+  db-data:
+  caddy-data:
+
+# The key must equal the name and this block must stay exactly as it is:
+# Compose labels the network with the key, and every repository joining
+# tentacron-net declares it identically. A different key fails with
+# "network tentacron-net was found but has incorrect label"; adding a driver or
+# ipam block makes a joining project try to recreate the network.
+networks:
+  tentacron-net:
+    name: tentacron-net

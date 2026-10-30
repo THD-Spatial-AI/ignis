@@ -3,7 +3,7 @@
 # That is its only job here: ignis handles CORS itself, preflight included
 # (internal/api/middleware/middleware.go), and there is no API-key gate.
 #
-# Use environment/http/ instead where TLS is terminated upstream, or not needed.
+# Runs only under the compose `https` profile; plain `docker compose up` serves HTTP.
 #
 # Site address is `localhost` for local development. A real deployment sets
 # IGNIS_SITE_ADDRESS in env/proxy.env to its own domain, or Caddy will
@@ -20,5 +20,5 @@
 }
 
 {$IGNIS_SITE_ADDRESS:localhost} {
-	reverse_proxy ignis:{$APP_PORT:8080}
+	reverse_proxy api:{$APP_PORT:8080}
 }
