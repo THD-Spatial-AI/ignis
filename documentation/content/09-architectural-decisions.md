@@ -56,7 +56,7 @@
 
 ## ADR-005: One Compose project per repository and transport, with a shared-network alias as the cross-repository name
 
-**Status:** Decided
+**Status:** Superseded by ADR-007, which keeps its project scoping, generated container names and shared-network rules
 
 **Context:** The energy-modelling system is several services (ignis, buem, city2tabula, weather and more), each with an app, sometimes a proxy and sometimes a database, expected to run side by side on one developer machine. Both of ignis's own environments must be able to run at the same time.
 
@@ -90,7 +90,7 @@ A shared network declared with a driver, subnet or ipam block. A joining project
 
 ## ADR-006: Two Compose environments, http and https, rather than one with a toggle
 
-**Status:** Decided
+**Status:** Superseded by ADR-007
 
 **Context:** Running ignis locally meant standing up Caddy: a `caddy` CLI install on the host, a one-off `caddy trust`, a `CADDY_DATA_DIR` that fails validation when wrong, and a key in `env/proxy.env`. None of that is wanted by a developer who needs the API up to test against. In production TLS is often already terminated upstream, by a firewall or the orchestrator's own reverse proxy.
 
@@ -101,3 +101,23 @@ A shared network declared with a driver, subnet or ipam block. A joining project
 **Rejected:** A single environment with a profile or an override file selecting the proxy. Compose merges `volumes:` by appending, and a service left with both `build:` and `image:` can still fall back to building locally, so overrides here fail quietly rather than loudly.
 
 **Shared:** The two dockerfiles stay at `environment/`. The published image is identical for both environments, and the publishing workflow builds from that one path; per-directory copies would give CI two identical files with no correct one to pick, and they would drift.
+
+## ADR-007: One compose file, with build or release and http or https chosen per command
+
+**Status:** Decided
+
+**Context:** ADR-005 and ADR-006 left four compose files across `environment/http` and `environment/https`, plus a quickstart, with the services carrying only small differences. Every repository on `tentacron-net` named its services differently, and a deployment script building some services from a branch and running released images of others had to know each repository's file layout.
+
+**Decision:** One `environment/docker-compose.yml`, Compose project `ignis`. Services are named by role: `api`, `db`, `build-db`, and `proxy` under the `https` profile. `api` and `build-db` carry both `image:` and `build:`; `--build` builds from the checkout and `--pull always --no-build` runs the release named by `IGNIS_IMAGE_TAG`. `api` joins `tentacron-net` in both modes with the alias `ignis`, which is the cross-repository name, and keeps `ignis-http` until every caller has moved. Caddy's data mount is `${CADDY_DATA_DIR:-caddy-data}`.
+
+**Reason:** The project and service layout matches every other service repository on the shared network, so a container reads `<repository>-<role>-<n>` and callers address each service by its repository name. With one project per host, ADR-005's case against a bare repository alias, two ignis stacks on the network at once, no longer arises, so `ignis` is unique.
+
+ADR-006's objections to a toggle no longer apply. Appended `volumes:` was a property of override files, and there are none: the Caddy data mount is one entry whose source is chosen by the variable, a host directory when it is set and a Docker volume otherwise, which is what the quickstart file provided. The quiet fallback from `image:` to `build:` happens only on a bare `up`; every documented command passes `--build` or `--no-build`, and `--no-build` fails loudly when the image cannot be pulled.
+
+`api` keeps its loopback port under `https`. It stays bound to `127.0.0.1`, so Caddy remains the only way in from another host.
+
+**Kept from ADR-005:** the project is scoped to this repository, because it is what `down --remove-orphans` acts on; no `container_name`, so Compose generates names; `db` and `build-db` never join `tentacron-net`; the network block is declared with the key equal to the name and no driver or ipam options.
+
+**Rejected:** The repository name as the service name (`ignis` in project `ignis`), which gives the container `ignis-ignis-1` for no gain once the alias carries the cross-repository name. `api` itself as an address: every repository on `tentacron-net` registers it, so it resolves to any of them.
+
+**Open:** Removing the `ignis-http` alias once no caller uses it.

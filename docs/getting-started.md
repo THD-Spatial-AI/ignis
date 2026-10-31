@@ -4,73 +4,65 @@ audience: developer
 
 # Getting started
 
-ignis is an HTTP API that computes TABULA heating demand for building archetypes. It ships as a Docker Compose stack: the Go application and its own PostgreSQL instance, optionally behind a Caddy reverse proxy that terminates TLS.
+ignis is an HTTP API that computes TABULA heating demand for building archetypes. It ships as one Docker Compose file, `environment/docker-compose.yml`: the Go application and its own PostgreSQL instance, optionally behind a Caddy reverse proxy that terminates TLS.
 
-## Choosing an environment
+## Running with Docker
 
-`environment/` holds two self-contained directories. Each one is complete on its own.
+Run every command from `environment/`. Two choices combine freely: where the images come from, and whether Caddy terminates TLS.
 
-| Directory | Containers | Use when |
-|---|---|---|
-| [`environment/http`](#http) | app, database | Developing against the API, or deploying where TLS is already terminated upstream |
-| [`environment/https`](#https) | app, database, Caddy | ignis has to terminate TLS itself |
-
-TLS is a property of a deployment, not of ignis. Where a platform ingress, an orchestrator's own reverse proxy, or a firewall already handles it, `environment/http` is the whole stack.
-
-Each directory holds one compose file per source of images:
-
-| File | Images |
+| Images | Command |
 |---|---|
-| `docker-compose.yml` | built from this checkout, so it picks up local code changes |
-| `docker-compose.prod.yml` | pulled from GHCR, no Go toolchain or source tree needed |
-| `docker-compose.quickstart.yml` (`https` only) | pulled from GHCR, with Caddy's CA in a Docker volume instead of the host trust store |
+| Built from this checkout, picking up local code changes | `docker compose up -d --build` |
+| The published release from GHCR, no Go toolchain needed | `docker compose up -d --pull always --no-build` |
+
+Add `--profile https` to either to start Caddy in front of the API (see [https](#https)), or set `COMPOSE_PROFILES=https` in `.env` to make it the default. Without it the stack serves plain HTTP, which is the whole stack where a platform ingress, an orchestrator's proxy or a firewall already terminates TLS.
 
 A third path, [manual setup](#manual-setup), runs the binaries without containers.
 
-!!! info "Both environments can run at once"
-    They use separate Compose projects (`ignis-http`, `ignis-https`), separate generated container names and separate database volumes, so both can run at once. Each has its own database and seeds it on its own `up`.
-
-!!! warning "Upgrading from a checkout made before the project rename"
-    The Compose project names are now `ignis-http` and `ignis-https`, previously `building-simulation` for both, and the fixed container names are gone. An existing stack has to come down first, because the old containers still hold those names. Remove them by name, which reaches nothing but ignis:
+!!! warning "Upgrading from `environment/http` and `environment/https`"
+    The stack is now the single Compose project `ignis`, replacing `ignis-http` and `ignis-https`. Bring an old stack down from a checkout that still has those directories, or by project name, before the first `up`:
 
     ```bash
-    docker stop ignis-app ignis-db ignis-reverse-proxy
-    docker rm ignis-app ignis-db ignis-reverse-proxy
+    docker compose -p ignis-http down
+    docker compose -p ignis-https down
     ```
 
-    Do not use `docker compose -p building-simulation down`. That targets the project rather than this repository, so on a machine where another service still declares the old project name it removes that service's containers as well, naming neither.
+    The database volume is now `ignis_db-data`, and `up` seeds it on first start. Remove the old volumes with `docker volume rm ignis-http_db-data ignis-https_db-data` once the new one is populated.
 
-    Each environment now has its own database volume, and each seeds itself on its first `up`. The previous shared volume, `building-simulation_ignis-db-data`, is left in place and no longer mounted; remove it with `docker volume rm building-simulation_ignis-db-data` once the new ones are populated.
-
-    If `tentacron-net` already exists from `make tentacron-stack`, `up` fails with a label mismatch, because a network made by `docker network create` carries no Compose labels. Remove it with `docker network rm tentacron-net` while nothing is attached, and the first stack up recreates it correctly.
-
-    Both cases report the same thing, a label rather than a name, which is why neither reads as a naming problem:
+    If `tentacron-net` already exists from `make tentacron-stack`, `up` fails with a label mismatch, because a network made by `docker network create` carries no Compose labels:
 
     ```
     network tentacron-net was found but has incorrect label
     com.docker.compose.network set to "" (expected: "tentacron-net")
     ```
 
-    An empty value means the network was created outside Compose, by `docker network create`; remove it as above. Any other value means a compose file declared the network under a different key, because Compose compares the key rather than the `name:`, so two files can name the same network and still refuse to start. Spell the key `tentacron-net`, the same as the name.
+    An empty value means the network was created outside Compose; remove it with `docker network rm tentacron-net` while nothing is attached, and the first stack up recreates it. Any other value means a compose file declared the network under a different key: Compose compares the key rather than the `name:`, so spell the key `tentacron-net`, the same as the name.
 
 !!! note "Compose warns about the shared network"
-    Whichever stack did not create `tentacron-net` prints that it "exists but was not created for project ..." and suggests `external: true`. The warning is expected and permanent: one network is deliberately shared by several repositories, so every project but the creator reports it. Do not switch it to `external: true`, which requires the network to exist before `up` and so breaks a first run on a clean machine.
+    Whichever stack did not create `tentacron-net` prints that it "exists but was not created for project ..." and suggests `external: true`. The warning is expected: one network is shared by several repositories, so every project but the creator reports it. Do not switch it to `external: true`, which requires the network to exist before `up` and so breaks a first run on a clean machine.
 
 ## Configuration files
 
-Each environment reads an optional `.env`, interpolated on the host, plus the files under its own `env/` directory, which are passed into the containers. They are split so each service receives only the variables it reads.
+Compose reads an optional `environment/.env`, interpolated on the host, plus the files under `environment/env/`, which are passed into the containers. They are split so each service receives only the variables it reads.
 
 | File | Read by | Holds |
 |---|---|---|
-| `.env` | Docker Compose, on the host | `APP_PORT`, `IGNIS_IMAGE_TAG`, plus `HOST_BIND`/`HOST_PORT` (http) or `HOST_HTTPS_PORT`/`CADDY_DATA_DIR` (https) |
-| `env/common.env` | app | `ALLOWED_ORIGINS` |
+| `.env` | Docker Compose, on the host | `COMPOSE_PROFILES`, `IGNIS_IMAGE_TAG`, `HOST_BIND`, `HOST_PORT`, `APP_PORT`, `HOST_HTTPS_PORT`, `CADDY_DATA_DIR` |
+| `env/common.env` | api | `ALLOWED_ORIGINS` |
 | `env/db.env` | db | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` |
-| `env/app.env` | app, build_db | `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_SSL_MODE` |
-| `env/proxy.env` (https only) | proxy | `IGNIS_SITE_ADDRESS` |
+| `env/app.env` | api, build-db | `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_SSL_MODE` |
+| `env/proxy.env` | proxy | `IGNIS_SITE_ADDRESS` |
 
-The `env/` files are committed with local development defaults, including a placeholder database password. Replace them before any deployment: see [Deployment](#deployment).
+`.env.example` lists every `.env` variable with its default. The `env/` files are committed with local development defaults, including a placeholder database password. Replace them before any deployment: see [Deployment](#deployment).
 
-Both dockerfiles stay at `environment/`, shared by the two environments. The published image is the same either way, and CI builds from that one path.
+| Compose service | Image | Role |
+|---|---|---|
+| `api` | `ghcr.io/thd-spatial-ai/ignis` | HTTP API server |
+| `build-db` | `ghcr.io/thd-spatial-ai/ignis-build-db` | TABULA seeder, runs on `up` and exits |
+| `db` | `postgres:17-alpine` | PostgreSQL database |
+| `proxy` | `caddy:2.11-alpine` | TLS termination, `https` profile only |
+
+Containers are named `ignis-<service>-<n>`, for example `ignis-api-1`. On the shared `tentacron-net` network, callers in other repositories address the API as `ignis`. The bare service name `api` is used by other repositories on that network too, so it is never an address. The alias `ignis-http` still resolves, for callers not yet moved to `ignis`.
 
 ## Access control
 
@@ -79,7 +71,7 @@ ignis carries no credential and asks for none. There is no API key on any endpoi
 What limits who can reach it is the port mapping, not `ALLOWED_ORIGINS`. CORS is enforced by a browser on behalf of a page it has loaded; a server-to-server caller sends no `Origin` header and ignores the response headers entirely.
 
 !!! danger "Decide reachability at the network layer"
-    In `environment/http` the app is bound to `127.0.0.1` by default, so nothing off the host can connect. In `environment/https` the app publishes no port at all and only the proxy is exposed. Set `HOST_BIND=0.0.0.0` only where something in front of the host decides who may connect. Deploy it only on a network whose access you control, behind a platform that has already authenticated the user.
+    The API is published on `HOST_BIND:HOST_PORT`, `127.0.0.1:8088` by default, in both modes, so nothing off the host can connect to it directly. Under `https`, Caddy publishes `HOST_HTTPS_PORT` on every interface. Set `HOST_BIND=0.0.0.0` only where something in front of the host decides who may connect. Deploy ignis only on a network whose access you control, behind a platform that has already authenticated the user.
 
 ---
 
@@ -87,90 +79,55 @@ What limits who can reach it is the port mapping, not `ALLOWED_ORIGINS`. CORS is
 
 Nothing on the host but Docker. No certificate to trust, no key to send.
 
-### 1. Start the stack
-
 ```bash
-cd environment/http
-docker compose -f docker-compose.prod.yml pull
-docker compose -f docker-compose.prod.yml up -d
+cd environment
+docker compose up -d --pull always --no-build
 ```
 
-To build from this checkout instead, so local code changes are picked up, drop the `-f` and use `docker compose up -d`.
-
-`.env` is optional: every variable has a default.
+The base URL is `http://localhost:8088`. `up` seeds an empty database before it starts the API (see [Seeding the database](#seeding-the-database)), then follow [Verifying](#verifying).
 
 | Variable | Description | Default |
 |---|---|---|
-| `HOST_BIND` | Host interface the app is published on | `127.0.0.1` |
-| `HOST_PORT` | Host port the app is published on | `8088` |
-| `APP_PORT` | The app's internal listen port | `8080` |
-
-### 2. Verify
-
-`up` seeds an empty database before it starts `ignis` (see [Seeding the database](#seeding-the-database)). Follow [Verifying](#verifying). The base URL is `http://localhost:8088`.
+| `HOST_BIND` | Host interface the API is published on | `127.0.0.1` |
+| `HOST_PORT` | Host port the API is published on | `8088` |
+| `APP_PORT` | The API's internal listen port | `8080` |
 
 ---
 
 ## https
 
-Adds Caddy in front of the app to terminate TLS. Caddy does nothing else: ignis answers CORS preflight itself, and no request carries a credential.
+Adds Caddy in front of the API to terminate TLS. Caddy does nothing else: ignis answers CORS preflight itself, and no request carries a credential.
+
+```bash
+cd environment
+docker compose --profile https up -d --pull always --no-build
+```
+
+This starts `db`, then `api` once the database reports healthy, then `proxy` once the API reports healthy. Caddy publishes `HOST_HTTPS_PORT`, default `443`. The base URL is `https://localhost`.
+
+| Variable | Description | Default |
+|---|---|---|
+| `HOST_HTTPS_PORT` | Host port Caddy publishes | `443` |
+| `CADDY_DATA_DIR` | Host directory holding a CA from `caddy trust` | unset: a Docker volume |
 
 ### Certificates
 
 How `https://localhost` behaves depends on where Caddy's local CA is stored.
 
-| Compose file | CA location | Result |
+| `CADDY_DATA_DIR` | CA location | Result |
 |---|---|---|
-| `docker-compose.quickstart.yml` | Docker-managed volume | Never enters the host trust store. Expect an untrusted-certificate warning. |
-| `docker-compose.yml`, `docker-compose.prod.yml` | Host directory (`CADDY_DATA_DIR`), created by `caddy trust` | Trusted, no warning, no `-k` needed. |
+| unset | Docker volume `ignis_caddy-data` | Never enters the host trust store. Expect an untrusted-certificate warning. |
+| set | The host directory `caddy trust` created | Trusted, no warning, no `-k` needed. |
 
-On the quickstart path, click through the warning in the browser, or pass `-k` (curl), `--no-check-certificate` (wget), or "disable SSL verification" (Postman).
+For a trusted certificate, install the `caddy` CLI on the host, run `caddy trust` once, and set `CADDY_DATA_DIR` in `.env` to the directory it created (Linux `~/.local/share/caddy`, macOS `~/Library/Application Support/Caddy`). A wrong path gives an untrusted certificate, the same as leaving it unset.
+
+Without it, click through the warning in the browser, or pass `-k` (curl), `--no-check-certificate` (wget), or "disable SSL verification" (Postman).
 
 !!! info "Using Swagger UI"
-    Calling the API from Swagger UI's "Try it out" on the [API reference](api.md) needs one extra step on the quickstart path. Browser JavaScript cannot click through a certificate warning the way a manual page load can, so a `fetch()` to an untrusted origin fails outright. Open `https://localhost` directly in a new tab first and click through the warning. Most browsers then trust that origin for the rest of the session.
-
-### Quickstart: pulled images, no host setup
-
-Needs only Docker. No Go toolchain, no `caddy` install, no `.env`.
-
-```bash
-git clone https://github.com/thd-spatial-ai/ignis.git
-cd ignis/environment/https
-docker compose -f docker-compose.quickstart.yml up -d
-```
+    Calling the API from Swagger UI's "Try it out" on the [API reference](api.md) with an untrusted certificate needs one extra step. Browser JavaScript cannot click through a certificate warning the way a manual page load can, so a `fetch()` to an untrusted origin fails outright. Open `https://localhost` directly in a new tab first and click through the warning. Most browsers then trust that origin for the rest of the session.
 
 !!! warning "Docker Desktop: work from a directory under the home folder"
-    Docker Desktop only shares paths under the user's home directory, or another folder added under File Sharing, into its VM. A working directory under `/tmp` fails with a bind-mount error such as "not shared from the host", which does not obviously point at the File Sharing setting. Clone or copy these files under the home directory instead.
-
-This starts `db`, then `ignis` once the database reports healthy, then `proxy` once the app reports healthy. Only the proxy publishes a host port (`HOST_HTTPS_PORT`, default `443`).
-
-`up` seeds an empty database before it starts `ignis` (see [Seeding the database](#seeding-the-database)). Then [Verifying](#verifying).
-
-### From source, with a trusted certificate
-
-Builds `ignis` and `build-db` from this checkout, so it picks up local code changes, and reuses a CA the browser already trusts.
-
-Install the `caddy` CLI on the host and run `caddy trust` once. That installs a local CA into the OS and browser trust store, which the proxy then reuses.
-
-```bash
-caddy trust
-cd environment/https
-cp .env.example .env
-docker compose up -d
-```
-
-`.env` must define:
-
-| Variable | Description | Default |
-|---|---|---|
-| `CADDY_DATA_DIR` | Host directory holding the `caddy trust` CA | required, no default |
-| `APP_PORT` | The app's internal listen port | `8080` |
-| `HOST_HTTPS_PORT` | The proxy's published port | `443` |
-
-!!! warning "CADDY_DATA_DIR"
-    A wrong value silently produces an untrusted certificate. A missing one fails validation instead, reported by name: `required variable CADDY_DATA_DIR is missing a value`.
-
-`up` seeds an empty database before it starts `ignis` (see [Seeding the database](#seeding-the-database)). Then [Verifying](#verifying).
+    Docker Desktop only shares paths under the user's home directory, or another folder added under File Sharing, into its VM. A checkout under `/tmp` fails with a bind-mount error such as "not shared from the host", which does not obviously point at the File Sharing setting.
 
 ---
 
@@ -178,52 +135,55 @@ docker compose up -d
 
 The TABULA workbook is baked into the `build-db` image, so there is nothing to download. A seed runs in one transaction: if it fails, nothing is committed and any previous tables stay.
 
-`up` runs `build-db -if-empty` and starts `ignis` only once it exits successfully. An empty database is seeded, a populated one is left unchanged, and a failed seed fails `up` with `service "build-db" didn't complete successfully`.
+`up` runs `build-db -if-empty` and starts the API only once it exits successfully. An empty database is seeded, a populated one is left unchanged, and a failed seed fails `up` with `service "build-db" didn't complete successfully`.
 
 !!! warning "Rebuilding is destructive"
     Rebuilding a populated database from the workbook drops and recreates all country tables:
 
     ```bash
-    <compose prefix> run --rm build-db -if-empty=false
+    docker compose run --rm build-db -if-empty=false
     ```
 
-    `<compose prefix>` is `docker compose` for `docker-compose.yml`, or `docker compose -f <file>` for the others.
+!!! warning "Building from source needs Git LFS"
+    The workbook is stored in Git LFS and copied into the `build-db` image. A checkout made without `git lfs install` holds a small pointer file instead, and the seed fails. See [Manual setup](#manual-setup).
 
 ## Verifying
 
 ```bash
-<compose prefix> exec db psql -U postgres -d ignis -c "\dt tabula.*"
+docker compose exec db psql -U postgres -d ignis -c "\dt tabula.*"
 ```
 
-That lists the seeded tables. Then check that the API answers, using the base URL of the environment in use:
+That lists the seeded tables. Then check that the API answers:
 
 ```bash
-curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8088/ignis/health   # environment/http
-curl -s -o /dev/null -w '%{http_code}\n' https://localhost/ignis/health       # environment/https
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8088/ignis/health   # either mode
+curl -s -o /dev/null -w '%{http_code}\n' https://localhost/ignis/health       # https profile
 ```
 
-Both return `200`. Add `-k` on the https quickstart path, where the certificate does not chain to a trusted CA.
+Both return `200`. Add `-k` to the second when `CADDY_DATA_DIR` is unset.
 
 ## Tearing down
 
 ```bash
-<compose prefix> down -v
+docker compose --profile https down -v
 ```
 
-The `-v` removes the database volume, so the next `up` seeds again. Omit it to keep the seeded data.
+`--profile https` also stops Caddy if it runs, and is harmless otherwise. The `-v` removes the database volume, so the next `up` seeds again. Omit it to keep the seeded data.
 
 ## Pinning a version
 
-The paths that pull images default to the `latest` published release. To pin a specific one, set `IGNIS_IMAGE_TAG` before starting:
+`--no-build` runs the `latest` published release by default. To pin a specific one, set `IGNIS_IMAGE_TAG` in `.env`, or export it before starting:
 
 ```bash
-export IGNIS_IMAGE_TAG=0.7.0
-<compose prefix> pull
-<compose prefix> up -d
+export IGNIS_IMAGE_TAG=0.8.0
+docker compose up -d --pull always --no-build
 ```
 
 !!! info "Tag format"
-    Published image tags carry no `v` prefix, even though the Git tags do. Release `v0.7.0` publishes as `0.7.0`, the first release whose `build-db` accepts `-if-empty`. Export the variable rather than prefixing a single command, so the app and seed images come from the same release.
+    Published image tags carry no `v` prefix, even though the Git tags do. Release `v0.8.0` publishes as `0.8.0`. Export the variable rather than prefixing a single command, so the API and seed images come from the same release.
+
+!!! warning "Source builds take the same tag"
+    `--build` tags what it builds as `ghcr.io/thd-spatial-ai/ignis:${IGNIS_IMAGE_TAG}`, `latest` by default. Running a release afterwards needs `--pull always`, as above, or the local build keeps running under the release's name.
 
 ---
 
@@ -252,7 +212,7 @@ For local development without containers.
 
 ### Configuration
 
-This path reads `environment/http/env/app.env` for database settings and `environment/http/env/common.env` for CORS. The committed values work as they are, apart from these:
+This path reads `environment/env/app.env` for database settings and `environment/env/common.env` for CORS. The committed values work as they are, apart from these:
 
 | Variable | Change to |
 |---|---|
@@ -293,18 +253,7 @@ Add `-strict` to exit 1 when any building is outside the tolerance. This path on
 
 ## Deployment
 
-Use `docker-compose.prod.yml` from whichever environment matches how TLS is handled. It pulls published images and needs no source tree on the target machine.
-
-Copy across the whole directory: the compose file, `.env`, the `env/` directory, and, for `environment/https`, the `caddy/` directory.
-
-!!! info "Service and image names"
-    | Compose service | Published image | Role |
-    |---|---|---|
-    | `ignis` | `ghcr.io/thd-spatial-ai/ignis` | HTTP API server |
-    | `build-db` | `ghcr.io/thd-spatial-ai/ignis-build-db` | TABULA seeder, runs on `up` and exits |
-    | `db` | `postgres:17-alpine` (not built here) | PostgreSQL database |
-
-    Service names and image names are independent: the seeder's image keeps the `ignis-` prefix it publishes under. `IGNIS_IMAGE_TAG` pins both `ghcr.io` images to one release. The service is named `ignis` because a service name is registered as a DNS alias on every network it joins, `tentacron-net` included, so it has to be unique across the workspace; `db` and `build-db` never join it and so stay short.
+Copy the whole `environment/` directory to the target machine: `docker-compose.yml`, `.env`, `env/` and, for `https`, `caddy/`. Release images need no source tree there.
 
 ### 1. Prepare the `env/` files
 
@@ -317,28 +266,25 @@ Copy across the whole directory: the compose file, `.env`, the `env/` directory,
 
 ### 2. Prepare `.env`
 
-For `environment/http`: `HOST_BIND` and `HOST_PORT` default to `127.0.0.1` and `8088`. Set `HOST_BIND=0.0.0.0` only where something in front of the host decides who may connect.
-
-For `environment/https`: `CADDY_DATA_DIR` is required; `APP_PORT` and `HOST_HTTPS_PORT` default to `8080` and `443`.
-
 Set `IGNIS_IMAGE_TAG` to pin a release. This is strongly advised for any deployment that should not move on the next publish. See [Pinning a version](#pinning-a-version).
+
+`HOST_BIND` and `HOST_PORT` default to `127.0.0.1` and `8088`. Set `HOST_BIND=0.0.0.0` only where something in front of the host decides who may connect. For TLS terminated by ignis itself, set `COMPOSE_PROFILES=https`.
 
 ### 3. Set the site address (https only)
 
 !!! warning "Set IGNIS_SITE_ADDRESS before deploying"
-    It defaults to `localhost`. Set it in `env/proxy.env` to the deployment's real domain, or Caddy will neither serve it nor provision a certificate for it. TLS-ALPN-01 (Caddy's default ACME challenge) works entirely over port 443, which is all the compose file publishes, so no port change is needed.
+    It defaults to `localhost`. Set it in `env/proxy.env` to the deployment's real domain, or Caddy will neither serve it nor provision a certificate for it. TLS-ALPN-01 (Caddy's default ACME challenge) works entirely over port 443, which is all Caddy publishes, so no port change is needed.
 
 ### 4. Pull and start
 
 `up` seeds an empty database itself.
 
 ```bash
-docker compose -f docker-compose.prod.yml pull
-docker compose -f docker-compose.prod.yml up -d
+docker compose up -d --pull always --no-build
 ```
 
-!!! warning "Pull first"
-    With `IGNIS_IMAGE_TAG` unset, a host that already has `latest` cached keeps running the old build after a release, with nothing on that host revealing it.
+!!! warning "Always pull"
+    Without `--pull always`, a host that already has the tag cached keeps running that image, with nothing on the host revealing it.
 
 ### 5. Verify
 
@@ -353,6 +299,6 @@ Expect `200`, then a list of variant codes. If the second call fails while healt
 
 ## Health checks
 
-Compose orders startup by health: `ignis` waits for a healthy `db`, and in `environment/https` the proxy waits for a healthy `ignis`.
+Compose orders startup by health: `api` waits for a healthy `db` and a finished `build-db`, and under `https` the proxy waits for a healthy `api`.
 
 `/ignis/health` reports process liveness only and does not test the database connection, so a healthy container does not by itself mean the schema is seeded or reachable.

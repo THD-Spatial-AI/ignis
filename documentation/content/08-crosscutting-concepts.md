@@ -2,7 +2,7 @@
 
 ## TLS termination
 
-ignis's code has no TLS, no certificates, no HTTPS server. That makes TLS a property of a deployment rather than of the service, and the two Compose environments are the two answers: `environment/https` puts Caddy in front to hold the certificate and decrypt, `environment/http` leaves it to whatever already terminates TLS upstream.
+ignis's code has no TLS, no certificates, no HTTPS server. That makes TLS a property of a deployment rather than of the service, and the compose file offers both answers: the `https` profile puts Caddy in front to hold the certificate and decrypt, and without it TLS is left to whatever already terminates it upstream.
 
 Where Caddy is used, the hop from proxy to app is plain HTTP, so it is only as safe as the network it crosses. That is acceptable while the network is a controlled one, such as a single Docker network. It stops being acceptable once that hop crosses infrastructure outside that control, which is why mutual TLS on the hop is listed as future work.
 
